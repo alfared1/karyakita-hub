@@ -10,26 +10,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS CDN with Dark Mode Config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: {
-              emerald: '#0F4C3A',
-              hover: '#1A6B52',
+              emerald: '#0F513D',
+              hover: '#166B51',
               amber: '#B45309',
-              bg: '#F8FAF9',
-              border: '#CFE0D8',
+              bg: '#F6F8F7',
+              border: '#D5E2DC',
             },
             unit: {
               lini1: '#7C3AED',
               lini2: '#0284C7',
               lini3: '#0D9488',
               lini4: '#EA580C',
-              lini5: '#0F4C3A',
+              lini5: '#0F513D',
               ops: '#4B5563',
             }
           },
@@ -53,29 +54,42 @@
 <body class="bg-brand-bg text-gray-800 min-h-screen flex flex-col font-sans">
 
   <!-- ========================================================================
-       TOP ROLE SIMULATOR & GLOBAL STATUS BAR (Zero-Cost Prototype Experience)
+       TOP ROLE SIMULATOR & GLOBAL STATUS BAR (Full Scale-Up Header)
        ======================================================================== -->
-  <header class="bg-brand-emerald text-white text-xs px-4 py-2 border-b border-brand-hover flex flex-wrap items-center justify-between gap-2 z-50">
+  <header class="bg-brand-emerald text-white text-xs px-4 py-2 border-b border-brand-hover flex flex-wrap items-center justify-between gap-2 z-50 shadow-sm">
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-1.5 font-bold tracking-wide">
         <i data-lucide="shield-check" class="w-4 h-4 text-emerald-300"></i>
         <span>KARYAKITA HUB OS</span>
       </div>
-      <span class="bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-600/50">STMIK Tazkia • 7 Mahasiswa SI</span>
+      <span class="bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-600/50 hidden sm:inline">STMIK Tazkia • 7 Mahasiswa SI</span>
     </div>
 
-    <!-- Active User Selector -->
-    <div class="flex items-center gap-2">
-      <span class="text-emerald-200 hidden sm:inline"><i data-lucide="user" class="w-3.5 h-3.5 inline mr-1"></i>Masuk Sebagai:</span>
-      <select id="role-simulator-select" class="bg-emerald-950 text-white border border-emerald-700 rounded px-2.5 py-1 text-xs font-medium focus:ring-1 focus:ring-emerald-400 focus:outline-none cursor-pointer">
-        <option value="alfatih">Alfatih (CEO/CTO — Super Admin)</option>
-        <option value="hilwa">Hilwa (COO / PM — Ops Admin)</option>
-        <option value="novita">Novita (CFO — Finance Admin)</option>
-        <option value="ilham">Ilham Akbar (CBDO / Lini 1 & 2)</option>
-        <option value="syarah">Syarah (CMO / Lini 4)</option>
-        <option value="aywa">Aywa (CRO / Lini 3 & 5)</option>
-        <option value="ahmad">Ahmad (Creative Director / Lini 1 & 4)</option>
-      </select>
+    <div class="flex items-center gap-2.5">
+      <!-- Capacity Status Pill -->
+      <button id="btn-topbar-capacity" onclick="openCapacityModal()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-900 transition" title="Klik untuk mengubah status kapasitas kuliah/tugas pekan ini">
+        <span id="topbar-capacity-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="topbar-capacity-label">Tersedia (4–5j)</span>
+      </button>
+
+      <!-- Theme Toggle Button -->
+      <button id="btn-toggle-theme" class="p-1 rounded-lg hover:bg-emerald-800/80 text-emerald-200 transition" title="Ganti Mode Gelap / Terang">
+        <i id="theme-toggle-icon" data-lucide="moon" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Active User Selector -->
+      <div class="flex items-center gap-1.5">
+        <span class="text-emerald-200 hidden md:inline text-[11px]"><i data-lucide="user" class="w-3.5 h-3.5 inline mr-1"></i>Masuk:</span>
+        <select id="role-simulator-select" class="bg-emerald-950 text-white border border-emerald-700 rounded px-2.5 py-1 text-xs font-medium focus:ring-1 focus:ring-emerald-400 focus:outline-none cursor-pointer max-w-[200px] sm:max-w-none truncate">
+          <option value="alfatih">Syauqi Muhammad Al Fatih (CEO & CTO)</option>
+          <option value="hilwa">Hilwa Mufida (COO & Head of PM)</option>
+          <option value="novita">Novita Rani (CFO & VP Growth Systems)</option>
+          <option value="ilham">Ilham Akbar (CBDO & CDO)</option>
+          <option value="syaraf">Syaraf Fauziah (CMO)</option>
+          <option value="nazwa">Nazwa Azahra (CRO)</option>
+          <option value="ahmad">Ahmad Maulana (Creative Director)</option>
+        </select>
+      </div>
     </div>
   </header>
 
@@ -87,7 +101,7 @@
         <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 text-amber-900"></i>
         <span><strong>Academic Freeze Mode Aktif:</strong> H-7 UTS/UAS STMIK Tazkia. Fokus selesaikan SLA proyek berjalan, tahan penambahan proyek kustom baru!</span>
       </div>
-      <button id="btn-toggle-freeze" class="text-xs bg-amber-700 text-white px-2 py-0.5 rounded hover:bg-amber-800 transition">Nonaktifkan</button>
+      <button id="btn-toggle-freeze" class="text-xs bg-amber-700 text-white px-2.5 py-1 rounded hover:bg-amber-800 transition font-semibold">Nonaktifkan</button>
     </div>
 
     <!-- Graduation Rule Meter (Kas Mandiri Rp3.500.000) -->
@@ -116,14 +130,14 @@
        ======================================================================== -->
   <div class="flex flex-1 overflow-hidden">
 
-    <!-- DESKTOP FIXED SIDEBAR (248px) -->
+    <!-- DESKTOP FIXED SIDEBAR (252px) -->
     <aside id="main-sidebar" class="w-64 bg-white border-r border-brand-border flex-shrink-0 flex flex-col justify-between hidden md:flex transition-all duration-300">
       
       <!-- Studio Header in Sidebar -->
       <div>
         <div class="p-4 border-b border-brand-border flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-brand-emerald flex items-center justify-center text-white font-bold text-lg shadow-sm">
-            K
+            KK
           </div>
           <div>
             <h1 class="font-heading font-bold text-sm text-gray-900 leading-tight">KaryaKita Studio</h1>
@@ -132,11 +146,11 @@
         </div>
 
         <!-- Navigation Links -->
-        <nav class="p-3 space-y-5 text-xs overflow-y-auto max-h-[calc(100vh-210px)]">
+        <nav class="p-3 space-y-4 text-xs overflow-y-auto max-h-[calc(100vh-210px)]">
           
-          <!-- [UTAMA] -->
+          <!-- [RINGKASAN & KINERJA] -->
           <div>
-            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Utama</div>
+            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Ringkasan & Kinerja</div>
             <ul class="space-y-1">
               <li>
                 <button data-nav="overview" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition active-nav">
@@ -147,63 +161,58 @@
               <li>
                 <button data-nav="analytics" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
                   <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-                  <span>Analitik & Laporan</span>
-                  <span class="ml-auto text-[9px] bg-emerald-100 text-brand-emerald px-1.5 py-0.2 rounded font-semibold">Q3</span>
+                  <span>Analitik & Wellbeing</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          <!-- [EKSEKUSI TIM] -->
+          <!-- [EKSEKUSI & KOLABORASI] -->
           <div>
-            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Eksekusi Tim</div>
+            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Eksekusi & Kolaborasi</div>
             <ul class="space-y-1">
               <li>
                 <button data-nav="tasks" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
-                  <i data-lucide="kanban" class="w-4 h-4"></i>
+                  <i data-lucide="check-square" class="w-4 h-4"></i>
                   <span>Papan Tugas</span>
                   <span id="badge-count-tasks" class="ml-auto text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.2 rounded-full font-bold">0</span>
                 </button>
               </li>
               <li>
                 <button data-nav="reports" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
-                  <i data-lucide="file-check-2" class="w-4 h-4"></i>
-                  <span>Lapor & Syura</span>
-                  <span class="ml-auto text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-semibold">Rabu/Minggu</span>
+                  <i data-lucide="message-square-heart" class="w-4 h-4"></i>
+                  <span>Rhythm & Syura</span>
                 </button>
               </li>
               <li>
                 <button data-nav="archives" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
                   <i data-lucide="folder-archive" class="w-4 h-4"></i>
-                  <span>Arsip & Dokumen</span>
-                  <span class="ml-auto text-[9px] text-gray-400 font-mono">Rp0</span>
+                  <span>Arsip & Vault</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          <!-- [BISNIS & KEUANGAN] -->
+          <!-- [KOMERSIAL & KEUANGAN] -->
           <div>
-            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Bisnis & Keuangan</div>
+            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Komersial & Keuangan</div>
             <ul class="space-y-1">
               <li>
                 <button data-nav="projects" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
                   <i data-lucide="briefcase" class="w-4 h-4"></i>
-                  <span>Proyek & Payment Gate</span>
+                  <span>Proyek, Gate & Triage</span>
                 </button>
               </li>
               <li>
                 <button data-nav="crm" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
-                  <i data-lucide="git-pull-request" class="w-4 h-4"></i>
+                  <i data-lucide="kanban" class="w-4 h-4"></i>
                   <span>Pipeline CRM</span>
-                  <span class="ml-auto text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-semibold">Q2</span>
                 </button>
               </li>
               <li>
                 <button data-nav="finance" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
-                  <i data-lucide="coins" class="w-4 h-4"></i>
+                  <i data-lucide="wallet" class="w-4 h-4"></i>
                   <span>Keuangan & Syirkah</span>
-                  <span class="ml-auto text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">Syariah</span>
                 </button>
               </li>
             </ul>
@@ -221,16 +230,16 @@
               </li>
               <li>
                 <button data-nav="affiliate" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
-                  <i data-lucide="share-2" class="w-4 h-4 text-orange-600"></i>
+                  <i data-lucide="clapperboard" class="w-4 h-4 text-orange-600"></i>
                   <span>Media & Affiliate (Lini 4)</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          <!-- [SISTEM & PORTAL] -->
+          <!-- [TATA KELOLA & OTOMASI] -->
           <div>
-            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Sistem & Portal</div>
+            <div class="px-2 mb-1.5 font-bold uppercase tracking-wider text-[10px] text-gray-400">Tata Kelola & Otomasi</div>
             <ul class="space-y-1">
               <li>
                 <button data-nav="integrations" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
@@ -241,7 +250,7 @@
               <li>
                 <button data-nav="system" class="nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md font-medium text-gray-700 hover:bg-emerald-50 hover:text-brand-emerald transition">
                   <i data-lucide="settings" class="w-4 h-4"></i>
-                  <span>Pengaturan & Audit Log</span>
+                  <span>Sistem & Audit Log</span>
                 </button>
               </li>
               <li>
@@ -261,10 +270,10 @@
       <div class="p-3 border-t border-brand-border bg-gray-50 flex items-center gap-3">
         <img id="sidebar-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" class="w-8 h-8 rounded-full border border-gray-300 object-cover">
         <div class="flex-1 min-w-0">
-          <p id="sidebar-user-name" class="text-xs font-bold text-gray-900 truncate">Alfatih</p>
-          <p id="sidebar-user-role" class="text-[10px] text-gray-500 truncate">CEO / CTO (Super Admin)</p>
+          <p id="sidebar-user-name" class="text-xs font-bold text-gray-900 truncate">Syauqi Muhammad Al Fatih</p>
+          <p id="sidebar-user-role" class="text-[10px] text-gray-500 truncate">CEO & CTO (Super Admin)</p>
         </div>
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="sidebar-capacity-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Kapasitas: Tersedia"></span>
       </div>
 
     </aside>
@@ -277,7 +286,7 @@
         
         <!-- Breadcrumbs & Quick Title -->
         <div class="flex items-center gap-2 min-w-0">
-          <button id="btn-toggle-mobile-menu" class="md:hidden p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100">
+          <button id="btn-toggle-mobile-menu" class="md:hidden p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100" aria-label="Toggle Menu">
             <i data-lucide="menu" class="w-4 h-4"></i>
           </button>
           <div class="flex items-center gap-1.5 text-xs">
@@ -290,7 +299,7 @@
         <!-- Global Search & Actions -->
         <div class="flex items-center gap-2">
           
-          <!-- Search input simulation -->
+          <!-- Search input -->
           <div class="relative hidden sm:block">
             <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-gray-400"></i>
             <input id="global-search-input" type="text" placeholder="Cari tugas, proyek, dokumen... (Ctrl+K)" class="w-48 lg:w-64 pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-brand-border rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-emerald focus:bg-white transition">
@@ -312,7 +321,7 @@
       </div>
 
       <!-- MAIN SCROLLABLE VIEW CANVAS -->
-      <main id="main-view-container" class="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 md:pb-8">
+      <main id="main-view-container" class="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-8">
         <!-- Views are rendered dynamically into this container by app.js -->
         <div id="view-loading" class="text-center py-20 text-gray-400">
           <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-brand-emerald mb-2"></i>
@@ -325,28 +334,30 @@
   </div>
 
   <!-- ========================================================================
-       MOBILE BOTTOM NAVIGATION BAR (< 768px)
+       MOBILE BOTTOM NAVIGATION BAR (< 768px) WITH THUMB-ZONE QUICK ACTION FAB
        ======================================================================== -->
-  <nav class="mobile-bottom-nav md:hidden flex justify-around items-center h-14 px-2">
-    <button data-nav="overview" class="nav-item flex flex-col items-center justify-center text-[10px] text-gray-500 hover:text-brand-emerald p-1 active-nav">
+  <nav class="mobile-bottom-nav md:hidden flex justify-around items-center h-16 px-2">
+    <button data-nav="overview" class="nav-item flex flex-col items-center justify-center text-[11px] text-gray-500 hover:text-brand-emerald p-1 active-nav min-w-[56px] min-h-[44px]">
       <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
       <span>Beranda</span>
     </button>
-    <button data-nav="tasks" class="nav-item flex flex-col items-center justify-center text-[10px] text-gray-500 hover:text-brand-emerald p-1">
-      <i data-lucide="kanban" class="w-5 h-5"></i>
+    <button data-nav="tasks" class="nav-item flex flex-col items-center justify-center text-[11px] text-gray-500 hover:text-brand-emerald p-1 min-w-[56px] min-h-[44px]">
+      <i data-lucide="check-square" class="w-5 h-5"></i>
       <span>Tugas</span>
     </button>
-    <button data-nav="reports" class="nav-item flex flex-col items-center justify-center text-[10px] text-gray-500 hover:text-brand-emerald p-1">
-      <i data-lucide="file-check-2" class="w-5 h-5"></i>
+    
+    <!-- Quick Action FAB (+) in center -->
+    <button id="btn-mobile-fab" onclick="openQuickActionSheet()" class="mobile-fab-btn" aria-label="Aksi Cepat & Menu Lengkap">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+    </button>
+
+    <button data-nav="reports" class="nav-item flex flex-col items-center justify-center text-[11px] text-gray-500 hover:text-brand-emerald p-1 min-w-[56px] min-h-[44px]">
+      <i data-lucide="message-square-heart" class="w-5 h-5"></i>
       <span>Lapor</span>
     </button>
-    <button data-nav="projects" class="nav-item flex flex-col items-center justify-center text-[10px] text-gray-500 hover:text-brand-emerald p-1">
+    <button data-nav="projects" class="nav-item flex flex-col items-center justify-center text-[11px] text-gray-500 hover:text-brand-emerald p-1 min-w-[56px] min-h-[44px]">
       <i data-lucide="briefcase" class="w-5 h-5"></i>
       <span>Proyek</span>
-    </button>
-    <button data-nav="finance" class="nav-item flex flex-col items-center justify-center text-[10px] text-gray-500 hover:text-brand-emerald p-1">
-      <i data-lucide="coins" class="w-5 h-5"></i>
-      <span>Keuangan</span>
     </button>
   </nav>
 

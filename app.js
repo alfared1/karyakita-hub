@@ -7,12 +7,21 @@
  */
 
 // Global State Key for LocalStorage Persistence
-const STORAGE_KEY = 'karyakita_hub_state_v2';
+const STORAGE_KEY = 'karyakita_hub_scaleup_v1';
 
-// Initial Seed Data (Produksi Bersih Tanpa Data Simulasi)
+// Capacity Status Metadata for Student Co-Founders
+const CAPACITY_META = {
+  AVAILABLE: { label: 'Tersedia (4–5j)', dot: 'bg-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  BUSY_LECTURES: { label: 'Padat Kuliah', dot: 'bg-amber-500', badgeClass: 'bg-amber-100 text-amber-800 border-amber-300' },
+  EXAM_MODE: { label: 'Mode Ujian', dot: 'bg-rose-500', badgeClass: 'bg-rose-100 text-rose-800 border-rose-300' },
+  NEEDS_SUPPORT: { label: 'Butuh Bantuan', dot: 'bg-sky-500', badgeClass: 'bg-sky-100 text-sky-800 border-sky-300' },
+};
+
+// Initial Seed Data (Full Scale-Up Clean Production Workspace)
 const INITIAL_STATE = {
   activeUserId: 'alfatih',
   currentSprint: 1,
+  themePreference: 'light',
   settings: {
     academicFreezeMode: false,
     graduationThresholdIdr: 3500000,
@@ -20,13 +29,90 @@ const INITIAL_STATE = {
     qardhRepaidIdr: 0,
   },
   users: {
-    alfatih: { id: 'alfatih', name: 'Alfatih', role: 'SUPER_ADMIN', roleLabel: 'CEO / CTO (Super Admin)', email: 'alfatih@karyakita.id', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120' },
-    hilwa: { id: 'hilwa', name: 'Hilwa', role: 'OPS_ADMIN', roleLabel: 'COO & Head of PM (Ops Admin)', email: 'hilwa@karyakita.id', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120' },
-    novita: { id: 'novita', name: 'Novita', role: 'FINANCE_ADMIN', roleLabel: 'CFO & VP Growth (Finance Admin)', email: 'novita@karyakita.id', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120' },
-    ilham: { id: 'ilham', name: 'Ilham Akbar', role: 'CO_FOUNDER', roleLabel: 'CBDO / CDO (Lini 1 & 2)', email: 'ilham@karyakita.id', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120' },
-    syarah: { id: 'syarah', name: 'Syarah', role: 'CO_FOUNDER', roleLabel: 'CMO (Lini 4)', email: 'syarah@karyakita.id', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120' },
-    aywa: { id: 'aywa', name: 'Aywa', role: 'CO_FOUNDER', roleLabel: 'CRO (Lini 3 & 5)', email: 'aywa@karyakita.id', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120' },
-    ahmad: { id: 'ahmad', name: 'Ahmad', role: 'CO_FOUNDER', roleLabel: 'Creative Director (Lini 1 & 4)', email: 'ahmad@karyakita.id', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120' }
+    alfatih: {
+      id: 'alfatih',
+      name: 'Syauqi Muhammad Al Fatih',
+      role: 'SUPER_ADMIN',
+      roleLabel: 'CEO & CTO',
+      email: 'alfathblv@gmail.com',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120',
+      ownedUnits: ['WEBTECH_L2', 'AI_ACADEMY_L5', 'INTERNAL_OPS'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'hilwa',
+      isActiveCofounder: true
+    },
+    hilwa: {
+      id: 'hilwa',
+      name: 'Hilwa Mufida',
+      role: 'OPS_ADMIN',
+      roleLabel: 'COO & Head of PM',
+      email: 'hilwa.mufida@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120',
+      ownedUnits: ['INTERNAL_OPS', 'ASSIST_DATA_L3'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'alfatih',
+      isActiveCofounder: true
+    },
+    novita: {
+      id: 'novita',
+      name: 'Novita Rani',
+      role: 'FINANCE_ADMIN',
+      roleLabel: 'CFO & VP Growth Systems',
+      email: 'novita.rani@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120',
+      ownedUnits: ['INTERNAL_OPS'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'hilwa',
+      isActiveCofounder: true
+    },
+    ilham: {
+      id: 'ilham',
+      name: 'Ilham Akbar',
+      role: 'UNIT_LEAD',
+      roleLabel: 'CBDO & CDO',
+      email: 'ilham.akbar@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+      ownedUnits: ['ASSIST_DATA_L3'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'syaraf',
+      isActiveCofounder: true
+    },
+    syaraf: {
+      id: 'syaraf',
+      name: 'Syaraf Fauziah',
+      role: 'UNIT_LEAD',
+      roleLabel: 'CMO',
+      email: 'syaraf.fauziah@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120',
+      ownedUnits: ['MEDIA_AFFILIATE_L4'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'nazwa',
+      isActiveCofounder: true
+    },
+    nazwa: {
+      id: 'nazwa',
+      name: 'Nazwa Azahra',
+      role: 'UNIT_LEAD',
+      roleLabel: 'CRO',
+      email: 'nazwa.azahra@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120',
+      ownedUnits: ['AI_ACADEMY_L5', 'MEDIA_AFFILIATE_L4'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'syaraf',
+      isActiveCofounder: true
+    },
+    ahmad: {
+      id: 'ahmad',
+      name: 'Ahmad Maulana',
+      role: 'UNIT_LEAD',
+      roleLabel: 'Creative Director',
+      email: 'ahmad.maulana@karyakita.id',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120',
+      ownedUnits: ['DESIGN_L1', 'MEDIA_AFFILIATE_L4'],
+      capacityStatus: 'AVAILABLE',
+      backupApproverId: 'nazwa',
+      isActiveCofounder: true
+    }
   },
   units: {
     LINI_1_DESIGN: { code: 'LINI_1_DESIGN', name: 'KaryaKita Design (Lini 1)', badgeClass: 'badge-unit-lini1', desc: 'Brand Identity & UI/UX Studio' },
@@ -46,6 +132,12 @@ const INITIAL_STATE = {
   academyBatches: [],
   affiliateContents: [],
   affiliateCommissions: [],
+  revisionTriage: [],
+  syirkahPeriod: {
+    status: 'DRAFT', // 'DRAFT' | 'REVIEW_48H' | 'LOCKED'
+    reviewEndsAt: null,
+    approvals: {}
+  },
   botLogs: [],
   auditLogs: [
     {
@@ -53,7 +145,7 @@ const INITIAL_STATE = {
       actorName: 'Sistem KaryaKita Hub',
       action: 'SYSTEM_INITIALIZED',
       entity: 'SystemConfig',
-      details: 'Sistem Operasi KaryaKita Hub siap digunakan untuk operasional tim nyata.',
+      details: 'Sistem Operasi KaryaKita Hub Full Scale-Up aktif dengan 7 co-founder dan tata kelola syariah terpadu.',
       timestamp: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
     }
   ]
@@ -110,6 +202,10 @@ class AppStore {
     return this.state.users[this.state.activeUserId] || this.state.users.alfatih;
   }
 
+  getActiveCofounders() {
+    return Object.values(this.state.users).filter(u => u.isActiveCofounder);
+  }
+
   calculateCashBalance() {
     let balance = 0;
     this.state.cashflow.forEach(entry => {
@@ -129,12 +225,41 @@ class AppStore {
       .reduce((sum, t) => sum + Number(t.hoursEstimate || 0), 0);
   }
 
+  // Calculate 4-Pillar Weighted Contribution Points for Syirkah 'Abdan
+  calculateWeightedContribution(userId) {
+    // 1. Task Execution Points (S=1, M=2, L=3) from DONE tasks
+    const completedTasks = this.state.tasks.filter(t => t.assigneeId === userId && t.status === 'DONE');
+    const taskPoints = completedTasks.reduce((sum, t) => sum + Number(t.contributionWeight || (t.hoursEstimate >= 3 ? 3 : t.hoursEstimate >= 2 ? 2 : 1)), 0);
+
+    // 2. Acquisition & CRM Points (5 pts per won deal)
+    const wonLeads = this.state.crmLeads.filter(l => l.ownerId === userId && l.stage === 'WON');
+    const crmPoints = wonLeads.length * 5;
+
+    // 3. Governance, Ops & Finance Points (3 pts per timely check-in + audit activities)
+    const userCheckins = this.state.checkins.filter(c => c.userId === userId && !c.isLate);
+    const opsPoints = userCheckins.length * 3;
+
+    // 4. AI Academy & Media Content Points (2 pts per published post/active batch PIC)
+    const mediaCount = this.state.affiliateContents.filter(c => c.picId === userId).length;
+    const batchCount = this.state.academyBatches.filter(b => b.picId === userId).length;
+    const mediaPoints = (mediaCount + batchCount) * 2;
+
+    const totalPoints = taskPoints + crmPoints + opsPoints + mediaPoints;
+    return {
+      taskPoints,
+      crmPoints,
+      opsPoints,
+      mediaPoints,
+      totalPoints: totalPoints || 1 // Base baseline
+    };
+  }
+
   // Audit Log Recorder
   logAudit(action, entity, details) {
     const actor = this.getCurrentUser();
     const newLog = {
       id: 'aud-' + Date.now(),
-      actorName: actor.name + ' (' + actor.role + ')',
+      actorName: actor.name + ' (' + (actor.roleLabel || actor.role) + ')',
       action: action,
       entity: entity,
       details: details,
@@ -183,6 +308,153 @@ function openModal(contentHtml) {
 function closeModal() {
   const backdrop = document.getElementById('global-modal-backdrop');
   backdrop.classList.add('hidden');
+}
+
+// ==============================================================================
+// THEME & ADAPTIVE DARK MODE CONTROLLER
+// ==============================================================================
+function initTheme() {
+  const saved = localStorage.getItem('karyakita_theme') || store.state.themePreference || 'light';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  const themeIcon = document.getElementById('theme-toggle-icon');
+  if (themeIcon) {
+    themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    lucide.createIcons({ root: themeIcon.parentElement });
+  }
+  store.state.themePreference = isDark ? 'dark' : 'light';
+}
+
+function toggleTheme() {
+  const isCurrentlyDark = document.documentElement.classList.contains('dark');
+  const next = isCurrentlyDark ? 'light' : 'dark';
+  localStorage.setItem('karyakita_theme', next);
+  applyTheme(next);
+  store.saveState();
+  showToast('Beralih ke mode ' + (next === 'dark' ? 'gelap (Deep Forest Slate)' : 'terang (Warm Daylight)'));
+}
+
+// ==============================================================================
+// CAPACITY STATUS CONTROLLER (SUPPORTIVE RHYTHM PULSE)
+// ==============================================================================
+function openCapacityModal() {
+  const user = store.getCurrentUser();
+  const currentCap = user.capacityStatus || 'AVAILABLE';
+
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="heart-pulse" class="w-4 h-4 text-brand-emerald"></i>
+          Update Kapasitas Kuliah & Beban Kerja (${user.name})
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <p class="text-xs text-gray-500">
+        Pilih status ketersediaan Anda pekan ini agar rekan tim mengetahui kapasitas Anda dan dapat saling mendukung tanpa beban berlebih.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        ${Object.entries(CAPACITY_META).map(([key, meta]) => `
+          <button onclick="setCapacityStatus('${key}')" class="p-3.5 rounded-xl border text-left flex items-start gap-3 transition ${currentCap === key ? 'border-brand-emerald bg-emerald-50/60 ring-2 ring-brand-emerald/20 font-bold' : 'border-gray-200 hover:border-gray-300 bg-white'}">
+            <span class="w-3 h-3 rounded-full ${meta.dot} mt-0.5 flex-shrink-0"></span>
+            <div>
+              <strong class="text-gray-900 block">${meta.label}</strong>
+              <p class="text-[11px] text-gray-500 font-normal mt-0.5">
+                ${key === 'AVAILABLE' ? 'Siap ambil tugas studio normal (3–5 jam/pekan)' :
+                  key === 'BUSY_LECTURES' ? 'Jadwal kuliah padat/tugas kampus menumpuk (1–2 jam)' :
+                  key === 'EXAM_MODE' ? 'Pekan UTS/UAS STMIK Tazkia (Otoritas approval didelegasikan)' :
+                  'Memerlukan bantuan rekan tim untuk menuntaskan SLA'}
+              </p>
+            </div>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function setCapacityStatus(newStatus) {
+  const user = store.getCurrentUser();
+  user.capacityStatus = newStatus;
+  store.logAudit('CAPACITY_STATUS_UPDATED', user.name, 'Status kapasitas diperbarui menjadi ' + CAPACITY_META[newStatus].label);
+  store.saveState();
+  closeModal();
+  updateTopBanners();
+  showToast('Status kapasitas Anda diperbarui: ' + CAPACITY_META[newStatus].label);
+  renderActiveView();
+}
+
+// ==============================================================================
+// MOBILE THUMB-ZONE QUICK ACTION SHEET
+// ==============================================================================
+function openQuickActionSheet() {
+  const user = store.getCurrentUser();
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4 text-brand-emerald"></i>
+          Aksi Cepat & Akses Seluruh Modul
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 text-xs">
+        <button onclick="closeModal(); navigateTo('reports');" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-brand-emerald font-bold flex items-center gap-2 text-left">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+          <span>⚡ Check-In 30 Detik</span>
+        </button>
+        <button onclick="closeModal(); openCreateTaskModal();" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-bold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-emerald"></i>
+          <span>+ Buat Tugas Baru</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('projects');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="briefcase" class="w-4 h-4 text-emerald-700"></i>
+          <span>Proyek & Triage</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('finance');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="wallet" class="w-4 h-4 text-amber-700"></i>
+          <span>Keuangan & Syirkah</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('crm');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="kanban" class="w-4 h-4 text-sky-700"></i>
+          <span>Pipeline CRM</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('academy');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-emerald-800"></i>
+          <span>AI Academy (Lini 5)</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('affiliate');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="clapperboard" class="w-4 h-4 text-orange-600"></i>
+          <span>Media & Affiliate</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('archives');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="folder-archive" class="w-4 h-4 text-teal-700"></i>
+          <span>Arsip & Vault (NDA)</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('analytics');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-700"></i>
+          <span>Analitik & Wellbeing</span>
+        </button>
+        <button onclick="closeModal(); navigateTo('system');" class="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-800 font-semibold flex items-center gap-2 text-left hover:bg-gray-100">
+          <i data-lucide="settings" class="w-4 h-4 text-gray-600"></i>
+          <span>Sistem & Audit Log</span>
+        </button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
 }
 
 // ==============================================================================
@@ -308,7 +580,8 @@ function renderOverviewView() {
   const taskProgressPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   
   const checkinsCount = store.state.checkins.length;
-  const totalFounders = 7;
+  const activeFounders = store.getActiveCofounders();
+  const totalFounders = activeFounders.length;
 
   const activeProjectsCount = store.state.projects.length;
   const activeBatchesCount = store.state.academyBatches.length;
@@ -422,6 +695,44 @@ function renderOverviewView() {
           </div>
         </div>
 
+      </div>
+
+      <!-- Supportive Rhythm Pulse: Status Kapasitas & Kesiapan 7 Co-Founder -->
+      <div class="card-surface p-5">
+        <div class="flex items-center justify-between mb-3.5">
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+              <i data-lucide="heart-pulse" class="w-4 h-4 text-brand-emerald"></i>
+              Rhythm Pulse Kapasitas Co-Founder
+            </h3>
+            <p class="text-xs text-gray-500">Transparansi kesiapan kuliah & ketersediaan waktu tim pekan ini</p>
+          </div>
+          <button onclick="openCapacityModal()" class="text-xs font-semibold text-brand-emerald hover:underline">
+            Update Status Saya →
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          ${activeFounders.map(f => {
+            const cap = CAPACITY_META[f.capacityStatus || 'AVAILABLE'] || CAPACITY_META.AVAILABLE;
+            const userCheckin = store.state.checkins.find(c => c.userId === f.id && c.sprintNumber === (store.state.currentSprint || 1));
+            return `
+              <div class="p-3 rounded-xl border border-gray-200 bg-gray-50/60 flex items-center gap-3">
+                <img src="${f.avatar}" class="w-9 h-9 rounded-full object-cover border border-gray-300">
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-gray-900 truncate">${f.name}</p>
+                  <p class="text-[10px] text-gray-500 truncate">${f.roleLabel}</p>
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-semibold ${cap.badgeClass}">
+                      <span class="w-1.5 h-1.5 rounded-full ${cap.dot}"></span>
+                      ${cap.label}
+                    </span>
+                    ${userCheckin ? '<span class="text-[9px] text-emerald-700 font-bold">✓ Lapor</span>' : '<span class="text-[9px] text-gray-400">Belum</span>'}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
 
       <!-- 2 Main Columns Layout -->
@@ -1253,10 +1564,19 @@ function renderReportsView() {
                 <label class="block font-semibold text-gray-700 mb-1">3. Ada hambatan atau butuh bantuan siapa?</label>
                 <textarea id="checkin-blocker" rows="2" placeholder="Contoh: Aman / Butuh feedback aset visual dari Ahmad..." class="w-full border border-gray-300 rounded p-2.5 focus:ring-1 focus:ring-brand-emerald">${myCheckin?.blockerSummary || ''}</textarea>
               </div>
+              <div>
+                <label class="block font-semibold text-gray-700 mb-1">Prakiraan Ketersediaan / Kapasitas Pekan Depan *</label>
+                <select id="checkin-capacity" class="w-full border border-gray-300 rounded px-2.5 py-2 text-xs focus:ring-1 focus:ring-brand-emerald">
+                  <option value="AVAILABLE" ${(user.capacityStatus || 'AVAILABLE') === 'AVAILABLE' ? 'selected' : ''}>Tersedia Normal (3–5 Jam/Pekan)</option>
+                  <option value="BUSY_LECTURES" ${user.capacityStatus === 'BUSY_LECTURES' ? 'selected' : ''}>Padat Kuliah & Tugas Kampus (1–2 Jam)</option>
+                  <option value="EXAM_MODE" ${user.capacityStatus === 'EXAM_MODE' ? 'selected' : ''}>Mode Ujian / UTS / UAS (Delegasi Approver Aktif)</option>
+                  <option value="NEEDS_SUPPORT" ${user.capacityStatus === 'NEEDS_SUPPORT' ? 'selected' : ''}>Butuh Bantuan Rekan Tim</option>
+                </select>
+              </div>
               <div class="flex justify-end pt-2">
                 <button onclick="submitAsyncCheckin()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
                   <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                  <span>Kirim Check-In (< 90 Detik)</span>
+                  <span>Kirim Check-In (< 60 Detik)</span>
                 </button>
               </div>
             </div>
@@ -1395,32 +1715,49 @@ function renderReportsView() {
           `).join('')}
         </div>
       ` : `
-        <!-- TAB 3: INDIKATOR KEADILAN SYIRKAH ABDAN -->
+        <!-- TAB 3: TRANSPARANSI KEADILAN SYIRKAH 'ABDAN (SELF-VISIBLE) -->
         <div class="space-y-6">
           <div class="card-surface p-5">
-            <h3 class="font-heading font-bold text-sm text-gray-900 mb-2 flex items-center gap-2">
-              <i data-lucide="scale" class="w-4 h-4 text-brand-emerald"></i>
-              Matriks Keadilan & Keaktifan 4 Sprint Terakhir
-            </h3>
-            <p class="text-xs text-gray-500 mb-4">
-              Prinsip <em>Tabayyun</em>: Sistem mendeteksi otomatis jika ada co-founder yang tidak aktif 2 sprint berturut-turut untuk dilakukan dialog 1-on-1 secara kekeluargaan.
-            </p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+                  <i data-lucide="scale" class="w-4 h-4 text-brand-emerald"></i>
+                  Transparansi Keadilan Syirkah 'Abdan (Poin Bobot Kontribusi)
+                </h3>
+                <p class="text-xs text-gray-500">
+                  Seluruh co-founder memiliki transparansi penuh (Self-Visibility) atas akumulasi kontribusi nyata 4 pilar.
+                </p>
+              </div>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded font-bold self-start sm:self-auto">
+                Akad Syirkah 'Abdan Terbuka
+              </span>
+            </div>
+
+            <!-- 4 Pillars Legend -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 text-[11px] bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <div><strong class="text-purple-700">Pilar 1:</strong> Eksekusi Tugas (S=1, M=2, L=3)</div>
+              <div><strong class="text-sky-700">Pilar 2:</strong> Akuisisi CRM (5 Poin)</div>
+              <div><strong class="text-emerald-700">Pilar 3:</strong> Ops & Keuangan (3 Poin)</div>
+              <div><strong class="text-orange-700">Pilar 4:</strong> Media & Academy (2 Poin)</div>
+            </div>
 
             <div class="overflow-x-auto border border-brand-border rounded-lg">
               <table class="w-full text-xs text-left">
                 <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase">
                   <tr>
                     <th class="p-3">Co-Founder</th>
-                    <th class="p-3">Peran Studio</th>
-                    <th class="p-3 text-center">Sprint 1</th>
-                    <th class="p-3 text-center">Sprint 2</th>
-                    <th class="p-3 text-center">Sprint 3 (Aktif)</th>
-                    <th class="p-3 text-center">Status Tabayyun</th>
+                    <th class="p-3">Peran & Unit</th>
+                    <th class="p-3 text-center">Tugas (P1)</th>
+                    <th class="p-3 text-center">CRM (P2)</th>
+                    <th class="p-3 text-center">Ops (P3)</th>
+                    <th class="p-3 text-center">Media (P4)</th>
+                    <th class="p-3 text-center font-bold text-gray-900">Total Poin</th>
+                    <th class="p-3 text-right">Status Keadilan</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   ${founders.map(f => {
-                    const myCompletedTasks = store.state.tasks.filter(t => t.assigneeId === f.id && t.status === 'DONE').length;
+                    const contrib = store.calculateWeightedContribution(f.id);
                     return `
                       <tr>
                         <td class="p-3 flex items-center gap-2">
@@ -1428,12 +1765,14 @@ function renderReportsView() {
                           <span class="font-bold text-gray-900">${f.name}</span>
                         </td>
                         <td class="p-3 text-gray-500">${f.roleLabel}</td>
-                        <td class="p-3 text-center text-emerald-700 font-semibold">Aktif (100%)</td>
-                        <td class="p-3 text-center text-emerald-700 font-semibold">Aktif (100%)</td>
-                        <td class="p-3 text-center font-bold">${myCompletedTasks > 0 ? 'Selesai ' + myCompletedTasks + ' Tugas' : 'Dalam Pengerjaan'}</td>
-                        <td class="p-3 text-center">
+                        <td class="p-3 text-center font-mono">${contrib.taskPoints} pt</td>
+                        <td class="p-3 text-center font-mono">${contrib.crmPoints} pt</td>
+                        <td class="p-3 text-center font-mono">${contrib.opsPoints} pt</td>
+                        <td class="p-3 text-center font-mono">${contrib.mediaPoints} pt</td>
+                        <td class="p-3 text-center font-mono font-bold text-brand-emerald text-sm">${contrib.totalPoints} pt</td>
+                        <td class="p-3 text-right">
                           <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">
-                            Sehat & Adil
+                            Kontributif
                           </span>
                         </td>
                       </tr>
@@ -1443,6 +1782,9 @@ function renderReportsView() {
               </table>
             </div>
 
+            <p class="text-[11px] text-gray-500 mt-3 italic">
+              * Prinsip Tabayyun: Poin kontribusi digunakan untuk pembagian porsi 40% Pool Eksekutor Syirkah 'Abdan. 60% lainnya dibagi rata secara merata kepada seluruh co-founder aktif.
+            </p>
           </div>
         </div>
       `}
@@ -1466,11 +1808,14 @@ function submitAsyncCheckin() {
   const completed = document.getElementById('checkin-completed').value.trim();
   const inprogress = document.getElementById('checkin-inprogress').value.trim();
   const blocker = document.getElementById('checkin-blocker').value.trim();
+  const capacity = document.getElementById('checkin-capacity')?.value || user.capacityStatus || 'AVAILABLE';
 
   if (!completed || !inprogress) {
     showToast('Harap isi ringkasan selesai dan progres!', 'error');
     return;
   }
+
+  user.capacityStatus = capacity;
 
   const existingIdx = store.state.checkins.findIndex(c => c.userId === user.id && c.sprintNumber === store.state.currentSprint);
   const checkinData = {
@@ -1479,6 +1824,7 @@ function submitAsyncCheckin() {
     completedSummary: completed,
     inProgressSummary: inprogress,
     blockerSummary: blocker || 'Aman, tidak ada kendala.',
+    capacityNext: capacity,
     submittedAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
   };
 
@@ -1488,8 +1834,9 @@ function submitAsyncCheckin() {
     store.state.checkins.push(checkinData);
   }
 
-  store.logAudit('CHECKIN_SUBMITTED', 'Check-In: ' + user.name, 'Laporan Async Check-In Rabu berhasil dikirim.');
+  store.logAudit('CHECKIN_SUBMITTED', 'Check-In: ' + user.name, `Laporan Async Check-In berhasil dikirim (Kapasitas: ${CAPACITY_META[capacity].label}).`);
   store.saveState();
+  updateTopBanners();
   showToast('Alhamdulillah! Laporan Async Check-In berhasil disimpan.');
   renderActiveView();
 }
@@ -1658,8 +2005,9 @@ function renderArchivesView() {
     if (archiveFilterQuarter !== 'all' && a.quarter !== archiveFilterQuarter) return false;
     if (archiveFilterCategory !== 'all' && a.category !== archiveFilterCategory) return false;
     
-    // RBAC Security Guard: NDA_KLIEN can only be accessed by Super Admin, Ops Admin, Finance Admin, or PIC!
-    if (a.confidentiality === 'NDA_KLIEN') {
+    // RBAC Security Guard: NDA_RESTRICTED / NDA_KLIEN can only be accessed by Super Admin, Ops Admin, Finance Admin, or PIC!
+    const isNda = a.visibility === 'NDA_RESTRICTED' || a.confidentiality === 'NDA_KLIEN';
+    if (isNda) {
       const allowedRoles = ['SUPER_ADMIN', 'OPS_ADMIN', 'FINANCE_ADMIN'];
       if (!allowedRoles.includes(user.role) && a.uploadedById !== user.id) {
         return false; // Isolated!
@@ -1742,16 +2090,28 @@ function renderArchivesView() {
                     </span>
                   </td>
                   <td class="p-3">
-                    <span class="text-[10px] px-2 py-0.5 rounded font-bold ${a.confidentiality === 'NDA_KLIEN' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">
-                      ${a.confidentiality === 'NDA_KLIEN' ? 'NDA Klien — Rahasia' : 'Internal Tim'}
-                    </span>
+                    ${(() => {
+                      const vis = a.visibility || (a.confidentiality === 'NDA_KLIEN' ? 'NDA_RESTRICTED' : 'INTERNAL_TEAM');
+                      if (vis === 'NDA_RESTRICTED') {
+                        return `<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-red-100 text-red-800 border border-red-200 inline-flex items-center gap-1"><i data-lucide="shield-alert" class="w-3 h-3"></i> NDA Ketat</span>`;
+                      } else if (vis === 'CLIENT_SAFE') {
+                        return `<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3"></i> Publik Klien</span>`;
+                      } else {
+                        return `<span class="text-[10px] px-2 py-0.5 rounded font-bold bg-sky-100 text-sky-800 border border-sky-200 inline-flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i> Internal Tim</span>`;
+                      }
+                    })()}
                   </td>
                   <td class="p-3 text-gray-500 tabular-nums">${a.date}</td>
                   <td class="p-3 text-right">
-                    <a href="${a.url}" target="_blank" class="inline-flex items-center gap-1 text-brand-emerald hover:underline font-semibold">
-                      <span>Buka</span>
-                      <i data-lucide="external-link" class="w-3 h-3"></i>
-                    </a>
+                    <div class="flex items-center justify-end gap-2">
+                      <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5" title="Tautan terverifikasi aktif">
+                        <i data-lucide="check" class="w-2.5 h-2.5"></i> Akses OK
+                      </span>
+                      <a href="${a.url}" target="_blank" class="inline-flex items-center gap-1 text-brand-emerald hover:underline font-semibold">
+                        <span>Buka</span>
+                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                      </a>
+                    </div>
                   </td>
                 </tr>
               `;
@@ -1802,10 +2162,11 @@ function openAddArchiveModal() {
             </select>
           </div>
           <div>
-            <label class="block font-semibold text-gray-700 mb-1">Kerahasiaan *</label>
-            <select id="new-arc-confidentiality" class="w-full border border-gray-300 rounded px-2.5 py-2">
-              <option value="INTERNAL_TIM">Internal Tim (Dapat Diakses 7 Pendiri)</option>
-              <option value="NDA_KLIEN">NDA Klien — Rahasia (Super Admin/Ops/Finance/PIC)</option>
+            <label class="block font-semibold text-gray-700 mb-1">Visibilitas & Guard *</label>
+            <select id="new-arc-visibility" class="w-full border border-gray-300 rounded px-2.5 py-2">
+              <option value="INTERNAL_TEAM">Internal Tim (Dapat Diakses Seluruh Tim)</option>
+              <option value="NDA_RESTRICTED">NDA Klien — Rahasia Ketat (Blokir ke Portal Klien)</option>
+              <option value="CLIENT_SAFE">Publik Klien (Aman & Tampil di Portal Klien B2B)</option>
             </select>
           </div>
         </div>
@@ -1843,7 +2204,7 @@ function openAddArchiveModal() {
 function submitNewArchive() {
   const title = document.getElementById('new-arc-title').value.trim();
   const category = document.getElementById('new-arc-category').value;
-  const confidentiality = document.getElementById('new-arc-confidentiality').value;
+  const visibility = document.getElementById('new-arc-visibility')?.value || 'INTERNAL_TEAM';
   const url = document.getElementById('new-arc-url').value.trim();
 
   if (!title || !url) {
@@ -1860,12 +2221,14 @@ function submitNewArchive() {
     uploadedById: store.state.activeUserId,
     storageType: 'EXTERNAL_LINK',
     url: url,
-    confidentiality: confidentiality,
+    visibility: visibility,
+    confidentiality: visibility === 'NDA_RESTRICTED' ? 'NDA_KLIEN' : 'INTERNAL_TIM',
+    linkVerified: true,
     date: new Date().toISOString().split('T')[0]
   };
 
   store.state.archives.unshift(newArchive);
-  store.logAudit('ARCHIVE_CREATED', 'Doc: ' + title, 'Dokumen baru diarsipkan dengan label ' + confidentiality);
+  store.logAudit('ARCHIVE_CREATED', 'Doc: ' + title, 'Dokumen baru diarsipkan dengan visibilitas ' + visibility);
   store.saveState();
   closeModal();
   showToast('Dokumen berhasil diarsipkan ke vault!');
@@ -1880,7 +2243,11 @@ function renderProjectsView() {
   const projects = store.state.projects;
   const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
 
-  const canVerifyPayment = ['SUPER_ADMIN', 'FINANCE_ADMIN'].includes(user.role);
+  const isCfo = user.role === 'FINANCE_ADMIN' || user.id === 'novita';
+  const isSuperAdmin = user.role === 'SUPER_ADMIN';
+  const isCfoExamMode = store.state.users.novita?.capacityStatus === 'EXAM_MODE';
+  const isBackupApprover = isCfoExamMode && (user.id === 'hilwa' || user.role === 'OPS_ADMIN');
+  const canVerifyPayment = isCfo || isSuperAdmin || isBackupApprover;
 
   return `
     <div class="space-y-5">
@@ -1890,10 +2257,10 @@ function renderProjectsView() {
         <div>
           <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
             <i data-lucide="shield-alert" class="w-4 h-4 text-brand-emerald"></i>
-            Disiplin Gerbang Pembayaran (Payment Gate Rule)
+            Disiplin Gerbang Pembayaran & Anti-Scope Creep (Payment Gate)
           </h3>
           <p class="text-xs text-gray-500 mt-0.5">
-            Proyek B2B wajib DP 50% terverifikasi CFO (Novita) sebelum tugas eksekusi dapat dipindahkan ke <em>In Progress</em>.
+            Proyek B2B wajib DP 50% terverifikasi CFO (Novita) / COO (Hilwa) sebelum tugas eksekusi dapat dikerjakan. Prinsip <em>Maker-Checker</em> melarang pembuat proyek memverifikasi DP sendiri.
           </p>
         </div>
         <button onclick="openCreateProjectModal()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition flex-shrink-0">
@@ -1901,6 +2268,19 @@ function renderProjectsView() {
           <span>Tambah Proyek Baru</span>
         </button>
       </div>
+
+      ${isCfoExamMode ? `
+        <!-- Delegation Banner -->
+        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-xs flex items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0 animate-pulse"></span>
+            <div class="text-amber-950">
+              <strong>Delegasi Approver Aktif:</strong> CFO (Novita Rani) sedang <em>Mode Ujian (Exam Mode)</em>. Otoritas verifikasi Payment Gate dialihkan sementara kepada <strong>Hilwa Mufida (COO & Head of PM)</strong>.
+            </div>
+          </div>
+          <span class="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold whitespace-nowrap">Backup Otoritas</span>
+        </div>
+      ` : ''}
 
       <!-- Project Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1922,6 +2302,7 @@ function renderProjectsView() {
           const isWaitingDp = p.paymentGateStatus === 'LOCKED_WAITING_DP';
           const isDp50 = p.paymentGateStatus === 'DP_50_VERIFIED';
           const isPaid100 = p.paymentGateStatus === 'PAID_100_VERIFIED';
+          const pendingRevs = store.state.revisionTriage.filter(r => r.projectId === p.id && r.triageStatus === 'PENDING_TRIAGE');
 
           return `
             <div class="card-surface p-5 space-y-4">
@@ -1953,6 +2334,37 @@ function renderProjectsView() {
                 </div>
               </div>
 
+              <!-- Revision Triage Inbox (Anti-Scope Creep) -->
+              ${pendingRevs.length > 0 ? `
+                <div class="bg-amber-50/70 border border-amber-300 rounded-lg p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-xs text-amber-950 flex items-center gap-1.5 font-heading">
+                      <i data-lucide="inbox" class="w-3.5 h-3.5 text-amber-700"></i>
+                      Inbox Triage Revisi (${pendingRevs.length} Menunggu Validasi)
+                    </strong>
+                    <span class="text-[9px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded font-bold">Anti-Scope Creep</span>
+                  </div>
+                  <div class="space-y-2 text-xs">
+                    ${pendingRevs.map(rev => `
+                      <div class="p-2 rounded bg-white border border-amber-200 flex flex-col gap-1.5">
+                        <div class="flex items-start justify-between gap-2">
+                          <p class="text-gray-800 font-semibold text-[11px]">"${rev.notes}"</p>
+                          <span class="text-[9px] text-gray-400 font-mono whitespace-nowrap">${rev.createdAt}</span>
+                        </div>
+                        <div class="flex items-center justify-end gap-1.5 pt-1 border-t border-gray-100">
+                          <button onclick="acceptRevisionTriage('${rev.id}')" class="px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-semibold flex items-center gap-1">
+                            <i data-lucide="check" class="w-3 h-3"></i> Terima & Buat Tugas
+                          </button>
+                          <button onclick="rejectRevisionAddendum('${rev.id}')" class="px-2 py-0.5 rounded bg-amber-700 hover:bg-amber-800 text-white text-[10px] font-semibold flex items-center gap-1">
+                            <i data-lucide="file-plus" class="w-3 h-3"></i> Ajukan Addendum
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
               <!-- Payment Gate Action & Client Portal Token -->
               <div class="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div class="flex items-center gap-1.5">
@@ -1979,7 +2391,7 @@ function renderProjectsView() {
                       </span>
                     `}
                   ` : `
-                    <span class="text-gray-400 text-[11px] italic">Wewenang CFO Novita</span>
+                    <span class="text-gray-400 text-[11px] italic">Wewenang CFO Novita / COO Hilwa</span>
                   `}
                 </div>
               </div>
@@ -1995,6 +2407,59 @@ function renderProjectsView() {
 
 function initProjectsEvents() {}
 
+function acceptRevisionTriage(triageId) {
+  const rev = store.state.revisionTriage.find(r => r.id === triageId);
+  if (!rev) return;
+  const project = store.state.projects.find(p => p.id === rev.projectId);
+  if (!project) return;
+
+  project.revisionUsed = (project.revisionUsed || 0) + 1;
+  rev.triageStatus = 'ACCEPTED_IN_QUOTA';
+  rev.reviewedById = store.state.activeUserId;
+
+  const newTask = {
+    id: 'task-' + Date.now(),
+    title: 'Revisi Klien: ' + project.clientName,
+    description: rev.notes,
+    unitId: project.unitId,
+    projectId: project.id,
+    assigneeId: project.picId,
+    createdById: store.state.activeUserId,
+    sprintNumber: store.state.currentSprint || 1,
+    status: 'TODO',
+    isBlocked: false,
+    blockedReason: null,
+    hoursEstimate: 1.5,
+    dueDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+    dodChecklist: [{ label: 'Tuntaskan revisi klien terverifikasi', checked: false }],
+    workProofUrl: '',
+    isClientVisible: true
+  };
+  store.state.tasks.unshift(newTask);
+  store.logAudit('REVISION_TRIAGE_ACCEPTED', 'Project: ' + project.title, 'Catatan revisi diterima; kartu tugas resmi dibuat di Papan Tugas.');
+  store.saveState();
+  showToast('Revisi diterima! Kuota dipotong 1x dan kartu tugas resmi telah dibuat di Papan Tugas.');
+  renderActiveView();
+}
+
+function rejectRevisionAddendum(triageId) {
+  const rev = store.state.revisionTriage.find(r => r.id === triageId);
+  if (!rev) return;
+  const project = store.state.projects.find(p => p.id === rev.projectId);
+  if (!project) return;
+
+  rev.triageStatus = 'OUT_OF_SCOPE_ADDENDUM';
+  rev.reviewedById = store.state.activeUserId;
+
+  const waText = `Yth. ${project.clientName}, terima kasih atas catatan yang dikirimkan. Setelah ditinjau oleh PM KaryaKita, permintaan "${rev.notes}" berada di luar ruang lingkup (scope) kontrak awal. Kami siap mengakomodasi melalui penambahan Addendum Kerja. Silakan konfirmasi untuk penawaran addendum ini.`;
+  navigator.clipboard?.writeText(waText);
+
+  store.logAudit('REVISION_TRIAGE_OUT_OF_SCOPE', 'Project: ' + project.title, 'Revisi ditandai di luar scope; draf addendum disiapkan.');
+  store.saveState();
+  showToast('Revisi ditandai di luar scope! Draf WhatsApp addendum telah disalin ke clipboard.');
+  renderActiveView();
+}
+
 function openVerifyDpModal(projectId) {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
@@ -2004,7 +2469,7 @@ function openVerifyDpModal(projectId) {
       <div class="flex items-center justify-between border-b border-brand-border pb-3">
         <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
           <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
-          Verifikasi Gerbang Pembayaran DP 50% (Wewenang CFO)
+          Verifikasi Gerbang Pembayaran DP 50% (CFO / Delegasi)
         </h3>
         <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
@@ -2038,6 +2503,12 @@ function submitVerifyDp(projectId) {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
 
+  // Maker-Checker Security Guard
+  if (store.state.activeUserId === project.createdById) {
+    showToast('Prinsip Maker-Checker: Pembuat proyek dilarang memverifikasi pembayarannya sendiri! Verifikasi harus dilakukan oleh CFO (Novita Rani) atau COO (Hilwa Mufida).', 'error');
+    return;
+  }
+
   const date = document.getElementById('verify-dp-date').value;
   const proof = document.getElementById('verify-dp-proof').value.trim();
 
@@ -2065,7 +2536,14 @@ function submitVerifyDp(projectId) {
   };
   store.state.cashflow.unshift(cashEntry);
 
-  store.logAudit('PAYMENT_GATE_VERIFIED', 'Project: ' + project.title, `DP 50% sebesar Rp${dpAmount.toLocaleString('id-ID')} terverifikasi.`);
+  const actor = store.getCurrentUser();
+  const isDelegation = store.state.users.novita?.capacityStatus === 'EXAM_MODE' && actor.id !== 'novita';
+  store.logAudit(
+    'PAYMENT_GATE_VERIFIED',
+    'Project: ' + project.title,
+    `DP 50% sebesar Rp${dpAmount.toLocaleString('id-ID')} terverifikasi${isDelegation ? ' (melalui Delegasi CFO saat Exam Mode)' : ''}.`
+  );
+
   store.saveState();
   closeModal();
   showToast('Alhamdulillah! DP 50% berhasil diverifikasi. Kartu tugas eksekusi kini dapat dikerjakan!');
@@ -2075,6 +2553,12 @@ function submitVerifyDp(projectId) {
 function openVerifyFullModal(projectId) {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
+
+  // Maker-Checker Security Guard
+  if (store.state.activeUserId === project.createdById) {
+    showToast('Prinsip Maker-Checker: Pembuat proyek dilarang memverifikasi pelunasan sendiri!', 'error');
+    return;
+  }
 
   if (confirm(`Apakah Anda yakin memverifikasi Pelunasan 100% untuk ${project.title}?`)) {
     project.paymentGateStatus = 'PAID_100_VERIFIED';
@@ -2432,10 +2916,28 @@ function renderFinanceView() {
   const retainedAmount = Math.floor((netAfterZakat * retainedPct) / 100);
   const distributablePool = netAfterZakat - retainedAmount;
 
-  // 40% Executor Pool & 60% Equal Pool across 7 founders
+  // 40% Executor Pool (Weighted Contribution) & 60% Equal Pool across active cofounders
+  const activeCofounders = store.getActiveCofounders();
+  const cofounderCount = activeCofounders.length || 1;
   const executorPool = Math.floor((distributablePool * 40) / 100);
   const equalPool = distributablePool - executorPool;
-  const perFounderEqual = Math.floor(equalPool / 7);
+  const perFounderEqual = Math.floor(equalPool / cofounderCount);
+
+  // Total weighted points across all active cofounders for 40% distribution
+  const founderContributionMap = {};
+  let totalWeightedPoints = 0;
+  activeCofounders.forEach(f => {
+    const stats = store.calculateWeightedContribution(f.id);
+    founderContributionMap[f.id] = stats;
+    totalWeightedPoints += stats.totalPoints;
+  });
+
+  const syirkahState = store.state.syirkahPeriod || { status: 'DRAFT', reviewEndsAt: null, approvals: {} };
+  const approvals = syirkahState.approvals || {};
+  const approvedCount = activeCofounders.filter(f => approvals[f.id]?.status === 'CONFIRMED').length;
+  const isQuorumReached = approvedCount >= Math.ceil(activeCofounders.length * 0.6); // 60%+ quorum (misal: 5 dari 7)
+  const isCurrentUserApproved = approvals[user.id]?.status === 'CONFIRMED';
+  const hasCurrentUserCofounder = activeCofounders.some(f => f.id === user.id);
 
   const canManageFinance = ['SUPER_ADMIN', 'FINANCE_ADMIN'].includes(user.role);
 
@@ -2565,24 +3067,84 @@ function renderFinanceView() {
 
         </div>
       ` : financeActiveTab === 'syirkah' ? `
-        <!-- TAB 2: SYIRKAH 'ABDAN PROFIT SHARING CALCULATOR -->
+        <!-- TAB 2: SYIRKAH 'ABDAN PROFIT SHARING CALCULATOR & 48H MUSYAWARAH -->
         <div class="space-y-6">
           
           <div class="card-surface p-5 bg-white space-y-4">
             <div class="border-b border-brand-border pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="font-heading font-bold text-sm text-gray-900">
-                  Penutupan Buku Akhir Bulan & Bagi Hasil Syirkah 'Abdan
-                </h3>
-                <p class="text-xs text-gray-500">Periode: <strong>${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong> • Sistem Zero-Riba, Zero-Gharar</p>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-heading font-bold text-sm text-gray-900">
+                    Penutupan Buku Akhir Bulan & Bagi Hasil Syirkah 'Abdan
+                  </h3>
+                  <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${syirkahState.status === 'LOCKED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : syirkahState.status === 'REVIEW_48H' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-700 border border-gray-300'}">
+                    ${syirkahState.status === 'LOCKED' ? 'TERKUNCI & RESMI' : syirkahState.status === 'REVIEW_48H' ? 'FASE REVIEW MUSYAWARAH 48 JAM' : 'DRAF PERIODE'}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Periode: <strong>${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong> • Sistem Zero-Riba, Zero-Gharar • Dinamis ${activeCofounders.length} Co-Founder Aktif</p>
               </div>
-              ${canManageFinance ? `
-                <button onclick="lockSyirkahPeriod()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
-                  <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-                  <span>Kunci Periode & Terbitkan Slip PDF</span>
-                </button>
-              ` : ''}
+              
+              <div class="flex items-center gap-2">
+                ${canManageFinance && syirkahState.status === 'DRAFT' ? `
+                  <button onclick="startMusyawarah48h()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <span>Buka Review Bersama (48 Jam)</span>
+                  </button>
+                ` : ''}
+
+                ${canManageFinance && syirkahState.status === 'REVIEW_48H' ? `
+                  <button onclick="lockSyirkahPeriod()" class="${isQuorumReached ? 'bg-brand-emerald hover:bg-brand-hover text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'} text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition" ${!isQuorumReached ? 'title="Menunggu minimal kuorum persetujuan co-founder"' : ''}>
+                    <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                    <span>Kunci Periode & Terbitkan Slip Final</span>
+                  </button>
+                ` : ''}
+
+                ${syirkahState.status === 'LOCKED' ? `
+                  <span class="text-xs text-emerald-800 font-semibold bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                    <span>Buku Kas Terkunci</span>
+                  </span>
+                ` : ''}
+              </div>
             </div>
+
+            <!-- 48-Hour Musyawarah Status Banner -->
+            ${syirkahState.status === 'REVIEW_48H' ? `
+              <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-start gap-2.5">
+                    <i data-lucide="hourglass" class="w-5 h-5 text-amber-700 mt-0.5"></i>
+                    <div>
+                      <h4 class="font-heading font-bold text-xs text-amber-950">Masa Musyawarah & Telaah Bersama (48-Hour Sign-Off Window)</h4>
+                      <p class="text-[11px] text-amber-800 mt-0.5">
+                        Prinsip <em>'An Taradhin Minkum</em> (Saling Rela). Berakhir pada: <strong>${syirkahState.reviewEndsAt ? new Date(syirkahState.reviewEndsAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '48 Jam ke depan'}</strong>.
+                        Progres Persetujuan: <strong>${approvedCount} dari ${activeCofounders.length} Co-Founder</strong> (${Math.round((approvedCount / activeCofounders.length) * 100)}%).
+                      </p>
+                    </div>
+                  </div>
+
+                  ${hasCurrentUserCofounder ? `
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      ${isCurrentUserApproved ? `
+                        <span class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                          <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i>
+                          <span>Anda Telah Menyetujui (Taradhin)</span>
+                        </span>
+                      ` : `
+                        <button onclick="confirmSyirkahSignOff('CONFIRMED')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                          <span>Setuju & Konfirmasi (Taradhin)</span>
+                        </button>
+                        <button onclick="confirmSyirkahSignOff('REVISION_REQUESTED')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                          <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                          <span>Ajukan Catatan/Koreksi</span>
+                        </button>
+                      `}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            ` : ''}
 
             <!-- Mathematical Breakdown Steps -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -2608,28 +3170,29 @@ function renderFinanceView() {
               </div>
             </div>
 
-            <!-- Distribution Breakdown across 7 Founders -->
+            <!-- Distribution Breakdown across Active Founders -->
             <div class="mt-4">
               <h4 class="font-heading font-bold text-xs text-gray-800 mb-2">
-                Rincian Estimasi Hak Bagi Hasil 7 Pendiri (${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}):
+                Rincian Estimasi Hak Bagi Hasil Co-Founder Aktif (${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}):
               </h4>
               <div class="overflow-x-auto border border-brand-border rounded-lg">
                 <table class="w-full text-xs text-left">
                   <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase">
                     <tr>
                       <th class="p-2.5">Co-Founder</th>
+                      <th class="p-2.5 text-center">Status Sign-Off</th>
                       <th class="p-2.5">Porsi Rata 60%</th>
-                      <th class="p-2.5">Porsi Eksekutor 40%</th>
+                      <th class="p-2.5">Porsi Eksekutor 40% (4-Pilar)</th>
                       <th class="p-2.5 text-right">Total Hak Bagi Hasil</th>
                       <th class="p-2.5 text-center">Slip PDF</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-100">
-                    ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(f => {
-                      const founderProjectTasks = store.state.tasks.filter(t => t.assigneeId === f.id && t.projectId && t.status === 'DONE').length;
-                      const totalProjectDoneTasks = store.state.tasks.filter(t => t.projectId && t.status === 'DONE').length;
-                      const executorPortion = totalProjectDoneTasks > 0 ? Math.floor((executorPool * founderProjectTasks) / totalProjectDoneTasks) : 0;
+                    ${activeCofounders.map(f => {
+                      const stats = founderContributionMap[f.id] || { totalPoints: 0 };
+                      const executorPortion = totalWeightedPoints > 0 ? Math.floor((executorPool * stats.totalPoints) / totalWeightedPoints) : 0;
                       const totalFounderShare = perFounderEqual + executorPortion;
+                      const approval = approvals[f.id];
 
                       return `
                         <tr>
@@ -2637,9 +3200,25 @@ function renderFinanceView() {
                             <img src="${f.avatar}" class="w-5 h-5 rounded-full object-cover">
                             <span>${f.name}</span>
                           </td>
+                          <td class="p-2.5 text-center">
+                            ${approval?.status === 'CONFIRMED' ? `
+                              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1">
+                                <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i> Disetujui
+                              </span>
+                            ` : approval?.status === 'REVISION_REQUESTED' ? `
+                              <span class="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1" title="${approval.note || 'Ada catatan'}">
+                                <i data-lucide="message-square" class="w-3 h-3 text-red-600"></i> Ada Koreksi
+                              </span>
+                            ` : `
+                              <span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3 h-3 text-amber-500"></i> Menunggu
+                              </span>
+                            `}
+                          </td>
                           <td class="p-2.5 font-mono tabular-nums">${formatRp(perFounderEqual)}</td>
                           <td class="p-2.5 font-mono tabular-nums ${executorPortion > 0 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}">
                             ${formatRp(executorPortion)}
+                            <span class="text-[10px] text-gray-500 block font-sans">Bobot: ${stats.totalPoints} pt</span>
                           </td>
                           <td class="p-2.5 text-right font-mono font-bold text-brand-emerald tabular-nums">
                             ${formatRp(totalFounderShare)}
@@ -2801,23 +3380,81 @@ function submitNewCashflow() {
   renderActiveView();
 }
 
-function lockSyirkahPeriod() {
-  if (confirm('Apakah Anda yakin ingin mengunci periode penutupan buku Maret 2026 dan menerbitkan slip bagi hasil untuk seluruh 7 pendiri?')) {
-    store.logAudit('SYIRKAH_PERIOD_LOCKED', 'Syirkah Periode: Maret 2026', 'Penutupan buku dikunci resmi oleh CFO.');
-    showToast('Alhamdulillah! Periode penutupan buku Maret 2026 resmi dikunci.');
-    renderActiveView();
+function startMusyawarah48h() {
+  if (!store.state.syirkahPeriod) store.state.syirkahPeriod = { status: 'DRAFT', reviewEndsAt: null, approvals: {} };
+  const endsAt = new Date(Date.now() + 48 * 3600000).toISOString();
+  store.state.syirkahPeriod.status = 'REVIEW_48H';
+  store.state.syirkahPeriod.reviewEndsAt = endsAt;
+  store.state.syirkahPeriod.approvals = {};
+  
+  store.logAudit('SYIRKAH_REVIEW_OPENED', 'Musyawarah 48 Jam Dimulai', 'Jendela review dibuka hingga: ' + new Date(endsAt).toLocaleString('id-ID'));
+  store.saveState();
+  showToast('Fase Review & Musyawarah 48 Jam resmi dibuka untuk seluruh co-founder!');
+  renderActiveView();
+}
+
+function confirmSyirkahSignOff(decision) {
+  const user = store.getCurrentUser();
+  if (!store.state.syirkahPeriod) store.state.syirkahPeriod = { status: 'DRAFT', reviewEndsAt: null, approvals: {} };
+  if (!store.state.syirkahPeriod.approvals) store.state.syirkahPeriod.approvals = {};
+
+  if (decision === 'REVISION_REQUESTED') {
+    const note = prompt('Tuliskan catatan atau masukan koreksi Anda terkait perhitungan bagi hasil:', '');
+    if (!note) return;
+    store.state.syirkahPeriod.approvals[user.id] = {
+      status: 'REVISION_REQUESTED',
+      note: note,
+      timestamp: new Date().toISOString()
+    };
+    store.logAudit('SYIRKAH_REVISION_NOTE', `Koreksi oleh: ${user.name}`, note);
+    showToast('Catatan koreksi Anda telah disampaikan ke CFO/Admin.');
+  } else {
+    store.state.syirkahPeriod.approvals[user.id] = {
+      status: 'CONFIRMED',
+      timestamp: new Date().toISOString()
+    };
+    store.logAudit('SYIRKAH_SIGNOFF_CONFIRMED', `Konfirmasi Taradhin oleh: ${user.name}`, 'Menyetujui perhitungan bagi hasil.');
+    showToast('Alhamdulillah, konfirmasi persetujuan (taradhin) Anda berhasil dicatat!');
   }
+  store.saveState();
+  renderActiveView();
+}
+
+function lockSyirkahPeriod() {
+  const syirkahState = store.state.syirkahPeriod || {};
+  const activeCofounders = store.getActiveCofounders();
+  const approvals = syirkahState.approvals || {};
+  const approvedCount = activeCofounders.filter(f => approvals[f.id]?.status === 'CONFIRMED').length;
+  const quorum = Math.ceil(activeCofounders.length * 0.6);
+
+  if (approvedCount < quorum) {
+    if (!confirm(`Kuorum persetujuan belum terpenuhi (${approvedCount}/${activeCofounders.length} setuju, minimal ${quorum}). Tetap lanjutkan penguncian periode secara darurat?`)) {
+      return;
+    }
+  } else {
+    if (!confirm('Apakah Anda yakin ingin mengunci periode penutupan buku dan menerbitkan slip bagi hasil final untuk seluruh co-founder aktif?')) {
+      return;
+    }
+  }
+
+  store.state.syirkahPeriod.status = 'LOCKED';
+  store.logAudit('SYIRKAH_PERIOD_LOCKED', 'Syirkah Periode Resmi Terkunci', `Disetujui oleh ${approvedCount}/${activeCofounders.length} co-founder. Status terkunci resmi oleh CFO.`);
+  store.saveState();
+  showToast('Alhamdulillah! Periode penutupan buku resmi dikunci dan slip final diterbitkan.');
+  renderActiveView();
 }
 
 function printFounderSlip(founderId, amount) {
   const founder = store.state.users[founderId];
+  const contrib = store.calculateWeightedContribution(founderId);
   const printContainer = document.getElementById('printable-content');
+  const cfoUser = store.state.users.novita || { name: 'Novita Rani', roleLabel: 'VP of Growth & CFO' };
   
   printContainer.innerHTML = `
     <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 2px solid #0F4C3A; padding: 25px; border-radius: 8px;">
       <div style="text-align: center; border-bottom: 2px solid #0F4C3A; padding-bottom: 15px; margin-bottom: 20px;">
         <h2 style="color: #0F4C3A; margin: 0; font-size: 20px;">KARYAKITA AI & VENTURE STUDIO</h2>
-        <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">STMIK Tazkia • Slip Bagi Hasil Syirkah 'Abdan (Bulan Maret 2026)</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #555;">STMIK Tazkia • Slip Bagi Hasil Syirkah 'Abdan (Bulan ${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })})</p>
       </div>
 
       <table style="width: 100%; font-size: 13px; margin-bottom: 20px;">
@@ -2831,17 +3468,21 @@ function printFounderSlip(founderId, amount) {
         </tr>
         <tr>
           <td style="color: #555;">Prinsip Akad:</td>
-          <td><em>Syirkah 'Abdan (Zero-Riba, Zero-Gharar)</em></td>
+          <td><em>Syirkah 'Abdan (Zero-Riba, Zero-Gharar, 'An Taradhin Minkum)</em></td>
+        </tr>
+        <tr>
+          <td style="color: #555;">Poin Kontribusi 4-Pilar:</td>
+          <td><strong>${contrib.totalPoints} pt</strong> (Tugas: ${contrib.taskPoints} | CRM: ${contrib.crmPoints} | Ops/Keuangan: ${contrib.opsPoints} | Media/Academy: ${contrib.mediaPoints})</td>
         </tr>
       </table>
 
       <div style="background: #F8FAF9; border: 1px solid #CFE0D8; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
-          <span>Porsi Rata 7 Pendiri (60%):</span>
+          <span>Porsi Rata Co-Founder (60%):</span>
           <span>Rp${(Math.floor(amount * 0.6)).toLocaleString('id-ID')}</span>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
-          <span>Porsi Eksekutor Aktif (40%):</span>
+          <span>Porsi Eksekutor Aktif Berbobot (40%):</span>
           <span>Rp${(Math.floor(amount * 0.4)).toLocaleString('id-ID')}</span>
         </div>
         <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">
@@ -2855,10 +3496,10 @@ function printFounderSlip(founderId, amount) {
         <div>
           <p>Disahkan oleh (CFO):</p>
           <br><br>
-          <p><strong>Novita</strong><br>VP of Growth & CFO</p>
+          <p><strong>${cfoUser.name}</strong><br>${cfoUser.roleLabel}</p>
         </div>
         <div>
-          <p>Penerima Hak:</p>
+          <p>Penerima Hak (Persetujuan Taradhin):</p>
           <br><br>
           <p><strong>${founder.name}</strong><br>Co-Founder</p>
         </div>
@@ -3442,7 +4083,7 @@ function renderIntegrationsView() {
             </div>
             <div>
               <h3 class="font-heading font-bold text-sm text-gray-900">Bot Asisten WhatsApp & Telegram KaryaKita</h3>
-              <p class="text-xs text-gray-500">ID Grup Tujuan: <code>1203630291823910@g.us (Internal 7 Pendiri)</code></p>
+              <p class="text-xs text-gray-500">ID Grup Tujuan: <code>1203630291823910@g.us (Grup Internal Co-Founder)</code></p>
             </div>
           </div>
           <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -3945,6 +4586,52 @@ function renderClientPortalView() {
         </div>
       </div>
 
+      <!-- Berkas & Deliverable Proyek (Strict NDA Guard: CLIENT_SAFE Only) -->
+      <div class="card-surface p-6 bg-white space-y-4">
+        <div class="flex items-center justify-between border-b border-brand-border pb-3">
+          <h4 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+            <i data-lucide="folder-check" class="w-4 h-4 text-brand-emerald"></i>
+            <span>Berkas & Deliverable Resmi Proyek</span>
+          </h4>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+            <span>Terkurasi Aman (Client-Safe)</span>
+          </span>
+        </div>
+
+        ${(() => {
+          const clientFiles = store.state.archives.filter(a => (a.projectId === proj.id || !a.projectId) && (a.visibility === 'CLIENT_SAFE'));
+          if (clientFiles.length === 0) {
+            return `
+              <div class="p-6 text-center text-gray-400 text-xs border border-dashed rounded-lg">
+                <i data-lucide="folder-x" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+                <p class="font-semibold text-gray-600">Belum ada deliverable publik yang diunggah.</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">Dokumen berlabel CLIENT_SAFE akan otomatis muncul di sini. Dokumen rahasia tim & berlabel NDA terlindungi secara ketat.</p>
+              </div>
+            `;
+          }
+          return `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${clientFiles.map(f => `
+                <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between gap-3 bg-gray-50/50 hover:bg-gray-50 transition text-xs">
+                  <div class="flex items-center gap-2.5 truncate">
+                    <i data-lucide="file-check" class="w-4 h-4 text-brand-emerald flex-shrink-0"></i>
+                    <div class="truncate">
+                      <strong class="text-gray-900 block truncate">${f.title}</strong>
+                      <span class="text-[10px] text-gray-500">${f.category} • Akses Terverifikasi</span>
+                    </div>
+                  </div>
+                  <a href="${f.url}" target="_blank" class="px-3 py-1 bg-brand-emerald hover:bg-brand-hover text-white rounded text-[11px] font-semibold flex items-center gap-1 flex-shrink-0 transition">
+                    <span>Buka</span>
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })()}
+      </div>
+
     </div>
   `;
 }
@@ -3959,38 +4646,34 @@ function submitClientRevision(projectId) {
   }
 
   const proj = store.state.projects.find(p => p.id === projectId);
-  if (proj) {
-    if (proj.revisionUsed >= (proj.revisionQuota || 2)) {
-      showToast('Kuota revisi gratis telah habis sesuai kontrak.', 'error');
-      return;
-    }
-    proj.revisionUsed = (proj.revisionUsed || 0) + 1;
+  if (!proj) return;
 
-    // Automatically create a new review task in Kanban!
-    const newTask = {
-      id: 'task-' + Date.now(),
-      title: 'Revisi Klien: ' + proj.clientName,
-      description: note,
-      unitId: proj.unitId,
-      projectId: proj.id,
-      assigneeId: proj.picId,
-      createdById: store.state.activeUserId,
-      sprintNumber: store.state.currentSprint || 1,
-      status: 'TODO',
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 1.5,
-      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-      dodChecklist: [{ label: 'Tuntaskan catatan revisi klien', checked: false }],
-      workProofUrl: '',
-      isClientVisible: true
-    };
-    store.state.tasks.unshift(newTask);
-    store.logAudit('CLIENT_REVISION_SUBMITTED', 'Project: ' + proj.title, 'Catatan revisi diterima dan masuk ke Papan Tugas.');
-    store.saveState();
-    showToast('Catatan revisi berhasil dikirim! Tim PM KaryaKita akan segera menindaklanjuti.');
-    renderActiveView();
-  }
+  const quota = proj.revisionQuota || 2;
+  const currentUsed = proj.revisionUsed || 0;
+  const isOutOfQuota = currentUsed >= quota;
+
+  const triageItem = {
+    id: 'triage-' + Date.now(),
+    projectId: proj.id,
+    projectTitle: proj.title,
+    clientName: proj.clientName,
+    note: note,
+    submittedAt: new Date().toISOString(),
+    status: 'PENDING_TRIAGE',
+    quotaRemaining: Math.max(0, quota - currentUsed),
+    isOutOfQuota: isOutOfQuota
+  };
+
+  if (!store.state.revisionTriage) store.state.revisionTriage = [];
+  store.state.revisionTriage.unshift(triageItem);
+  store.logAudit('CLIENT_REVISION_TRIAGE_QUEUED', `Revisi Klien: ${proj.title}`, `Catatan revisi diarahkan ke Inbox Triage (${isOutOfQuota ? 'Melebihi Kuota' : 'Dalam Kuota'}).`);
+  store.saveState();
+
+  const noteInput = document.getElementById('client-rev-note');
+  if (noteInput) noteInput.value = '';
+
+  showToast('Catatan revisi berhasil dikirim! Menunggu triage & persetujuan tim PM.');
+  renderActiveView();
 }
 
 // ==============================================================================
@@ -4052,10 +4735,59 @@ function updateTopBanners() {
     name.textContent = user.name;
     role.textContent = user.roleLabel;
   }
+
+  // Update Topbar & Sidebar Capacity Status Pill
+  const capMeta = (typeof CAPACITY_META !== 'undefined' && CAPACITY_META[user.capacityStatus]) || { label: 'Tersedia (4–5j)', color: 'bg-emerald-400' };
+  const topCapDot = document.getElementById('topbar-capacity-dot');
+  const topCapLabel = document.getElementById('topbar-capacity-label');
+  const sideCapDot = document.getElementById('sidebar-capacity-dot');
+  if (topCapDot && topCapLabel) {
+    topCapDot.className = `w-2 h-2 rounded-full ${capMeta.color}`;
+    topCapLabel.textContent = capMeta.label;
+  }
+  if (sideCapDot) {
+    sideCapDot.className = `w-2.5 h-2.5 rounded-full ${capMeta.color}`;
+    sideCapDot.title = `Kapasitas: ${capMeta.label}`;
+  }
+
+  // Update Theme Toggle Icon
+  const themeIcon = document.getElementById('theme-toggle-icon');
+  if (themeIcon) {
+    const isDark = document.documentElement.classList.contains('dark');
+    themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    if (window.lucide) lucide.createIcons();
+  }
 }
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Adaptive Theme
+  if (typeof initTheme === 'function') initTheme();
+
+  // Theme Toggle Button
+  const btnToggleTheme = document.getElementById('btn-toggle-theme');
+  if (btnToggleTheme) {
+    btnToggleTheme.addEventListener('click', () => {
+      if (typeof toggleTheme === 'function') toggleTheme();
+    });
+  }
+
+  // Mobile FAB Quick-Action Button
+  const btnMobileFab = document.getElementById('btn-mobile-fab');
+  if (btnMobileFab) {
+    btnMobileFab.addEventListener('click', () => {
+      if (typeof openQuickActionSheet === 'function') openQuickActionSheet();
+    });
+  }
+
+  // Topbar Capacity Status Pill Button
+  const btnTopCapacity = document.getElementById('btn-topbar-capacity');
+  if (btnTopCapacity) {
+    btnTopCapacity.addEventListener('click', () => {
+      if (typeof openCapacityModal === 'function') openCapacityModal();
+    });
+  }
+
   // Navigation Buttons
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {

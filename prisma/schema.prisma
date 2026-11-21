@@ -3,26 +3,32 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum SystemRole {
   SUPER_ADMIN
   OPS_ADMIN
   FINANCE_ADMIN
-  CO_FOUNDER
+  UNIT_LEAD
   EXTERNAL_CONTRIBUTOR
 }
 
-enum BusinessUnitCode {
-  LINI_1_DESIGN
-  LINI_2_WEBTECH
-  LINI_3_ASSIST_DATA
-  LINI_4_MEDIA_AFFILIATE
-  LINI_5_AI_ACADEMY
+enum BusinessUnit {
+  DESIGN_L1
+  WEBTECH_L2
+  ASSIST_DATA_L3
+  MEDIA_AFFILIATE_L4
+  AI_ACADEMY_L5
   INTERNAL_OPS
+}
+
+enum CapacityStatus {
+  AVAILABLE
+  BUSY_LECTURES
+  EXAM_MODE
+  NEEDS_SUPPORT
 }
 
 enum TaskStatus {
@@ -31,244 +37,293 @@ enum TaskStatus {
   IN_PROGRESS
   REVIEW
   DONE
+  BLOCKED
 }
 
 enum PaymentGateStatus {
-  LOCKED_WAITING_DP
+  WAITING_DP_50
+  WAITING_FULL_100
   DP_50_VERIFIED
-  PAID_100_VERIFIED
+  PAID_FULL
 }
 
-enum ArchiveConfidentiality {
-  INTERNAL_TIM
-  NDA_KLIEN
+enum ArchiveVisibility {
+  INTERNAL_TEAM
+  NDA_RESTRICTED
+  CLIENT_SAFE
 }
 
-enum CashflowType {
+enum RevisionTriageStatus {
+  PENDING_TRIAGE
+  ACCEPTED_IN_QUOTA
+  OUT_OF_SCOPE_ADDENDUM
+}
+
+enum SyirkahStatus {
+  DRAFT
+  REVIEW_48H
+  LOCKED
+}
+
+enum TransactionType {
   INCOME
-  OPEX
+  OPERATING_EXPENSE
   QARDH_IN
-  QARDH_REPAY
-  ZAKAT
-  PROFIT_SHARE
-}
-
-enum LeadStage {
-  LEAD_IN
-  OUTREACH
-  DISCOVERY
-  PROPOSAL_SENT
-  NEGOTIATION
-  WON
-  LOST
+  QARDH_REPAYMENT
+  ZAKAT_INFAQ
+  PROFIT_DISTRIBUTION
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  role      Role     @default(CO_FOUNDER)
-  avatarUrl String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id                String         @id @default(cuid())
+  name              String
+  email             String         @unique
+  avatarUrl         String?
+  role              SystemRole     @default(UNIT_LEAD)
+  ownedUnits        BusinessUnit[]
+  isActiveCofounder Boolean        @default(true)
+  capacityStatus    CapacityStatus @default(AVAILABLE)
+  themePreference   String         @default("system")
+  backupApproverId  String?
+  backupApprover    User?          @relation("ApproverDelegation", fields: [backupApproverId], references: [id])
+  delegatedFrom     User[]         @relation("ApproverDelegation")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  assignedTasks  Task[]          @relation("TaskAssignee")
-  createdTasks   Task[]          @relation("TaskCreator")
-  ownedProjects  Project[]       @relation("ProjectPic")
-  verifiedDps    Project[]       @relation("ProjectDpVerifier")
-  checkins       WeeklyCheckin[]
-  archives       Archive[]
-  projectMembers ProjectMember[]
-  auditLogs      AuditLog[]
-}
-
-model BusinessUnit {
-  id         String           @id @default(cuid())
-  code       BusinessUnitCode @unique
-  fullName   String           // e.g. "KaryaKita AI Academy (Lini 5)"
-  badgeColor String           // HEX color
-  projects   Project[]
-  tasks      Task[]
-  archives   Archive[]
-}
-
-model SystemSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
+  assignedTasks     Task[]              @relation("TaskAssignee")
+  checkIns          AsyncCheckIn[]
+  syirkahApprovals  SyirkahApproval[]
+  uploadedArchives  ArchiveItem[]
+  auditLogs         AuditLog[]
 }
 
 model Project {
   id                  String            @id @default(cuid())
   title               String
   clientName          String
-  unitId              String
-  unit                BusinessUnit      @relation(fields: [unitId], references: [id])
-  contractValueIdr    BigInt            @default(0)
+  unit                BusinessUnit
+  contractValue       Decimal           @db.Decimal(14, 2)
   picId               String
-  pic                 User              @relation("ProjectPic", fields: [picId], references: [id])
-  slaDeadline         DateTime?
-  paymentGateStatus   PaymentGateStatus @default(LOCKED_WAITING_DP)
-  dpVerifiedById      String?
-  dpVerifiedBy        User?             @relation("ProjectDpVerifier", fields: [dpVerifiedById], references: [id])
-  dpVerifiedAt        DateTime?
-  dpProofUrl          String?
-  fullPaidAt          DateTime?
-
-  // Jembatan Tahap 2 & 3 (Zero Destructive Migration)
-  crmLeadId           String?           @unique
-  clientPortalToken   String?           @unique
+  createdById         String
+  paymentGateStatus   PaymentGateStatus @default(WAITING_DP_50)
+  paymentVerifiedById String?
+  paymentProofUrl     String?
+  paymentVerifiedAt   DateTime?
+  slaDeadline         DateTime
+  revisionQuotaMax    Int               @default(3)
+  revisionQuotaUsed   Int               @default(0)
+  clientPortalToken   String            @unique @default(cuid())
   clientPortalPinHash String?
-  revisionQuota       Int               @default(3)
-  revisionUsed        Int               @default(0)
+  crmLeadId           String?           @unique
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
-  tasks    Task[]
-  archives Archive[]
-  members  ProjectMember[]
+  tasks               Task[]
+  milestones          ProjectMilestone[]
+  revisions           ClientRevisionRequest[]
+  archives            ArchiveItem[]
+  transactions        FinanceTransaction[]
+}
 
-  @@index([unitId, paymentGateStatus])
+model ProjectMilestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  progressPct Int       @default(0)
+  isPublic    Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  dueDate     DateTime?
+}
+
+model ClientRevisionRequest {
+  id               String               @id @default(cuid())
+  projectId        String
+  project          Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientSenderName String
+  notes            String
+  triageStatus     RevisionTriageStatus @default(PENDING_TRIAGE)
+  reviewedById     String?
+  linkedTaskId     String?              @unique
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 }
 
 model Task {
+  id                 String       @id @default(cuid())
+  title              String
+  description        String?
+  unit               BusinessUnit
+  status             TaskStatus   @default(TODO)
+  sprintLabel        String
+  assigneeId         String
+  assignee           User         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  projectId          String?
+  project            Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  hoursEstimate      Float        @default(1.0)
+  contributionWeight Int          @default(2)
+  dodChecklist       Json
+  proofUrl           String?
+  blockedReason      String?
+  dueDate            DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model AsyncCheckIn {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  weekKey        String
+  capacityNext   CapacityStatus
+  completedText  String
+  focusNextText  String
+  blockersText   String?
+  createdAt      DateTime       @default(now())
+
+  @@unique([userId, weekKey])
+}
+
+model SyuraMinutes {
+  id             String   @id @default(cuid())
+  meetingDate    DateTime
+  moderatorId    String
+  attendeeIds    String[]
+  decisions      String
+  actionItems    Json
+  botDispatched  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model ArchiveItem {
+  id           String            @id @default(cuid())
+  title        String
+  quarter      String
+  category     String
+  unit         BusinessUnit
+  visibility   ArchiveVisibility @default(INTERNAL_TEAM)
+  externalUrl  String?
+  fileUrl      String?
+  linkVerified Boolean           @default(false)
+  uploadedById String
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
+  projectId    String?
+  project      Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+}
+
+model CrmLead {
+  id             String       @id @default(cuid())
+  companyName    String
+  contactName    String
+  contactPhone   String?
+  contactEmail   String?
+  source         String
+  targetUnit     BusinessUnit
+  estimatedValue Decimal      @db.Decimal(14, 2)
+  stage          String       @default("LEAD_IN")
+  ownerId        String
+  lastContactAt  DateTime     @default(now())
+  notes          Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model FinanceTransaction {
+  id          String          @id @default(cuid())
+  date        DateTime        @default(now())
+  type        TransactionType
+  unit        BusinessUnit
+  amount      Decimal         @db.Decimal(14, 2)
+  description String
+  proofUrl    String?
+  projectId   String?
+  project     Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdById String
+  createdAt   DateTime        @default(now())
+}
+
+model SyirkahPeriod {
+  id                   String            @id @default(cuid())
+  monthKey             String            @unique
+  grossRevenue         Decimal           @db.Decimal(14, 2)
+  operatingExpenses    Decimal           @db.Decimal(14, 2)
+  zakatAmount          Decimal           @db.Decimal(14, 2)
+  retainedEarningsRate Float
+  activeCofounderCount Int
+  status               SyirkahStatus     @default(DRAFT)
+  reviewEndsAt         DateTime?
+  lockedAt             DateTime?
+  approvals            SyirkahApproval[]
+  createdAt            DateTime          @default(now())
+}
+
+model SyirkahApproval {
+  id          String        @id @default(cuid())
+  periodId    String
+  period      SyirkahPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  executorAmt Decimal       @db.Decimal(14, 2)
+  equalAmt    Decimal       @db.Decimal(14, 2)
+  decision    String        @default("PENDING")
+  note        String?
+  decidedAt   DateTime?
+
+  @@unique([periodId, userId])
+}
+
+model AcademyBatch {
+  id           String               @id @default(cuid())
+  title        String
+  category     String
+  eventDate    DateTime
+  quota        Int
+  ticketPrice  Decimal              @db.Decimal(12, 2)
+  status       String               @default("OPEN")
+  participants AcademyParticipant[]
+}
+
+model AcademyParticipant {
   id              String       @id @default(cuid())
-  title           String
-  description     String?
-  unitId          String
-  unit            BusinessUnit @relation(fields: [unitId], references: [id])
-  projectId       String?
-  project         Project?     @relation(fields: [projectId], references: [id])
-  assigneeId      String
-  assignee        User         @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  createdById     String
-  createdBy       User         @relation("TaskCreator", fields: [createdById], references: [id])
-  sprintNumber    Int          // 1..12 per kuartal
-  status          TaskStatus   @default(BACKLOG)
-  isBlocked       Boolean      @default(false)
-  blockedReason   String?
-  hoursEstimate   Decimal      @default(1.0) @db.Decimal(4, 1)
-  dueDate         DateTime?
-  dodChecklist    Json         @default("[]") // [{ label: string, checked: boolean }]
-  workProofUrl    String?
-
-  // Jembatan Tahap 3 (Portal Klien)
-  isClientVisible Boolean      @default(false)
-  milestoneOrder  Int?
-  completedAt     DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  archives Archive[]
-
-  @@index([assigneeId, sprintNumber, status])
-  @@index([projectId, status])
+  batchId         String
+  batch           AcademyBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  name            String
+  contact         String
+  paymentVerified Boolean      @default(false)
+  attended        Boolean      @default(false)
+  certificateSent Boolean      @default(false)
 }
 
-model WeeklyCheckin {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  sprintNumber      Int
-  weekStartDate     DateTime
-  completedSummary  String
-  inProgressSummary String
-  blockerSummary    String?
-  submittedAt       DateTime @default(now())
-
-  @@unique([userId, sprintNumber])
+model AffiliateItem {
+  id           String   @id @default(cuid())
+  title        String
+  platform     String
+  stage        String   @default("IDEA")
+  picId        String
+  postUrl      String?
+  commission   Decimal  @default(0) @db.Decimal(12, 2)
+  payoutStatus String   @default("PENDING")
+  createdAt    DateTime @default(now())
 }
 
-model SyuraMinute {
-  id              String   @id @default(cuid())
-  meetingDate     DateTime
-  moderatorId     String
-  attendeeUserIds Json     // string[] of user IDs
-  decisions       String
-  actionItems     Json     // [{ title: string, picId: string, sprint: number }]
-  createdAt       DateTime @default(now())
-}
-
-model Archive {
-  id              String                 @id @default(cuid())
-  title           String
-  quarter         String                 // e.g. "2026-Q1"
-  category        String
-  unitId          String
-  unit            BusinessUnit           @relation(fields: [unitId], references: [id])
-  projectId       String?
-  project         Project?               @relation(fields: [projectId], references: [id])
-  taskId          String?
-  task            Task?                  @relation(fields: [taskId], references: [id])
-  uploadedById    String
-  uploadedBy      User                   @relation(fields: [uploadedById], references: [id])
-  storageType     String                 @default("EXTERNAL_LINK") // EXTERNAL_LINK | FILE_UPLOAD
-  externalUrl     String?
-  fileStorageKey  String?
-  fileSizeBytes   Int?
-  mimeType        String?
-  confidentiality ArchiveConfidentiality @default(INTERNAL_TIM)
-  createdAt       DateTime               @default(now())
-
-  @@index([quarter, category, confidentiality])
-}
-
-model ProjectMember {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scopeRole String  @default("PIC") // PIC | EXTERNAL_CONTRIBUTOR
-
-  @@unique([projectId, userId])
+model AcademicCalendar {
+  id         String   @id @default(cuid())
+  label      String
+  examStart  DateTime
+  examEnd    DateTime
+  autoFreeze Boolean  @default(true)
 }
 
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String
   actor      User     @relation(fields: [actorId], references: [id])
-  action     String   // e.g. "PAYMENT_GATE_VERIFIED", "SYIRKAH_PERIOD_LOCKED"
-  entityType String   // e.g. "Project", "SyirkahClosing", "CashflowEntry"
+  action     String
+  entityType String
   entityId   String
   beforeJson Json?
   afterJson  Json?
   createdAt  DateTime @default(now())
-
-  @@index([entityType, entityId, createdAt])
-}
-
-// Model Tahap 2
-model CashflowEntry {
-  id          String       @id @default(cuid())
-  date        DateTime
-  type        CashflowType
-  category    String
-  amountIdr   BigInt
-  description String
-  proofUrl    String?
-  projectId   String?
-  unitId      String?
-  createdById String
-  createdAt   DateTime     @default(now())
-}
-
-model SyirkahClosing {
-  id               String   @id @default(cuid())
-  periodMonth      String   @unique // e.g. "2026-03"
-  totalIncomeIdr   BigInt
-  totalOpexIdr     BigInt
-  netBeforeZakat   BigInt
-  zakatAmountIdr   BigInt
-  netAfterZakatIdr BigInt
-  retainedRatioPct Int      // 70 atau 30
-  retainedAmount   BigInt
-  distributableIdr BigInt
-  executorPoolIdr  BigInt   // 40%
-  equalPoolIdr     BigInt   // 60%
-  isLocked         Boolean  @default(false)
-  lockedAt         DateTime?
-  lockedById       String?
-  createdAt        DateTime @default(now())
 }
