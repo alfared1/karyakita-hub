@@ -20,6 +20,10 @@ const CAPACITY_META = {
 // Initial Seed Data (Full Scale-Up Clean Production Workspace)
 const INITIAL_STATE = {
   activeUserId: 'alfatih',
+  authSession: {
+    isAuthenticated: false,
+    userId: null
+  },
   currentSprint: 1,
   themePreference: 'light',
   settings: {
@@ -31,6 +35,11 @@ const INITIAL_STATE = {
   users: {
     alfatih: {
       id: 'alfatih',
+      username: 'alfatih',
+      password: 'Kk#Fatih2026!x9',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Syauqi Muhammad Al Fatih',
       role: 'SUPER_ADMIN',
       roleLabel: 'CEO & CTO',
@@ -43,6 +52,11 @@ const INITIAL_STATE = {
     },
     hilwa: {
       id: 'hilwa',
+      username: 'hilwa',
+      password: 'Kk#Hilwa98!mQ4',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Hilwa Mufida',
       role: 'OPS_ADMIN',
       roleLabel: 'COO & Head of PM',
@@ -55,6 +69,11 @@ const INITIAL_STATE = {
     },
     novita: {
       id: 'novita',
+      username: 'novita',
+      password: 'Kk#Novita45$zR7',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Novita Rani',
       role: 'FINANCE_ADMIN',
       roleLabel: 'CFO & VP Growth Systems',
@@ -67,6 +86,11 @@ const INITIAL_STATE = {
     },
     ilham: {
       id: 'ilham',
+      username: 'ilham',
+      password: 'Kk#Ilham72*wP3',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Ilham Akbar',
       role: 'UNIT_LEAD',
       roleLabel: 'CBDO & CDO',
@@ -74,15 +98,20 @@ const INITIAL_STATE = {
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
       ownedUnits: ['ASSIST_DATA_L3'],
       capacityStatus: 'AVAILABLE',
-      backupApproverId: 'syaraf',
+      backupApproverId: 'syarah',
       isActiveCofounder: true
     },
-    syaraf: {
-      id: 'syaraf',
-      name: 'Syaraf Fauziah',
+    syarah: {
+      id: 'syarah',
+      username: 'syarah',
+      password: 'Kk#Syarah36&tL8',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
+      name: 'Syarah Fauziah',
       role: 'UNIT_LEAD',
       roleLabel: 'CMO',
-      email: 'syaraf.fauziah@karyakita.id',
+      email: 'syarah.fauziah@karyakita.id',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120',
       ownedUnits: ['MEDIA_AFFILIATE_L4'],
       capacityStatus: 'AVAILABLE',
@@ -91,6 +120,11 @@ const INITIAL_STATE = {
     },
     nazwa: {
       id: 'nazwa',
+      username: 'nazwa',
+      password: 'Kk#Nazwa81^yK5',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Nazwa Azahra',
       role: 'UNIT_LEAD',
       roleLabel: 'CRO',
@@ -98,11 +132,16 @@ const INITIAL_STATE = {
       avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120',
       ownedUnits: ['AI_ACADEMY_L5', 'MEDIA_AFFILIATE_L4'],
       capacityStatus: 'AVAILABLE',
-      backupApproverId: 'syaraf',
+      backupApproverId: 'syarah',
       isActiveCofounder: true
     },
     ahmad: {
       id: 'ahmad',
+      username: 'ahmad',
+      password: 'Kk#Ahmad64@sB2',
+      mustChangePassword: true,
+      hasCompletedOnboarding: false,
+      passwordChangedAt: null,
       name: 'Ahmad Maulana',
       role: 'UNIT_LEAD',
       roleLabel: 'Creative Director',
@@ -164,7 +203,40 @@ class AppStore {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (!parsed.users) parsed.users = {};
+
+        // Migrate syaraf to syarah if exists
+        if (parsed.users.syaraf && !parsed.users.syarah) {
+          parsed.users.syarah = { ...parsed.users.syaraf, id: 'syarah', username: 'syarah', name: 'Syarah Fauziah', email: 'syarah.fauziah@karyakita.id' };
+          delete parsed.users.syaraf;
+        }
+
+        // Ensure all users have credentials & onboarding flags
+        Object.keys(INITIAL_STATE.users).forEach(uid => {
+          if (!parsed.users[uid]) {
+            parsed.users[uid] = { ...INITIAL_STATE.users[uid] };
+          } else {
+            parsed.users[uid].username = parsed.users[uid].username || INITIAL_STATE.users[uid].username;
+            parsed.users[uid].password = parsed.users[uid].password || INITIAL_STATE.users[uid].password;
+            if (parsed.users[uid].mustChangePassword === undefined) {
+              parsed.users[uid].mustChangePassword = INITIAL_STATE.users[uid].mustChangePassword;
+            }
+            if (parsed.users[uid].hasCompletedOnboarding === undefined) {
+              parsed.users[uid].hasCompletedOnboarding = false;
+            }
+          }
+        });
+
+        if (parsed.users.syarah) {
+          parsed.users.syarah.name = 'Syarah Fauziah';
+          parsed.users.syarah.email = 'syarah.fauziah@karyakita.id';
+        }
+
+        if (!parsed.authSession) {
+          parsed.authSession = { isAuthenticated: false, userId: null };
+        }
+        return parsed;
       }
     } catch (e) {
       console.warn('Gagal membaca state dari localStorage:', e);
@@ -199,7 +271,8 @@ class AppStore {
 
   // Helper Getters
   getCurrentUser() {
-    return this.state.users[this.state.activeUserId] || this.state.users.alfatih;
+    const uid = this.state.activeUserId === 'syaraf' ? 'syarah' : this.state.activeUserId;
+    return this.state.users[uid] || this.state.users.alfatih;
   }
 
   getActiveCofounders() {
@@ -463,6 +536,11 @@ function openQuickActionSheet() {
 let currentView = 'overview';
 
 function navigateTo(viewName) {
+  const isAuthenticated = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
+  if (!isAuthenticated) {
+    if (typeof checkAuthAndRender === 'function') checkAuthAndRender();
+    return;
+  }
   currentView = viewName;
 
   // Update Breadcrumb
@@ -4412,26 +4490,85 @@ function renderSystemView() {
       </div>
 
       ${systemActiveTab === 'users' ? `
-        <!-- TAB 1: USERS WHITELIST -->
+        <!-- TAB 1: USERS & CREDENTIAL MANAGEMENT -->
         <div class="card-surface p-5 space-y-4">
-          <h3 class="font-heading font-bold text-sm text-gray-900">
-            Daftar Akun Whitelist Eksklusif 7 Co-Founder
-          </h3>
-          <div class="divide-y divide-gray-100">
-            ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
-              <div class="py-3 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-3">
-                  <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover">
-                  <div>
-                    <strong class="text-gray-900">${u.name}</strong>
-                    <p class="text-gray-500 font-mono text-[11px]">${u.email}</p>
-                  </div>
-                </div>
-                <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800">
-                  ${u.roleLabel}
-                </span>
-              </div>
-            `).join('')}
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-brand-border pb-3">
+            <div>
+              <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+                <i data-lucide="key-round" class="w-4 h-4 text-brand-emerald"></i>
+                <span>Manajemen Kredensial & Aktivasi Akun 7 Co-Founder</span>
+              </h3>
+              <p class="text-xs text-gray-500 mt-0.5">Kredensial awal diberikan oleh DevOps/Admin. Co-Founder wajib mengganti kata sandi baru saat login pertama kali.</p>
+            </div>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
+              Sistem Keamanan Tertutup (Zero-OAuth)
+            </span>
+          </div>
+
+          <div class="overflow-x-auto border border-brand-border rounded-lg">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase">
+                <tr>
+                  <th class="p-3">Co-Founder</th>
+                  <th class="p-3">Username / ID</th>
+                  <th class="p-3">Status Kata Sandi</th>
+                  <th class="p-3 text-center">Status Tur Panduan</th>
+                  <th class="p-3 text-right">Aksi DevOps / Admin</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="p-3 flex items-center gap-2.5">
+                      <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover">
+                      <div>
+                        <strong class="text-gray-900 block">${u.name}</strong>
+                        <span class="text-[10px] text-gray-500">${u.roleLabel}</span>
+                      </div>
+                    </td>
+                    <td class="p-3 font-mono text-gray-700">${u.username || u.id}</td>
+                    <td class="p-3">
+                      ${u.mustChangePassword ? `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                          <i data-lucide="key" class="w-3 h-3 text-amber-600"></i>
+                          <span>Password Sementara Aktif</span>
+                        </span>
+                      ` : `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                          <span>Aktif (Password Pribadi)</span>
+                        </span>
+                      `}
+                    </td>
+                    <td class="p-3 text-center">
+                      ${u.hasCompletedOnboarding ? `
+                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Selesai</span>
+                      ` : `
+                        <span class="text-[10px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">Belum Mulai</span>
+                      `}
+                    </td>
+                    <td class="p-3 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        ${u.mustChangePassword ? `
+                          <button onclick="copyTempPassword('${u.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Salin kata sandi sementara untuk dikirim via WA">
+                            <i data-lucide="copy" class="w-3 h-3"></i>
+                            <span>Salin Sandi</span>
+                          </button>
+                        ` : ''}
+                        <button onclick="resetUserCredentialsByAdmin('${u.id}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Terbitkan kata sandi sementara baru">
+                          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                          <span>Reset</span>
+                        </button>
+                        <button onclick="openOnboardingTour(store.state.users['${u.id}'])" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-brand-emerald border border-emerald-200 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Tinjau panduan tur role ini">
+                          <i data-lucide="play" class="w-3 h-3"></i>
+                          <span>Tur</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         </div>
       ` : systemActiveTab === 'calendar' ? `
@@ -4759,6 +4896,722 @@ function updateTopBanners() {
   }
 }
 
+// ==============================================================================
+// ENTERPRISE AUTHENTICATION & ROLE-TAILORED ONBOARDING TOUR
+// ==============================================================================
+
+const ROLE_ONBOARDING_DATA = {
+  SUPER_ADMIN: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Sistem operasi venture studio mandiri berbasis syariah (Syirkah 'Abdan, zero-riba, zero-gharar). 13 modul terintegrasi untuk mendukung 7 mahasiswa berkolaborasi seimbang dengan jadwal kuliah STMIK Tazkia.",
+        icon: "shield-check",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: CEO & CTO",
+        title: "Executive Command Center & Integrasi Sistem",
+        desc: "Sebagai CEO & CTO, Anda memegang kendali eksekutif: memantau KPI studio di Beranda, mengaktifkan Academic Freeze H-7 ujian, mengelola delegasi approver, serta memastikan kedaulatan data dan repositori GitHub.",
+        icon: "cpu",
+        color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
+      },
+      {
+        badge: "Ritme Akademik",
+        title: "Supportive Rhythm Pulse & Kapasitas",
+        desc: "Gunakan Capacity Pill di Top Bar untuk mengatur status kapasitas ('Tersedia', 'Padat Kuliah', 'Mode Ujian', 'Butuh Bantuan'). Rekan tim dapat saling mendukung ritme tanpa rasa tertekan.",
+        icon: "heart-handshake",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Siap Memimpin Studio?",
+        desc: "Bagikan kredensial awal kepada rekan co-founder, periksa Papan Tugas, dan pantau ritme mingguan studio. Selamat berkarya dengan itqan dan keberkahan!",
+        icon: "rocket",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  OPS_ADMIN: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Pusat tata kelola operasional dan manajemen proyek terpadu untuk 7 co-founder mahasiswa STMIK Tazkia. Menjamin seluruh delivery tepat waktu dengan standar Itqan.",
+        icon: "briefcase",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: COO & Head of PM",
+        title: "Kanban Papan Tugas & Triage Revisi Klien",
+        desc: "Kelola Papan Tugas dengan DoD (Definition of Done), verifikasi jam kerja, dan kelola 'Inbox Triage Revisi' proyek B2B agar masukan klien tidak langsung membebani Kanban.",
+        icon: "check-square",
+        color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50"
+      },
+      {
+        badge: "Maker-Checker & Delegasi",
+        title: "Backup Approver & Keuangan",
+        desc: "Saat CFO (Novita Rani) berada dalam 'Mode Ujian (EXAM_MODE)', Anda secara otomatis didelegasikan sebagai Backup Approver untuk memverifikasi pembayaran DP 50% dan termin proyek.",
+        icon: "shield-alert",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Siap Mengawal Operasional?",
+        desc: "Jadwalkan Syura mingguan di menu Lapor, pantau tugas berjalan, dan kelola antrean proyek studio.",
+        icon: "arrow-right-circle",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  FINANCE_ADMIN: {
+    slides: [
+      {
+        badge: "Prinsip Syariah",
+        title: "Buku Kas & Tata Kelola Syariah",
+        desc: "Sistem pencatatan kas zero-riba dan zero-gharar. Dilengkapi kalkulator otomatis Zakat Perusahaan 2,5%, Graduation Rule Rp3,5 Juta, dan pelacak Qardh Hasan 0% bunga.",
+        icon: "coins",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: CFO",
+        title: "Payment Gate & Musyawarah 48 Jam",
+        desc: "Verifikasi bukti transfer DP 50% dan pelunasan proyek di menu Proyek. Sebelum mengunci buku bulanan, aktifkan 'Review & Musyawarah 48 Jam' agar seluruh co-founder dapat saling menelaah (taradhin).",
+        icon: "receipt",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Keadilan Bagi Hasil",
+        title: "Porsi 60% Rata & 40% Eksekutor Berbobot",
+        desc: "Bagi hasil dihitung otomatis secara dinamis: 60% dibagi rata kepada co-founder aktif, dan 40% dialokasikan berdasarkan 4-Pilar Poin Kontribusi berbobot.",
+        icon: "scale",
+        color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Cetak Invoice & Awasi Kas",
+        desc: "Gunakan Generator Invoice PDF otomatis untuk klien B2B dan pastikan arus kas studio tumbuh sehat menuju target kelulusan bootstrap.",
+        icon: "printer",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  UNIT_LEAD_TECH: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Sistem operasi venture studio tempat Anda memimpin pengembangan bisnis (B2B Deals) dan unit teknologi serta data assistance.",
+        icon: "trending-up",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: CBDO & CDO",
+        title: "Pipeline CRM 6-Tahap & Lini 3 Data",
+        desc: "Pantau pipeline prospek klien B2B dari Leads hingga Won. Konversikan deal yang dimenangkan menjadi proyek resmi dengan 1-klik, serta pimpin unit Assist & Data (Lini 3).",
+        icon: "target",
+        color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50"
+      },
+      {
+        badge: "Poin Kontribusi",
+        title: "Akuisisi Klien & Bobot Syirkah",
+        desc: "Setiap deal klien B2B yang berhasil Anda menangkan (Won) menyumbangkan 5 poin kontribusi berbobot ke porsi eksekutor Syirkah 'Abdan Anda.",
+        icon: "award",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Buka Pipeline CRM",
+        desc: "Tambah calon klien pertama Anda di menu CRM dan pantau konversinya bersama tim penjualan.",
+        icon: "rocket",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  UNIT_LEAD_CREATIVE: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Pusat komando pemasaran, konten viral, dan pertumbuhan audiens KaryaKita AI & Venture Studio.",
+        icon: "sparkles",
+        color: "text-pink-600 bg-pink-50 dark:bg-pink-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: CMO",
+        title: "Kalender Konten Media & Jaringan Afiliasi",
+        desc: "Rancang ide konten di TikTok, Instagram Reels, YouTube Shorts, dan LinkedIn di menu Media & Afiliasi (Lini 4). Kelola komisi mitra afiliasi yang mempromosikan layanan studio.",
+        icon: "video",
+        color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50"
+      },
+      {
+        badge: "Poin Kontribusi",
+        title: "Produksi Konten & Bobot Syirkah",
+        desc: "Setiap konten yang diterbitkan dan dipimpin oleh Anda otomatis tercatat menambah poin kontribusi Pilar Media & AI Academy pada evaluasi bulanan.",
+        icon: "award",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Siap Viralkan KaryaKita?",
+        desc: "Masuk ke menu Media & Affiliate dan tambahkan rencana konten edukasi AI pekan ini!",
+        icon: "send",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  UNIT_LEAD_ACADEMY: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Pusat inkubasi talenta dan workshop kecerdasan buatan terdepan melalui lini KaryaKita AI Academy (Lini 5).",
+        icon: "graduation-cap",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: CRO & Lead Academy",
+        title: "Manajemen Batch Workshop & Peserta",
+        desc: "Buka batch workshop AI baru, import daftar peserta via CSV, verifikasi bukti pembayaran peserta, dan terbitkan sertifikat resmi di menu AI Academy.",
+        icon: "users",
+        color: "text-teal-600 bg-teal-50 dark:bg-teal-950/50"
+      },
+      {
+        badge: "Poin Kontribusi",
+        title: "Eksekusi Batch & Poin Syirkah",
+        desc: "Setiap batch academy aktif yang Anda koordinasikan menyumbang poin berbobot ke dalam kalkulator bagi hasil studio secara proporsional dan adil.",
+        icon: "award",
+        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Siap Luncurkan Batch Baru?",
+        desc: "Buka menu AI Academy, periksa silabus workshop, dan kelola calon peserta yang mendaftar.",
+        icon: "book-open",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  },
+  UNIT_LEAD_DESIGN: {
+    slides: [
+      {
+        badge: "Prinsip & Visi Studio",
+        title: "Selamat Datang di KaryaKita Hub OS",
+        desc: "Studio kreatif tempat identitas visual, brand asset, dan desain antarmuka kelas dunia dilahirkan untuk klien B2B.",
+        icon: "palette",
+        color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50"
+      },
+      {
+        badge: "Peran Khusus Anda: Creative Director",
+        title: "Lini 1 Desain & Vault Arsip Dokumen",
+        desc: "Pimpin proyek branding & UI/UX, simpan deliverable resmi ke Vault Arsip dengan tag 'CLIENT_SAFE', dan lindungi file sensitif dengan tag 'NDA_RESTRICTED'.",
+        icon: "folder-check",
+        color: "text-violet-600 bg-violet-50 dark:bg-violet-950/50"
+      },
+      {
+        badge: "Standar Kualitas",
+        title: "Itqan & Bukti Karya",
+        desc: "Sematkan tautan bukti karya Figma/Google Drive pada setiap kartu tugas sebelum digeser ke kolom 'Done (Itqan)' agar otomatis terindeks ke arsip.",
+        icon: "check-circle-2",
+        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+      },
+      {
+        badge: "Langkah Awal",
+        title: "Mulai Desain Mahakarya",
+        desc: "Buka Papan Tugas, cek permintaan desain dari proyek klien, dan unggah aset siap kirim ke portal klien.",
+        icon: "pen-tool",
+        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+      }
+    ]
+  }
+};
+
+function getOnboardingDataForUser(user) {
+  if (!user) return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
+  if (user.role === 'SUPER_ADMIN') return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
+  if (user.role === 'OPS_ADMIN') return ROLE_ONBOARDING_DATA.OPS_ADMIN;
+  if (user.role === 'FINANCE_ADMIN') return ROLE_ONBOARDING_DATA.FINANCE_ADMIN;
+  if (user.id === 'ilham') return ROLE_ONBOARDING_DATA.UNIT_LEAD_TECH;
+  if (user.id === 'syarah' || user.id === 'syaraf') return ROLE_ONBOARDING_DATA.UNIT_LEAD_CREATIVE;
+  if (user.id === 'nazwa') return ROLE_ONBOARDING_DATA.UNIT_LEAD_ACADEMY;
+  if (user.id === 'ahmad') return ROLE_ONBOARDING_DATA.UNIT_LEAD_DESIGN;
+  return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
+}
+
+let currentOnboardingIndex = 0;
+let currentOnboardingUser = null;
+
+function openOnboardingTour(user) {
+  currentOnboardingUser = user || store.getCurrentUser();
+  currentOnboardingIndex = 0;
+  renderOnboardingModal();
+}
+
+function renderOnboardingModal() {
+  const tourData = getOnboardingDataForUser(currentOnboardingUser);
+  const slides = tourData.slides;
+  const currentSlide = slides[currentOnboardingIndex];
+  const isFirst = currentOnboardingIndex === 0;
+  const isLast = currentOnboardingIndex === slides.length - 1;
+
+  const modalHtml = `
+    <div class="p-6 sm:p-8 space-y-6 max-w-lg mx-auto">
+      
+      <!-- Tour Header & Skip Button -->
+      <div class="flex items-center justify-between border-b border-brand-border dark:border-[#23362F] pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            ${currentSlide.badge}
+          </span>
+          <span class="text-xs text-gray-400">(${currentOnboardingIndex + 1} dari ${slides.length})</span>
+        </div>
+        <button onclick="finishOnboardingTour()" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition font-medium flex items-center gap-1">
+          <span>Lewati Tur</span>
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Slide Main Content (Interactive Carousel Card) -->
+      <div class="text-center py-4 space-y-4">
+        <div class="w-16 h-16 mx-auto rounded-2xl ${currentSlide.color} flex items-center justify-center shadow-sm">
+          <i data-lucide="${currentSlide.icon}" class="w-8 h-8"></i>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">${currentSlide.title}</h3>
+          <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto">
+            ${currentSlide.desc}
+          </p>
+        </div>
+      </div>
+
+      <!-- Carousel Navigation & Dots Indicator -->
+      <div class="flex flex-col gap-4 border-t border-brand-border dark:border-[#23362F] pt-4">
+        
+        <!-- Dots -->
+        <div class="flex items-center justify-center gap-2">
+          ${slides.map((_, idx) => `
+            <button onclick="goToOnboardingSlide(${idx})" class="w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === currentOnboardingIndex ? 'bg-brand-emerald dark:bg-emerald-400 w-6' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}" aria-label="Slide ${idx + 1}"></button>
+          `).join('')}
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center justify-between gap-3">
+          <button onclick="prevOnboardingSlide()" ${isFirst ? 'disabled class="px-3.5 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-300 dark:text-gray-700 text-xs cursor-not-allowed"' : 'class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition"'} flex items-center gap-1.5>
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            <span>Sebelumnya</span>
+          </button>
+
+          <button onclick="${isLast ? 'finishOnboardingTour()' : 'nextOnboardingSlide()'}" class="px-5 py-2 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <span>${isLast ? 'Masuk ke Dashboard' : 'Selanjutnya'}</span>
+            <i data-lucide="${isLast ? 'check' : 'chevron-right'}" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function nextOnboardingSlide() {
+  const tourData = getOnboardingDataForUser(currentOnboardingUser);
+  if (currentOnboardingIndex < tourData.slides.length - 1) {
+    currentOnboardingIndex++;
+    renderOnboardingModal();
+  }
+}
+
+function prevOnboardingSlide() {
+  if (currentOnboardingIndex > 0) {
+    currentOnboardingIndex--;
+    renderOnboardingModal();
+  }
+}
+
+function goToOnboardingSlide(idx) {
+  currentOnboardingIndex = idx;
+  renderOnboardingModal();
+}
+
+function finishOnboardingTour() {
+  if (currentOnboardingUser) {
+    currentOnboardingUser.hasCompletedOnboarding = true;
+    store.logAudit('ONBOARDING_COMPLETED', `Product Tour: ${currentOnboardingUser.name}`, `Tur panduan role ${currentOnboardingUser.roleLabel} telah diselesaikan.`);
+    store.saveState();
+  }
+  closeModal();
+  showToast('Selamat bekerja & berkolaborasi di KaryaKita Hub!');
+  renderActiveView();
+}
+
+// Authentication Helpers
+function checkPasswordStrength(pwd) {
+  const hasLength = (pwd || '').length >= 8;
+  const hasUpper = /[A-Z]/.test(pwd || '');
+  const hasLower = /[a-z]/.test(pwd || '');
+  const hasNumberOrSymbol = /[0-9]/.test(pwd || '') || /[^A-Za-z0-9]/.test(pwd || '');
+  return {
+    isValid: hasLength && hasUpper && hasLower && hasNumberOrSymbol,
+    hasLength,
+    hasUpper,
+    hasLower,
+    hasNumberOrSymbol
+  };
+}
+
+function validatePasswordStrengthLive(pwd) {
+  const s = checkPasswordStrength(pwd);
+  const elLen = document.getElementById('rule-length');
+  const elUp = document.getElementById('rule-upper');
+  const elLow = document.getElementById('rule-lower');
+  const elNum = document.getElementById('rule-number');
+
+  const updateRule = (el, passed, label) => {
+    if (!el) return;
+    if (passed) {
+      el.className = 'flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold';
+      el.innerHTML = '<i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-500"></i> ' + label;
+    } else {
+      el.className = 'flex items-center gap-1 text-gray-400';
+      el.innerHTML = '<i data-lucide="circle" class="w-3 h-3"></i> ' + label;
+    }
+  };
+
+  updateRule(elLen, s.hasLength, 'Min. 8 Karakter');
+  updateRule(elUp, s.hasUpper, 'Huruf Besar (A-Z)');
+  updateRule(elLow, s.hasLower, 'Huruf Kecil (a-z)');
+  updateRule(elNum, s.hasNumberOrSymbol, 'Angka / Simbol');
+  if (window.lucide) lucide.createIcons();
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    icon.setAttribute('data-lucide', 'eye');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderAuthForm(formType, userId = null) {
+  const container = document.getElementById('auth-form-container');
+  if (!container) return;
+
+  if (formType === 'login') {
+    container.innerHTML = `
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white">Masuk ke Studio</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Gunakan ID / Email resmi co-founder dan kata sandi dari DevOps.</p>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Username / Email Co-Founder *</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="text" id="login-username" required placeholder="Misal: alfatih, novita, atau syarah" class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi *</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <button type="button" onclick="togglePasswordVisibility('login-password', 'login-pwd-icon')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                <i id="login-pwd-icon" data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="hidden p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+          <span id="login-error-text">Kredensial tidak valid.</span>
+        </div>
+
+        <button type="submit" id="btn-submit-login" class="w-full py-2.5 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+          <span>Masuk ke Dashboard</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+
+        <div class="p-3 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
+          <div class="font-bold flex items-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Login Pertama Kali?</span>
+          </div>
+          <p>Gunakan password sementara dari DevOps (contoh: <code>Kk#Fatih2026!x9</code>). Anda akan langsung diminta menentukan password baru pribadi demi keamanan.</p>
+        </div>
+      </form>
+    `;
+  } else if (formType === 'reset') {
+    const user = store.state.users[userId];
+    if (!user) return renderAuthForm('login');
+
+    container.innerHTML = `
+      <form id="form-reset-first-time" onsubmit="handleFirstTimeResetSubmit(event, '${user.id}')" class="space-y-4">
+        <div class="text-center pb-2 border-b border-brand-border dark:border-[#23362F]">
+          <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center mb-2 shadow-inner">
+            <i data-lucide="key-round" class="w-6 h-6"></i>
+          </div>
+          <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white">Aktivasi Akun & Buat Kata Sandi Baru</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Ahlan wa Sahlan, <strong>${user.name}</strong> (${user.roleLabel})!<br>
+            Ini adalah login pertama Anda. Silakan tentukan kata sandi baru pribadi Anda.
+          </p>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru Pribadi *</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="password" id="reset-new-password" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <button type="button" onclick="togglePasswordVisibility('reset-new-password', 'reset-pwd-icon1')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                <i id="reset-pwd-icon1" data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Password Strength Checklist -->
+          <div class="p-3 bg-gray-50 dark:bg-[#192722] rounded-lg border border-gray-200 dark:border-gray-700 space-y-1.5 text-[11px]">
+            <span class="font-semibold block text-gray-700 dark:text-gray-300">Kriteria Keamanan Sandi:</span>
+            <div class="grid grid-cols-2 gap-1 text-[10px]">
+              <div id="rule-length" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Min. 8 Karakter</div>
+              <div id="rule-upper" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Besar (A-Z)</div>
+              <div id="rule-lower" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Kecil (a-z)</div>
+              <div id="rule-number" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Angka / Simbol</div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Kata Sandi Baru *</label>
+            <div class="relative">
+              <i data-lucide="check-check" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="password" id="reset-confirm-password" required placeholder="Ulangi kata sandi baru" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <button type="button" onclick="togglePasswordVisibility('reset-confirm-password', 'reset-pwd-icon2')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                <i id="reset-pwd-icon2" data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="reset-error-msg" class="hidden p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+          <span id="reset-error-text">Kata sandi belum memenuhi kriteria.</span>
+        </div>
+
+        <div class="pt-2 flex items-center gap-2">
+          <button type="button" onclick="renderAuthForm('login')" class="w-1/3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            Batal
+          </button>
+          <button type="submit" id="btn-submit-reset" class="flex-1 py-2.5 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Simpan & Masuk Studio</span>
+          </button>
+        </div>
+      </form>
+    `;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function handleLoginSubmit(event) {
+  event.preventDefault();
+  const usernameInput = document.getElementById('login-username')?.value.trim().toLowerCase();
+  const passwordInput = document.getElementById('login-password')?.value;
+  const errorBox = document.getElementById('login-error-msg');
+  const errorText = document.getElementById('login-error-text');
+
+  if (!usernameInput || !passwordInput) return;
+
+  const user = Object.values(store.state.users).find(u => 
+    (u.username && u.username.toLowerCase() === usernameInput) ||
+    (u.id && u.id.toLowerCase() === usernameInput) ||
+    (u.email && u.email.toLowerCase() === usernameInput)
+  );
+
+  if (!user || user.password !== passwordInput) {
+    if (errorBox && errorText) {
+      errorText.textContent = 'Username atau kata sandi tidak cocok. Silakan minta password sementara ke DevOps (Alfatih).';
+      errorBox.classList.remove('hidden');
+    }
+    showToast('Kredensial tidak valid!', 'error');
+    return;
+  }
+
+  // If user must change password (first time login)
+  if (user.mustChangePassword) {
+    if (errorBox) errorBox.classList.add('hidden');
+    renderAuthForm('reset', user.id);
+    return;
+  }
+
+  // Normal successful login
+  store.state.authSession = {
+    isAuthenticated: true,
+    userId: user.id
+  };
+  store.state.activeUserId = user.id;
+  store.logAudit('AUTH_LOGIN_SUCCESS', `Login: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil masuk.`);
+  store.saveState();
+
+  showToast(`Alhamdulillah! Selamat datang, ${user.name}.`);
+  checkAuthAndRender();
+
+  if (!user.hasCompletedOnboarding) {
+    setTimeout(() => {
+      openOnboardingTour(user);
+    }, 400);
+  }
+}
+
+function handleFirstTimeResetSubmit(event, userId) {
+  event.preventDefault();
+  const newPassword = document.getElementById('reset-new-password')?.value;
+  const confirmPassword = document.getElementById('reset-confirm-password')?.value;
+  const errorBox = document.getElementById('reset-error-msg');
+  const errorText = document.getElementById('reset-error-text');
+
+  const strength = checkPasswordStrength(newPassword);
+  if (!strength.isValid) {
+    if (errorBox && errorText) {
+      errorText.textContent = 'Kata sandi baru wajib minimal 8 karakter dengan kombinasi huruf besar, huruf kecil, dan angka/simbol.';
+      errorBox.classList.remove('hidden');
+    }
+    showToast('Kriteria kata sandi belum terpenuhi!', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    if (errorBox && errorText) {
+      errorText.textContent = 'Konfirmasi kata sandi tidak cocok dengan kata sandi baru!';
+      errorBox.classList.remove('hidden');
+    }
+    showToast('Konfirmasi kata sandi tidak cocok!', 'error');
+    return;
+  }
+
+  const user = store.state.users[userId];
+  if (!user) return;
+
+  user.password = newPassword;
+  user.mustChangePassword = false;
+  user.passwordChangedAt = new Date().toISOString();
+
+  store.state.authSession = {
+    isAuthenticated: true,
+    userId: user.id
+  };
+  store.state.activeUserId = user.id;
+
+  store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, 'Kata sandi baru berhasil dibuat. Akun co-founder aktif resmi.');
+  store.saveState();
+
+  showToast('Alhamdulillah! Kata sandi baru Anda berhasil disimpan. Akun Anda resmi aktif!');
+  checkAuthAndRender();
+
+  setTimeout(() => {
+    openOnboardingTour(user);
+  }, 400);
+}
+
+function copyTempPassword(userId) {
+  const user = store.state.users[userId];
+  if (!user) return;
+  const textToCopy = `Halo ${user.name},\nBerikut kredensial awal untuk masuk ke KaryaKita Hub OS (https://karyakita-hub.vercel.app):\nUsername: ${user.username || user.id}\nPassword Sementara: ${user.password}\n\nSilakan langsung login dan buat password baru pribadi Anda.`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      showToast(`Kredensial sementara untuk ${user.name} disalin ke clipboard!`);
+    }).catch(() => {
+      prompt('Salin pesan kredensial ini untuk dikirim ke WhatsApp rekan:', textToCopy);
+    });
+  } else {
+    prompt('Salin pesan kredensial ini untuk dikirim ke WhatsApp rekan:', textToCopy);
+  }
+}
+
+function resetUserCredentialsByAdmin(userId) {
+  const user = store.state.users[userId];
+  if (!user) return;
+
+  if (confirm(`Apakah Anda yakin ingin mereset kata sandi co-founder ${user.name}? Kata sandi sementara baru akan diterbitkan.`)) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+    let newTemp = 'Kk#' + user.name.split(' ')[0];
+    for (let i = 0; i < 4; i++) {
+      newTemp += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    newTemp += '!9';
+
+    user.password = newTemp;
+    user.mustChangePassword = true;
+    user.hasCompletedOnboarding = false;
+
+    store.logAudit('AUTH_ADMIN_PASSWORD_RESET', `Reset Kredensial: ${user.name}`, `DevOps/Admin mereset kata sandi sementara untuk ${user.name}.`);
+    store.saveState();
+
+    alert(`Kata sandi sementara baru untuk ${user.name}:\n\n${newTemp}\n\nKredensial ini telah disalin. Kirimkan kepada rekan via WhatsApp pribadi.`);
+    if (navigator.clipboard) navigator.clipboard.writeText(newTemp).catch(() => {});
+    renderActiveView();
+  }
+}
+
+function logout() {
+  if (confirm('Apakah Anda yakin ingin keluar dari KaryaKita Hub?')) {
+    store.state.authSession = { isAuthenticated: false, userId: null };
+    store.logAudit('AUTH_LOGOUT', 'User Logout', `Pengguna keluar dari sesi.`);
+    store.saveState();
+    showToast('Anda telah keluar dari sistem.');
+    checkAuthAndRender();
+  }
+}
+
+function checkAuthAndRender() {
+  const authScreen = document.getElementById('auth-screen');
+  const appLayout = document.getElementById('app-layout-wrapper');
+  const topbarSimulator = document.getElementById('topbar-simulator');
+  const dynamicBanners = document.getElementById('dynamic-banners-container');
+  const mobileNav = document.querySelector('.mobile-bottom-nav');
+
+  const isAuthenticated = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
+
+  if (!isAuthenticated) {
+    if (authScreen) authScreen.classList.remove('hidden');
+    if (appLayout) appLayout.classList.add('hidden');
+    if (topbarSimulator) topbarSimulator.classList.add('hidden');
+    if (dynamicBanners) dynamicBanners.classList.add('hidden');
+    if (mobileNav) mobileNav.classList.add('hidden');
+    renderAuthForm('login');
+  } else {
+    // Synchronize activeUserId with authSession.userId
+    store.state.activeUserId = store.state.authSession.userId;
+    if (authScreen) authScreen.classList.add('hidden');
+    if (appLayout) appLayout.classList.remove('hidden');
+    if (topbarSimulator) topbarSimulator.classList.remove('hidden');
+    if (dynamicBanners) dynamicBanners.classList.remove('hidden');
+    if (mobileNav) mobileNav.classList.remove('hidden');
+
+    const roleSelect = document.getElementById('role-simulator-select');
+    if (roleSelect) roleSelect.value = store.state.activeUserId;
+
+    updateTopBanners();
+    renderActiveView();
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Adaptive Theme
@@ -4802,6 +5655,9 @@ document.addEventListener('DOMContentLoaded', () => {
     roleSelect.value = store.state.activeUserId;
     roleSelect.addEventListener('change', (e) => {
       store.state.activeUserId = e.target.value;
+      if (store.state.authSession) {
+        store.state.authSession.userId = e.target.value;
+      }
       store.saveState();
       updateTopBanners();
       showToast('Beralih peran: ' + store.getCurrentUser().name);
@@ -4869,7 +5725,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initialize
-  updateTopBanners();
-  navigateTo('overview');
+  // Check Authentication State and Render
+  checkAuthAndRender();
 });
