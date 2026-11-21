@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = __dirname;
+// Root directory project (satu tingkat di atas folder scripts)
+const PUBLIC_DIR = path.join(__dirname, '..');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=UTF-8',
@@ -19,7 +20,6 @@ const MIME_TYPES = {
 };
 
 function handleRequest(req, res) {
-  // CORS & basic headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -30,12 +30,10 @@ function handleRequest(req, res) {
     return;
   }
 
-  // Parse URL safely
   const host = req.headers.host || 'localhost:3000';
   const parsedUrl = new URL(req.url, `http://${host}`);
   let pathname = parsedUrl.pathname;
 
-  // Route fallback: if requesting any route without extension, serve index.html (SPA)
   let filePath = path.join(PUBLIC_DIR, pathname);
 
   fs.stat(filePath, (err, stats) => {
@@ -63,7 +61,6 @@ function handleRequest(req, res) {
 
 const server = http.createServer(handleRequest);
 
-// Hanya panggil listen jika dijalankan langsung via node server.js / start.bat
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log('================================================================');
@@ -76,4 +73,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = server;
+module.exports = handleRequest;

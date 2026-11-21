@@ -12,7 +12,7 @@ echo Memeriksa instalasi Node.js...
 node -v >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Node.js belum terdeteksi di sistem.
-    echo Silakan buka file index.html langsung di browser Anda.
+    echo Membuka index.html langsung di browser Anda...
     pause
     start "" "%~dp0index.html"
     exit /b
@@ -20,6 +20,6 @@ if %errorlevel% neq 0 (
 
 echo Memulai Server Lokal di http://localhost:3000 ...
 start "" http://localhost:3000
-node server.js
+node scripts\server.js
 
 pause

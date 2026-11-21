@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "KaryaKita Hub — Internal Venture Studio Operating System (7 Mahasiswa Sistem Informasi STMIK Tazkia)",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'Build static ready'",
+    "start": "node scripts/server.js",
+    "dev": "node scripts/server.js",
+    "build": "echo 'Static build complete'",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts"
   },
