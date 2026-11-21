@@ -46,8 +46,8 @@ async function main() {
   const settings = [
     { key: 'academic_freeze_mode', value: 'false' },
     { key: 'graduation_threshold_idr', value: '3500000' },
-    { key: 'manual_cash_balance_idr', value: '1850000' },
-    { key: 'current_sprint', value: '3' },
+    { key: 'manual_cash_balance_idr', value: '0' },
+    { key: 'current_sprint', value: '1' },
   ];
 
   for (const s of settings) {

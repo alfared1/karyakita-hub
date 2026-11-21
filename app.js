@@ -7,17 +7,17 @@
  */
 
 // Global State Key for LocalStorage Persistence
-const STORAGE_KEY = 'karyakita_hub_state_v1';
+const STORAGE_KEY = 'karyakita_hub_state_v2';
 
-// Initial Seed Data (Zero-Cost Prototype & Realistic Operations)
+// Initial Seed Data (Produksi Bersih Tanpa Data Simulasi)
 const INITIAL_STATE = {
   activeUserId: 'alfatih',
-  currentSprint: 3,
+  currentSprint: 1,
   settings: {
     academicFreezeMode: false,
     graduationThresholdIdr: 3500000,
-    qardhInitialTotalIdr: 300000,
-    qardhRepaidIdr: 100000,
+    qardhInitialTotalIdr: 0,
+    qardhRepaidIdr: 0,
   },
   users: {
     alfatih: { id: 'alfatih', name: 'Alfatih', role: 'SUPER_ADMIN', roleLabel: 'CEO / CTO (Super Admin)', email: 'alfatih@karyakita.id', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120' },
@@ -26,8 +26,7 @@ const INITIAL_STATE = {
     ilham: { id: 'ilham', name: 'Ilham Akbar', role: 'CO_FOUNDER', roleLabel: 'CBDO / CDO (Lini 1 & 2)', email: 'ilham@karyakita.id', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120' },
     syarah: { id: 'syarah', name: 'Syarah', role: 'CO_FOUNDER', roleLabel: 'CMO (Lini 4)', email: 'syarah@karyakita.id', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120' },
     aywa: { id: 'aywa', name: 'Aywa', role: 'CO_FOUNDER', roleLabel: 'CRO (Lini 3 & 5)', email: 'aywa@karyakita.id', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120' },
-    ahmad: { id: 'ahmad', name: 'Ahmad', role: 'CO_FOUNDER', roleLabel: 'Creative Director (Lini 1 & 4)', email: 'ahmad@karyakita.id', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120' },
-    client_guest: { id: 'client_guest', name: 'PT Halal Syariah Mart', role: 'CLIENT_GUEST', roleLabel: 'Klien B2B (Read-Only Portal)', email: 'client@halalmart.co.id', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=120' }
+    ahmad: { id: 'ahmad', name: 'Ahmad', role: 'CO_FOUNDER', roleLabel: 'Creative Director (Lini 1 & 4)', email: 'ahmad@karyakita.id', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120' }
   },
   units: {
     LINI_1_DESIGN: { code: 'LINI_1_DESIGN', name: 'KaryaKita Design (Lini 1)', badgeClass: 'badge-unit-lini1', desc: 'Brand Identity & UI/UX Studio' },
@@ -37,559 +36,25 @@ const INITIAL_STATE = {
     LINI_5_AI_ACADEMY: { code: 'LINI_5_AI_ACADEMY', name: 'KaryaKita AI Academy (Lini 5)', badgeClass: 'badge-unit-lini5', desc: 'Corporate & Public Workshop' },
     INTERNAL_OPS: { code: 'INTERNAL_OPS', name: 'Operasional Internal', badgeClass: 'badge-unit-ops', desc: 'Tata Kelola Studio & MKUT.102' }
   },
-  projects: [
-    {
-      id: 'proj-1',
-      title: 'Brand Identity & Design System PT Halal Mart',
-      clientName: 'PT Halal Syariah Mart',
-      unitId: 'LINI_1_DESIGN',
-      contractValueIdr: 4500000,
-      picId: 'ilham',
-      paymentGateStatus: 'DP_50_VERIFIED', // LOCKED_WAITING_DP | DP_50_VERIFIED | PAID_100_VERIFIED
-      dpVerifiedById: 'novita',
-      dpVerifiedAt: '2026-03-02',
-      dpProofUrl: 'https://drive.google.com/drive/folders/kk-proof-dp1',
-      slaDeadline: '2026-03-25',
-      clientPortalToken: 'tok-halalmart',
-      revisionQuota: 3,
-      revisionUsed: 1,
-    },
-    {
-      id: 'proj-2',
-      title: 'Custom Landing Page & Booking Engine Travel Barokah',
-      clientName: 'PT Barokah Tour & Travel',
-      unitId: 'LINI_2_WEBTECH',
-      contractValueIdr: 6000000,
-      picId: 'alfatih',
-      paymentGateStatus: 'LOCKED_WAITING_DP',
-      dpVerifiedById: null,
-      dpVerifiedAt: null,
-      dpProofUrl: null,
-      slaDeadline: '2026-04-10',
-      clientPortalToken: 'tok-barokah',
-      revisionQuota: 3,
-      revisionUsed: 0,
-    },
-    {
-      id: 'proj-3',
-      title: 'Dokumentasi SOP & Analisis Koperasi Madani',
-      clientName: 'Koperasi Simpan Pinjam Syariah Madani',
-      unitId: 'LINI_3_ASSIST_DATA',
-      contractValueIdr: 3000000,
-      picId: 'aywa',
-      paymentGateStatus: 'DP_50_VERIFIED',
-      dpVerifiedById: 'novita',
-      dpVerifiedAt: '2026-03-05',
-      dpProofUrl: 'https://drive.google.com/file/d/proof-kop/view',
-      slaDeadline: '2026-03-20',
-      clientPortalToken: 'tok-koperasi',
-      revisionQuota: 2,
-      revisionUsed: 0,
-    },
-    {
-      id: 'proj-4',
-      title: 'Corporate AI Workshop Batch 1',
-      clientName: 'PT Madani Logistik Indonesia',
-      unitId: 'LINI_5_AI_ACADEMY',
-      contractValueIdr: 7500000,
-      picId: 'alfatih',
-      paymentGateStatus: 'PAID_100_VERIFIED',
-      dpVerifiedById: 'novita',
-      dpVerifiedAt: '2026-02-28',
-      dpProofUrl: 'https://drive.google.com/file/d/proof-ai1/view',
-      slaDeadline: '2026-03-12',
-      clientPortalToken: 'tok-madani',
-      revisionQuota: 1,
-      revisionUsed: 0,
-    }
-  ],
-  tasks: [
-    {
-      id: 'task-101',
-      title: 'Eksplorasi Moodboard & Logo Guideline Halal Mart',
-      description: 'Menyusun 3 alternatif logo halal profesional sesuai arahan syariah.',
-      unitId: 'LINI_1_DESIGN',
-      projectId: 'proj-1',
-      assigneeId: 'ahmad',
-      createdById: 'hilwa',
-      sprintNumber: 3,
-      status: 'IN_PROGRESS', // BACKLOG | TODO | IN_PROGRESS | REVIEW | DONE
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 2.5,
-      dueDate: '2026-03-15',
-      dodChecklist: [
-        { label: '3 Alternatif Logo di Figma', checked: true },
-        { label: 'Palet Warna & Tipografi Islami', checked: true },
-        { label: 'Ekspor PDF Mockup Presentasi', checked: false }
-      ],
-      workProofUrl: 'https://figma.com/@karyakita/halalmart-concept',
-      isClientVisible: true
-    },
-    {
-      id: 'task-102',
-      title: 'Arsitektur Database & Auth Whitelist KaryaKita Hub',
-      description: 'Menyiapkan schema.prisma, guard RBAC server, dan isolasi arsip NDA.',
-      unitId: 'LINI_2_WEBTECH',
-      projectId: null,
-      assigneeId: 'alfatih',
-      createdById: 'hilwa',
-      sprintNumber: 3,
-      status: 'DONE',
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 3.0,
-      dueDate: '2026-03-08',
-      dodChecklist: [
-        { label: 'PostgreSQL schema terpadu 3 tahap', checked: true },
-        { label: 'Enforce closed 7-email whitelist', checked: true },
-        { label: 'Uji prisma.$transaction', checked: true }
-      ],
-      workProofUrl: 'https://github.com/karyakita-studio/karyakita-hub',
-      isClientVisible: false
-    },
-    {
-      id: 'task-103',
-      title: 'Wireframing UI Landing Page Travel Barokah',
-      description: 'Struktur halaman utama, paket umroh, dan booking flow.',
-      unitId: 'LINI_2_WEBTECH',
-      projectId: 'proj-2',
-      assigneeId: 'ilham',
-      createdById: 'hilwa',
-      sprintNumber: 3,
-      status: 'TODO', // Belum boleh IN_PROGRESS karena proj-2 LOCKED_WAITING_DP!
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 2.0,
-      dueDate: '2026-03-18',
-      dodChecklist: [
-        { label: 'Wireframe Low-Fidelity di Figma', checked: false },
-        { label: 'Copywriting Value Proposition', checked: false }
-      ],
-      workProofUrl: '',
-      isClientVisible: true
-    },
-    {
-      id: 'task-104',
-      title: 'Pembuatan Modul Praktik Prompt Engineering AI Academy',
-      description: 'Materi latihan peserta workshop corporate PT Madani.',
-      unitId: 'LINI_5_AI_ACADEMY',
-      projectId: 'proj-4',
-      assigneeId: 'aywa',
-      createdById: 'alfatih',
-      sprintNumber: 3,
-      status: 'DONE',
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 2.0,
-      dueDate: '2026-03-10',
-      dodChecklist: [
-        { label: 'Slide Presentasi 25 Halaman', checked: true },
-        { label: 'Lembar Latihan Kasus Bisnis Logistik', checked: true }
-      ],
-      workProofUrl: 'https://drive.google.com/drive/folders/kk-ai-madani',
-      isClientVisible: true
-    },
-    {
-      id: 'task-105',
-      title: 'Produksi 3 Video TikTok Edukasi AI untuk Mahasiswa',
-      description: 'Konten organik untuk awareness KaryaKita Media dan promo workshop.',
-      unitId: 'LINI_4_MEDIA_AFFILIATE',
-      projectId: null,
-      assigneeId: 'syarah',
-      createdById: 'hilwa',
-      sprintNumber: 3,
-      status: 'REVIEW',
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 2.0,
-      dueDate: '2026-03-14',
-      dodChecklist: [
-        { label: 'Riset Topik AI Mahasiswa', checked: true },
-        { label: 'Video Edit CapCut 1080p', checked: true },
-        { label: 'Review Ahmad & Hilwa', checked: true }
-      ],
-      workProofUrl: 'https://tiktok.com/@karyakitastudio/video/draft',
-      isClientVisible: false
-    },
-    {
-      id: 'task-106',
-      title: 'Penagihan Pelunasan 50% & Rekonsiliasi Kas PT Madani',
-      description: 'Penerbitan kuitansi pelunasan dan input buku kas Syirkah.',
-      unitId: 'INTERNAL_OPS',
-      projectId: 'proj-4',
-      assigneeId: 'novita',
-      createdById: 'alfatih',
-      sprintNumber: 3,
-      status: 'DONE',
-      isBlocked: false,
-      blockedReason: null,
-      hoursEstimate: 1.0,
-      dueDate: '2026-03-05',
-      dodChecklist: [
-        { label: 'Invoice Pelunasan Terbit', checked: true },
-        { label: 'Bukti Transfer Rp7.500.000 Masuk Rekening', checked: true }
-      ],
-      workProofUrl: 'https://drive.google.com/file/d/kk-inv-001/view',
-      isClientVisible: false
-    },
-    {
-      id: 'task-107',
-      title: 'Review SOP Administrasi Koperasi Simpan Pinjam',
-      description: 'Analisis dokumen alur simpanan & pembiayaan syariah.',
-      unitId: 'LINI_3_ASSIST_DATA',
-      projectId: 'proj-3',
-      assigneeId: 'aywa',
-      createdById: 'hilwa',
-      sprintNumber: 3,
-      status: 'IN_PROGRESS',
-      isBlocked: true,
-      blockedReason: 'Menunggu kiriman draf anggaran dasar terbaru dari pihak pengurus koperasi.',
-      hoursEstimate: 2.5,
-      dueDate: '2026-03-12',
-      dodChecklist: [
-        { label: 'Peta Alur Kerja (Flowchart)', checked: true },
-        { label: 'Kesesuaian Akad Syariah', checked: false }
-      ],
-      workProofUrl: 'https://drive.google.com/drive/folders/kk-sop-kop',
-      isClientVisible: true
-    }
-  ],
-  checkins: [
-    {
-      userId: 'alfatih',
-      sprintNumber: 3,
-      completedSummary: 'Menuntaskan arsitektur database PostgreSQL dan modul sistem operasi KaryaKita Hub.',
-      inProgressSummary: 'Mempersiapkan materi hands-on Corporate AI Training PT Madani.',
-      blockerSummary: 'Aman, koordinasi teknis lancar.',
-      submittedAt: '2026-03-04 19:20 WIB'
-    },
-    {
-      userId: 'hilwa',
-      sprintNumber: 3,
-      completedSummary: 'Audit papan tugas Kanban 7 pendiri dan sinkronisasi SLA proyek Q1.',
-      inProgressSummary: 'Mengawal tenggat moodboard Lini 1 dan draft wireframe Lini 2.',
-      blockerSummary: 'Perlu konfirmasi ketersediaan Ahmad untuk review video TikTok.',
-      submittedAt: '2026-03-04 20:05 WIB'
-    },
-    {
-      userId: 'novita',
-      sprintNumber: 3,
-      completedSummary: 'Verifikasi DP 50% PT Halal Mart & rekonsiliasi kas masuk Rp2.250.000.',
-      inProgressSummary: 'Menyiapkan draft kalkulator bagi hasil Syirkah Abdan akhir bulan.',
-      blockerSummary: 'Tidak ada kendala finansial.',
-      submittedAt: '2026-03-04 20:30 WIB'
-    },
-    {
-      userId: 'ilham',
-      sprintNumber: 3,
-      completedSummary: 'Closing prospek B2B Travel Barokah nilai kontrak Rp6.000.000.',
-      inProgressSummary: 'Menunggu transfer DP 50% dari klien travel untuk buka status eksekusi.',
-      blockerSummary: 'Klien minta invoice resmi sebelum pembayaran transfer DP.',
-      submittedAt: '2026-03-04 21:10 WIB'
-    },
-    {
-      userId: 'syarah',
-      sprintNumber: 3,
-      completedSummary: 'Produksi 3 video TikTok dan penulisan skrip konten edukasi bisnis digital.',
-      inProgressSummary: 'Jadwal posting konten dan monitoring insight engagement.',
-      blockerSummary: 'Butuh asset grafis thumbnail dari Ahmad.',
-      submittedAt: '2026-03-04 21:45 WIB'
-    }
-    // Aywa dan Ahmad sengaja belum lapor untuk mendemonstrasikan status 5/7 pada prototype!
-  ],
-  syuraMinutes: [
-    {
-      id: 'syura-3',
-      meetingDate: '2026-03-01',
-      moderator: 'Hilwa (COO)',
-      attendees: ['alfatih', 'hilwa', 'novita', 'ilham', 'syarah', 'aywa', 'ahmad'],
-      decisions: '1. Penegakan tegas aturan Payment Gate: Proyek Travel Barokah tidak boleh disentuh sebelum DP 50% masuk.\n2. Disiplin batas waktu kerja 3-5 jam/pekan selama masa perkuliahan aktif.\n3. Alokasi kas ditahan 70% tetap dipertahankan sampai target Graduation Rule Rp3,5 juta tercapai.',
-      actionItems: [
-        { id: 'act-1', title: 'Terbitkan invoice resmi DP 50% untuk Travel Barokah', picId: 'novita', promoted: true },
-        { id: 'act-2', title: 'Upload dokumen brief client PT Halal Mart ke folder arsip NDA', picId: 'ilham', promoted: false },
-        { id: 'act-3', title: 'Finalisasi slide AI Academy Batch Corporate', picId: 'aywa', promoted: true }
-      ]
-    }
-  ],
-  archives: [
-    {
-      id: 'arc-1',
-      title: 'Akad Syirkah Abdan 7 Pendiri KaryaKita Hub (Resmi)',
-      quarter: '2026-Q1',
-      category: 'Akad & Legal',
-      unitId: 'INTERNAL_OPS',
-      uploadedById: 'alfatih',
-      storageType: 'EXTERNAL_LINK',
-      url: 'https://drive.google.com/file/d/akad-syirkah-karyakita-2026/view',
-      confidentiality: 'INTERNAL_TIM',
-      date: '2026-02-15'
-    },
-    {
-      id: 'arc-2',
-      title: 'NDA & Spesifikasi Sistem Internal PT Halal Mart',
-      quarter: '2026-Q1',
-      category: 'Proyek Klien B2B',
-      unitId: 'LINI_1_DESIGN',
-      uploadedById: 'ilham',
-      storageType: 'EXTERNAL_LINK',
-      url: 'https://drive.google.com/drive/folders/halalmart-nda-confidential',
-      confidentiality: 'NDA_KLIEN', // Rahasia!
-      date: '2026-03-02'
-    },
-    {
-      id: 'arc-3',
-      title: 'Bukti Transfer DP 50% PT Halal Mart (Rp2.250.000)',
-      quarter: '2026-Q1',
-      category: 'Laporan Keuangan',
-      unitId: 'LINI_1_DESIGN',
-      uploadedById: 'novita',
-      storageType: 'FILE_UPLOAD',
-      url: 'https://storage.karyakita.id/proofs/transfer_dp_halalmart.pdf',
-      confidentiality: 'INTERNAL_TIM',
-      date: '2026-03-02'
-    },
-    {
-      id: 'arc-4',
-      title: 'Silabus & Modul Praktik AI Academy 2026',
-      quarter: '2026-Q1',
-      category: 'Materi AI Academy',
-      unitId: 'LINI_5_AI_ACADEMY',
-      uploadedById: 'aywa',
-      storageType: 'EXTERNAL_LINK',
-      url: 'https://drive.google.com/drive/folders/ai-academy-syllabus-q1',
-      confidentiality: 'INTERNAL_TIM',
-      date: '2026-02-25'
-    }
-  ],
-  cashflow: [
-    {
-      id: 'cf-1',
-      date: '2026-02-10',
-      type: 'QARDH_IN',
-      category: 'Talangan Modal Pendiri (0% Bunga)',
-      amountIdr: 300000,
-      description: 'Talangan awal operasional studio oleh Alfatih & Novita',
-      proofUrl: 'https://drive.google.com/proof-qardh',
-      createdById: 'novita'
-    },
-    {
-      id: 'cf-2',
-      date: '2026-02-18',
-      type: 'OPEX',
-      category: 'Infrastruktur Web & Domain',
-      amountIdr: 150000,
-      description: 'Domain legal karya-kita.id (promo tahun pertama)',
-      proofUrl: 'https://drive.google.com/proof-domain',
-      createdById: 'novita'
-    },
-    {
-      id: 'cf-3',
-      date: '2026-02-28',
-      type: 'INCOME',
-      category: 'Lini 5 — Corporate Training',
-      amountIdr: 7500000,
-      description: 'Pelunasan 100% Workshop AI Corporate PT Madani Logistik',
-      proofUrl: 'https://drive.google.com/proof-madani',
-      createdById: 'novita'
-    },
-    {
-      id: 'cf-4',
-      date: '2026-03-01',
-      type: 'QARDH_REPAY',
-      category: 'Pengembalian Talangan Qardh',
-      amountIdr: 100000,
-      description: 'Cicilan pengembalian modal awal talangan pendiri (tanpa bunga)',
-      proofUrl: 'https://drive.google.com/proof-repay',
-      createdById: 'novita'
-    },
-    {
-      id: 'cf-5',
-      date: '2026-03-02',
-      type: 'INCOME',
-      category: 'Lini 1 — Design Studio',
-      amountIdr: 2250000,
-      description: 'DP 50% Kontrak Brand Identity PT Halal Mart',
-      proofUrl: 'https://drive.google.com/proof-dp1',
-      createdById: 'novita'
-    },
-    {
-      id: 'cf-6',
-      date: '2026-03-03',
-      type: 'OPEX',
-      category: 'Operasional Rapat & Zoom',
-      amountIdr: 125000,
-      description: 'Langganan tool penunjang koordinasi tim',
-      proofUrl: 'https://drive.google.com/proof-tools',
-      createdById: 'novita'
-    }
-  ],
-  crmLeads: [
-    {
-      id: 'lead-1',
-      businessName: 'PT Nusantara Agro Ekspor',
-      targetUnitId: 'LINI_2_WEBTECH',
-      estimatedValueIdr: 8000000,
-      stage: 'NEGOTIATION', // LEAD_IN | OUTREACH | DISCOVERY | PROPOSAL_SENT | NEGOTIATION | WON
-      picId: 'ilham',
-      contactName: 'Pak Hendra (Direktur Operasional)',
-      contactPhone: '081298765432',
-      lastFollowUpDaysAgo: 1
-    },
-    {
-      id: 'lead-2',
-      businessName: 'Klinik Gigi drg. Farhan',
-      targetUnitId: 'LINI_1_DESIGN',
-      estimatedValueIdr: 2500000,
-      stage: 'PROPOSAL_SENT',
-      picId: 'ilham',
-      contactName: 'drg. Farhan',
-      contactPhone: '081311223344',
-      lastFollowUpDaysAgo: 4 // Peringatan oranye (> 3 hari)
-    },
-    {
-      id: 'lead-3',
-      businessName: 'Yayasan Pendidikan Al-Hikmah Bogor',
-      targetUnitId: 'LINI_5_AI_ACADEMY',
-      estimatedValueIdr: 5000000,
-      stage: 'DISCOVERY',
-      picId: 'aywa',
-      contactName: 'Ustadz Ridwan',
-      contactPhone: '085712345678',
-      lastFollowUpDaysAgo: 2
-    },
-    {
-      id: 'lead-4',
-      businessName: 'Toko Busana Muslim Syar-i Aisyah',
-      targetUnitId: 'LINI_4_MEDIA_AFFILIATE',
-      estimatedValueIdr: 3000000,
-      stage: 'WON',
-      picId: 'syarah',
-      contactName: 'Ibu Aisyah',
-      contactPhone: '081987654321',
-      lastFollowUpDaysAgo: 0
-    }
-  ],
-  academyBatches: [
-    {
-      id: 'batch-pub-1',
-      title: 'Workshop Publik: Praktik AI Praktis untuk Mahasiswa & Profesional',
-      type: 'PUBLIC_WORKSHOP',
-      priceIdr: 75000,
-      date: '2026-03-22',
-      quota: 30,
-      registeredCount: 28,
-      verifiedCount: 24,
-      status: 'REGISTRATION_OPEN',
-      participants: [
-        { id: 'p1', name: 'Rizky Ramadhan', email: 'rizky@gmail.com', phone: '081234567801', paid: true, attended: false, certSent: false },
-        { id: 'p2', name: 'Nurul Hidayah', email: 'nurul@gmail.com', phone: '081234567802', paid: true, attended: false, certSent: false },
-        { id: 'p3', name: 'Faisal Akbar', email: 'faisal@gmail.com', phone: '081234567803', paid: false, attended: false, certSent: false }
-      ]
-    },
-    {
-      id: 'batch-corp-1',
-      title: 'Corporate AI Training: AI Workflow Automation PT Madani Logistik',
-      type: 'CORPORATE_B2B',
-      priceIdr: 7500000,
-      date: '2026-03-12',
-      quota: 15,
-      registeredCount: 15,
-      verifiedCount: 15,
-      status: 'COMPLETED',
-      participants: [
-        { id: 'cp1', name: 'Budi Santoso (Kadiv IT)', email: 'budi@madanilog.com', phone: '0811223344', paid: true, attended: true, certSent: true },
-        { id: 'cp2', name: 'Siti Rahma (Lead Analyst)', email: 'siti@madanilog.com', phone: '0811223345', paid: true, attended: true, certSent: true }
-      ]
-    }
-  ],
-  affiliateContents: [
-    {
-      id: 'aff-c-1',
-      title: '3 AI Tools Gratis untuk Skripsi Tanpa Bikin Pusing',
-      platform: 'TikTok',
-      stage: 'SUDAH_TAYANG',
-      picId: 'syarah',
-      postUrl: 'https://tiktok.com/@karyakita/video/12345',
-      targetProgram: 'Promo AI Academy (Lini 5)'
-    },
-    {
-      id: 'aff-c-2',
-      title: 'Cara Setup Website Bisnis Modal Nol Rupiah di Vercel',
-      platform: 'Instagram Reels',
-      stage: 'SIAP_TAYANG',
-      picId: 'ahmad',
-      postUrl: '',
-      targetProgram: 'Lini 2 WebTech'
-    },
-    {
-      id: 'aff-c-3',
-      title: 'Review Template Notion Studio Mahasiswa',
-      platform: 'YouTube Shorts',
-      stage: 'EDITING',
-      picId: 'ahmad',
-      postUrl: '',
-      targetProgram: 'Affiliate Notion / Template'
-    }
-  ],
-  affiliateCommissions: [
-    {
-      id: 'com-1',
-      partnerName: 'TikTok Shop / Affiliate Buku Bisnis',
-      period: 'Februari 2026',
-      clicks: 340,
-      conversions: 18,
-      commissionIdr: 450000,
-      status: 'DISBURSED' // PENDING | DISBURSED
-    },
-    {
-      id: 'com-2',
-      partnerName: 'Hostinger Referral (Lini 2 WebTech)',
-      period: 'Februari 2026',
-      clicks: 85,
-      conversions: 3,
-      commissionIdr: 600000,
-      status: 'DISBURSED'
-    },
-    {
-      id: 'com-3',
-      partnerName: 'SaaS AI Tool Affiliate',
-      period: 'Maret 2026',
-      clicks: 120,
-      conversions: 4,
-      commissionIdr: 320000,
-      status: 'PENDING'
-    }
-  ],
-  botLogs: [
-    { time: '2026-03-04 16:00 WIB', channel: 'WhatsApp Group', type: 'Async Check-In Pengingat 1', status: 'Terkirim (7 Co-Founders)' },
-    { time: '2026-03-04 20:30 WIB', channel: 'WhatsApp Group', type: 'Check-In Warning (Aywa & Ahmad)', status: 'Terkirim (2 Belum Lapor)' },
-    { time: '2026-03-02 14:15 WIB', channel: 'WhatsApp Group', type: 'Payment Gate Alert (PT Halal Mart DP 50% Verified)', status: 'Terkirim Sukses' }
-  ],
+  projects: [],
+  tasks: [],
+  checkins: [],
+  syuraMinutes: [],
+  archives: [],
+  cashflow: [],
+  crmLeads: [],
+  academyBatches: [],
+  affiliateContents: [],
+  affiliateCommissions: [],
+  botLogs: [],
   auditLogs: [
     {
-      id: 'aud-1',
-      actorName: 'Novita (CFO)',
-      action: 'PAYMENT_GATE_VERIFIED',
-      entity: 'Project: PT Halal Syariah Mart',
-      details: 'Status DP 50% terverifikasi. Bukti transfer Rp2.250.000 tervalidasi.',
-      timestamp: '2026-03-02 14:10:00 WIB'
-    },
-    {
-      id: 'aud-2',
-      actorName: 'Alfatih (CEO/CTO)',
-      action: 'SYSTEM_SETTINGS_UPDATE',
+      id: 'aud-init',
+      actorName: 'Sistem KaryaKita Hub',
+      action: 'SYSTEM_INITIALIZED',
       entity: 'SystemConfig',
-      details: 'Inisialisasi Sprint 3 dan penetapan batas Graduation Rule Rp3.500.000.',
-      timestamp: '2026-03-01 09:00:00 WIB'
-    },
-    {
-      id: 'aud-3',
-      actorName: 'Novita (CFO)',
-      action: 'CASHFLOW_TRANSACTION_ADDED',
-      entity: 'Cashflow: Income DP PT Halal Mart',
-      details: 'Pencatatan kas masuk Rp2.250.000 ke buku kas utama.',
-      timestamp: '2026-03-02 14:12:00 WIB'
+      details: 'Sistem Operasi KaryaKita Hub siap digunakan untuk operasional tim nyata.',
+      timestamp: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB'
     }
   ]
 };
@@ -657,9 +122,10 @@ class AppStore {
     return balance;
   }
 
-  calculateUserWeeklyHours(userId, sprint = 3) {
+  calculateUserWeeklyHours(userId, sprint = null) {
+    const currentSprint = sprint !== null ? sprint : (this.state.currentSprint || 1);
     return this.state.tasks
-      .filter(t => t.assigneeId === userId && t.sprintNumber === sprint && t.status !== 'DONE')
+      .filter(t => t.assigneeId === userId && t.sprintNumber === currentSprint && t.status !== 'DONE')
       .reduce((sum, t) => sum + Number(t.hoursEstimate || 0), 0);
   }
 
@@ -847,7 +313,7 @@ function renderOverviewView() {
   const activeProjectsCount = store.state.projects.length;
   const activeBatchesCount = store.state.academyBatches.length;
 
-  const blockedTasks = tasks.filter(t => t.isBlocked || t.status === 'TODO' && t.dueDate === '2026-03-08');
+  const blockedTasks = tasks.filter(t => t.isBlocked);
   const myTasks = tasks.filter(t => t.assigneeId === user.id);
 
   const cashBalance = store.calculateCashBalance();
@@ -880,7 +346,7 @@ function renderOverviewView() {
         <!-- KPI 1: Micro-Sprint Pekan Ini -->
         <div class="card-surface p-4 flex flex-col justify-between">
           <div class="flex items-center justify-between text-gray-500">
-            <span class="text-xs font-medium">Sprint 3 Progress</span>
+            <span class="text-xs font-medium">Sprint ${store.state.currentSprint || 1} Progress</span>
             <div class="p-1.5 rounded-lg bg-emerald-50 text-brand-emerald">
               <i data-lucide="check-circle" class="w-4 h-4"></i>
             </div>
@@ -909,8 +375,8 @@ function renderOverviewView() {
               ${checkinsCount} / ${totalFounders} Co-Founder
             </div>
             <div class="flex items-center gap-1 mt-2">
-              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold">5 Sudah Lapor</span>
-              <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">2 Belum</span>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold">${checkinsCount} Sudah Lapor</span>
+              <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">${Math.max(0, totalFounders - checkinsCount)} Belum</span>
             </div>
             <span class="text-[11px] text-gray-500 mt-1 block">< 90 detik via mobile</span>
           </div>
@@ -929,7 +395,7 @@ function renderOverviewView() {
               ${activeProjectsCount} Proyek + ${activeBatchesCount} Batch
             </div>
             <p class="text-[11px] text-gray-500 mt-2">
-              Lini 1 (Design), Lini 2 (WebTech), Lini 5 (AI)
+              ${activeProjectsCount > 0 ? `${activeProjectsCount} Proyek Aktif Berjalan` : 'Belum ada proyek berjalan'}
             </p>
             <span class="text-[11px] text-sky-700 font-medium">Payment Gate Active</span>
           </div>
@@ -1227,7 +693,15 @@ function renderTasksView() {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              ${tasks.map(t => {
+              ${tasks.length === 0 ? `
+                <tr>
+                  <td colspan="7" class="p-8 text-center text-gray-400">
+                    <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+                    <p class="font-semibold text-gray-600">Belum ada tugas di Papan Tugas.</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Klik tombol <strong>+ Buat Tugas</strong> di atas untuk menambahkan tugas perdana tim.</p>
+                  </td>
+                </tr>
+              ` : tasks.map(t => {
                 const assignee = store.state.users[t.assigneeId] || { name: t.assigneeId };
                 const unit = store.state.units[t.unitId] || { name: t.unitId, badgeClass: '' };
                 return `
@@ -1835,66 +1309,90 @@ function renderReportsView() {
       ` : reportsActiveTab === 'syura' ? `
         <!-- TAB 2: NOTULEN WEEKLY SYURA -->
         <div class="space-y-6">
-          <div class="card-surface p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border pb-4 mb-4">
-              <div>
-                <h3 class="font-heading font-bold text-sm text-gray-900">
-                  Notulen Rapat Weekly Syura #3 (Minggu Malam)
-                </h3>
-                <p class="text-xs text-gray-500">Moderator: Hilwa (COO) • Kehadiran: 7 / 7 Pendiri Hadir Lengkap</p>
-              </div>
-              <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded">Disahkan Alfatih (CEO)</span>
-            </div>
-
-            <!-- Strategic Decisions -->
-            <div class="mb-5">
-              <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Keputusan Strategis:</h4>
-              <ul class="text-xs text-gray-700 space-y-1.5 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                <li>• <strong>Penegakan Payment Gate:</strong> Semua pengerjaan teknis proyek Lini 1 & 2 wajib diverifikasi DP 50% oleh Novita.</li>
-                <li>• <strong>Disiplin Waktu Mahasiswa:</strong> Batas beban 3-5 jam/minggu dipantau ketat menjelang ujian semester Tazkia.</li>
-                <li>• <strong>Alokasi Kas Ditahan:</strong> Menjaga rasio 70% kas ditahan hingga saldo kas studio mencapai Rp3,5 juta.</li>
-              </ul>
-            </div>
-
-            <!-- Action Items Table -->
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-brand-border">
             <div>
-              <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Daftar Action Items:</h4>
-              <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                <table class="w-full text-xs text-left">
-                  <thead class="bg-gray-50 text-[10px] text-gray-500 uppercase">
-                    <tr>
-                      <th class="p-2.5">Action Item</th>
-                      <th class="p-2.5">PIC</th>
-                      <th class="p-2.5 text-right">Status di Kanban</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100">
-                    ${store.state.syuraMinutes[0]?.actionItems.map(item => {
-                      const pic = store.state.users[item.picId] || { name: item.picId };
-                      return `
-                        <tr>
-                          <td class="p-2.5 font-medium text-gray-800">${item.title}</td>
-                          <td class="p-2.5">${pic.name}</td>
-                          <td class="p-2.5 text-right">
-                            ${item.promoted ? `
-                              <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">
-                                Sudah di Kanban
-                              </span>
-                            ` : `
-                              <button onclick="promoteSyuraItemToTask('${item.id}')" class="text-[11px] bg-brand-emerald text-white px-2.5 py-1 rounded hover:bg-brand-hover transition">
-                                Jadikan Tugas di Kanban →
-                              </button>
-                            `}
-                          </td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
+              <h4 class="font-heading font-bold text-sm text-gray-900">Weekly Syura (Musyawarah Mingguan)</h4>
+              <p class="text-xs text-gray-500">Mencatat konsensus, evaluasi pekanan, dan action items tim ke Kanban.</p>
             </div>
-
+            <button onclick="openCreateSyuraModal()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Catat Notulen Syura Baru</span>
+            </button>
           </div>
+
+          ${store.state.syuraMinutes.length === 0 ? `
+            <div class="card-surface p-12 text-center text-gray-400">
+              <i data-lucide="file-text" class="w-10 h-10 mx-auto text-gray-300 mb-2"></i>
+              <p class="text-xs font-semibold text-gray-700">Belum ada notulen Weekly Syura yang dicatat.</p>
+              <p class="text-[11px] text-gray-500 mt-1">Rapat musyawarah mingguan (Ahad malam) diadakan untuk evaluasi dan action items tim.</p>
+              <button onclick="openCreateSyuraModal()" class="mt-4 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Catat Notulen Syura Perdana</span>
+              </button>
+            </div>
+          ` : store.state.syuraMinutes.map(minute => `
+            <div class="card-surface p-5 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border pb-3">
+                <div>
+                  <h3 class="font-heading font-bold text-sm text-gray-900">
+                    ${minute.title || 'Notulen Weekly Syura'}
+                  </h3>
+                  <p class="text-xs text-gray-500">Tanggal: ${minute.meetingDate} • Moderator: ${minute.moderator}</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded">Disahkan Pimpinan</span>
+              </div>
+
+              <!-- Strategic Decisions -->
+              <div>
+                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Keputusan Strategis:</h4>
+                <div class="text-xs text-gray-700 whitespace-pre-line bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  ${minute.decisions}
+                </div>
+              </div>
+
+              <!-- Action Items Table -->
+              <div>
+                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">Daftar Action Items:</h4>
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                  <table class="w-full text-xs text-left">
+                    <thead class="bg-gray-50 text-[10px] text-gray-500 uppercase">
+                      <tr>
+                        <th class="p-2.5">Action Item</th>
+                        <th class="p-2.5">PIC</th>
+                        <th class="p-2.5 text-right">Status di Kanban</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      ${(minute.actionItems || []).map(item => {
+                        const pic = store.state.users[item.picId] || { name: item.picId };
+                        return `
+                          <tr>
+                            <td class="p-2.5 font-medium text-gray-800">${item.title}</td>
+                            <td class="p-2.5">${pic.name}</td>
+                            <td class="p-2.5 text-right">
+                              ${item.promoted ? `
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">
+                                  Sudah di Kanban
+                                </span>
+                              ` : `
+                                <button onclick="promoteSyuraItemToTask('${item.id}')" class="text-[11px] bg-brand-emerald text-white px-2.5 py-1 rounded hover:bg-brand-hover transition">
+                                  Jadikan Tugas di Kanban →
+                                </button>
+                              `}
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                      ${(!minute.actionItems || minute.actionItems.length === 0) ? `
+                        <tr><td colspan="3" class="p-3 text-center text-gray-400 text-[11px]">Tidak ada action items khusus.</td></tr>
+                      ` : ''}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          `).join('')}
         </div>
       ` : `
         <!-- TAB 3: INDIKATOR KEADILAN SYIRKAH ABDAN -->
@@ -2024,8 +1522,12 @@ function copyCheckinsToWhatsApp() {
 }
 
 function promoteSyuraItemToTask(itemId) {
-  const minute = store.state.syuraMinutes[0];
-  const item = minute?.actionItems.find(a => a.id === itemId);
+  let targetMinute = null;
+  let item = null;
+  for (const m of store.state.syuraMinutes) {
+    item = (m.actionItems || []).find(a => a.id === itemId);
+    if (item) { targetMinute = m; break; }
+  }
   if (!item) return;
 
   const newTask = {
@@ -2034,14 +1536,14 @@ function promoteSyuraItemToTask(itemId) {
     description: 'Berasal dari keputusan rapat Weekly Syura',
     unitId: 'INTERNAL_OPS',
     projectId: null,
-    assigneeId: item.picId,
+    assigneeId: item.picId || store.state.activeUserId,
     createdById: store.state.activeUserId,
     sprintNumber: store.state.currentSprint,
     status: 'TODO',
     isBlocked: false,
     blockedReason: null,
     hoursEstimate: 1.0,
-    dueDate: '2026-03-15',
+    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
     dodChecklist: [{ label: item.title, checked: false }],
     workProofUrl: '',
     isClientVisible: false
@@ -2052,6 +1554,95 @@ function promoteSyuraItemToTask(itemId) {
   store.logAudit('SYURA_PROMOTED_TASK', 'Action Item: ' + item.title, 'Didorong ke papan tugas Kanban.');
   store.saveState();
   showToast('Action item berhasil diubah menjadi kartu Kanban!');
+  renderActiveView();
+}
+
+function openCreateSyuraModal() {
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-emerald"></i>
+          Catat Notulen Weekly Syura Baru
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Judul / Seri Syura *</label>
+            <input type="text" id="new-syura-title" placeholder="Misal: Notulen Weekly Syura #1" class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Tanggal Rapat *</label>
+            <input type="date" id="new-syura-date" value="${new Date().toISOString().split('T')[0]}" class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Moderator Rapat</label>
+          <select id="new-syura-mod" class="w-full border border-gray-300 rounded px-2.5 py-2">
+            ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
+              <option value="${u.name} (${u.roleLabel.split(' (')[0]})">${u.name} (${u.roleLabel.split(' (')[0]})</option>
+            `).join('')}
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Keputusan Strategis & Notulensi *</label>
+          <textarea id="new-syura-decisions" rows="4" placeholder="Tuliskan poin-poin keputusan musyawarah tim..." class="w-full border border-gray-300 rounded p-2.5"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Action Items (1 baris per poin untuk tugas di Kanban)</label>
+          <textarea id="new-syura-actions" rows="3" placeholder="Contoh:&#10;Terbitkan invoice resmi untuk Klien A&#10;Finalisasi materi workshop AI" class="w-full border border-gray-300 rounded p-2.5"></textarea>
+        </div>
+      </div>
+
+      <div class="border-t border-brand-border pt-4 flex justify-end gap-2">
+        <button onclick="closeModal()" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-xs">Batal</button>
+        <button onclick="submitNewSyura()" class="px-4 py-1.5 rounded bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold">Simpan Notulen</button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function submitNewSyura() {
+  const title = document.getElementById('new-syura-title')?.value.trim();
+  const meetingDate = document.getElementById('new-syura-date')?.value || new Date().toISOString().split('T')[0];
+  const moderator = document.getElementById('new-syura-mod')?.value || 'Hilwa (COO)';
+  const decisions = document.getElementById('new-syura-decisions')?.value.trim();
+  const actionsRaw = document.getElementById('new-syura-actions')?.value.trim();
+
+  if (!title || !decisions) {
+    showToast('Lengkapi judul dan keputusan strategis notulen!', 'error');
+    return;
+  }
+
+  const actionItems = actionsRaw ? actionsRaw.split('\n').filter(Boolean).map((line, idx) => ({
+    id: 'act-' + Date.now() + '-' + idx,
+    title: line.trim(),
+    picId: 'hilwa',
+    promoted: false
+  })) : [];
+
+  const newMinute = {
+    id: 'syura-' + Date.now(),
+    title: title,
+    meetingDate: meetingDate,
+    moderator: moderator,
+    attendees: Object.keys(store.state.users).filter(id => id !== 'client_guest'),
+    decisions: decisions,
+    actionItems: actionItems
+  };
+
+  store.state.syuraMinutes.unshift(newMinute);
+  store.logAudit('SYURA_RECORDED', 'Notulen: ' + title, 'Notulen Weekly Syura berhasil dicatat.');
+  store.saveState();
+  closeModal();
+  showToast('Notulen Weekly Syura berhasil disimpan!');
   renderActiveView();
 }
 
@@ -2125,7 +1716,15 @@ function renderArchivesView() {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            ${archives.map(a => {
+            ${archives.length === 0 ? `
+              <tr>
+                <td colspan="7" class="p-8 text-center text-gray-400">
+                  <i data-lucide="folder-open" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+                  <p class="font-semibold text-gray-600">Belum ada arsip atau tautan dokumen yang diunggah.</p>
+                  <p class="text-[11px] text-gray-400 mt-1">Klik tombol <strong>+ Tambah Arsip / Tautan</strong> di atas untuk menyimpan akad, SOP, atau dokumen proyek.</p>
+                </td>
+              </tr>
+            ` : archives.map(a => {
               const uploader = store.state.users[a.uploadedById] || { name: a.uploadedById };
               return `
                 <tr class="hover:bg-gray-50 transition">
@@ -2305,7 +1904,19 @@ function renderProjectsView() {
 
       <!-- Project Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        ${projects.map(p => {
+        ${projects.length === 0 ? `
+          <div class="col-span-full card-surface p-12 text-center text-gray-400">
+            <i data-lucide="briefcase" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+            <h4 class="font-bold text-gray-800 text-sm">Belum Ada Proyek Klien Terdaftar</h4>
+            <p class="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+              Daftarkan proyek baru dari klien B2B Anda untuk mengaktifkan pelacakan SLA, portal klien transparan, dan Gerbang Pembayaran DP 50%.
+            </p>
+            <button onclick="openCreateProjectModal()" class="mt-4 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Tambah Proyek Perdana</span>
+            </button>
+          </div>
+        ` : projects.map(p => {
           const unit = store.state.units[p.unitId] || { name: p.unitId, badgeClass: '' };
           const pic = store.state.users[p.picId] || { name: p.picId };
           const isWaitingDp = p.paymentGateStatus === 'LOCKED_WAITING_DP';
@@ -2667,6 +2278,11 @@ function renderCrmView() {
                     </div>
                   `;
                 }).join('')}
+                ${stageLeads.length === 0 ? `
+                  <div class="border border-dashed border-gray-300 rounded-lg p-3 text-center text-gray-400 text-[10px]">
+                    Kosong
+                  </div>
+                ` : ''}
               </div>
             </div>
           `;
@@ -2884,7 +2500,7 @@ function renderFinanceView() {
               <div>
                 <h4 class="font-bold text-amber-950">Pelacak Qardh Hasan (Talangan Modal Awal 0% Bunga)</h4>
                 <p class="text-amber-800 text-[11px] mt-0.5">
-                  Modal talangan pendiri: Rp300.000 • Sudah lunas dicicil: Rp100.000 • Sisa kewajiban: <strong>Rp200.000</strong>
+                  Modal talangan: ${formatRp(store.state.settings.qardhInitialTotalIdr || 0)} • Sudah lunas dicicil: ${formatRp(store.state.settings.qardhRepaidIdr || 0)} • Sisa kewajiban: <strong>${formatRp(Math.max(0, (store.state.settings.qardhInitialTotalIdr || 0) - (store.state.settings.qardhRepaidIdr || 0)))}</strong>
                 </p>
               </div>
             </div>
@@ -2910,7 +2526,15 @@ function renderFinanceView() {
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                ${store.state.cashflow.map(cf => {
+                ${store.state.cashflow.length === 0 ? `
+                  <tr>
+                    <td colspan="6" class="p-8 text-center text-gray-400">
+                      <i data-lucide="receipt" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+                      <p class="font-semibold text-gray-600">Belum ada transaksi kas yang dicatat.</p>
+                      <p class="text-[11px] text-gray-400 mt-1">Klik tombol <strong>+ Catat Transaksi Kas</strong> untuk mencatat pemasukan, opex, atau pengembalian qardh.</p>
+                    </td>
+                  </tr>
+                ` : store.state.cashflow.map(cf => {
                   const isPlus = cf.type === 'INCOME' || cf.type === 'QARDH_IN';
                   return `
                     <tr class="hover:bg-gray-50 transition">
@@ -2948,9 +2572,9 @@ function renderFinanceView() {
             <div class="border-b border-brand-border pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 class="font-heading font-bold text-sm text-gray-900">
-                  Simulasi Penutupan Buku Akhir Bulan & Bagi Hasil Syirkah 'Abdan
+                  Penutupan Buku Akhir Bulan & Bagi Hasil Syirkah 'Abdan
                 </h3>
-                <p class="text-xs text-gray-500">Periode: <strong>Maret 2026</strong> • Sistem Zero-Riba, Zero-Gharar</p>
+                <p class="text-xs text-gray-500">Periode: <strong>${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong> • Sistem Zero-Riba, Zero-Gharar</p>
               </div>
               ${canManageFinance ? `
                 <button onclick="lockSyirkahPeriod()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
@@ -2987,7 +2611,7 @@ function renderFinanceView() {
             <!-- Distribution Breakdown across 7 Founders -->
             <div class="mt-4">
               <h4 class="font-heading font-bold text-xs text-gray-800 mb-2">
-                Rincian Estimasi Hak Bagi Hasil 7 Pendiri (Maret 2026):
+                Rincian Estimasi Hak Bagi Hasil 7 Pendiri (${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}):
               </h4>
               <div class="overflow-x-auto border border-brand-border rounded-lg">
                 <table class="w-full text-xs text-left">
@@ -3002,9 +2626,9 @@ function renderFinanceView() {
                   </thead>
                   <tbody class="divide-y divide-gray-100">
                     ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(f => {
-                      // Simulated weight for active project executor (Alfatih, Hilwa, Novita, Ilham)
-                      const isHighExecutor = ['alfatih', 'ilham', 'aywa'].includes(f.id);
-                      const executorPortion = isHighExecutor ? Math.floor(executorPool / 3) : 0;
+                      const founderProjectTasks = store.state.tasks.filter(t => t.assigneeId === f.id && t.projectId && t.status === 'DONE').length;
+                      const totalProjectDoneTasks = store.state.tasks.filter(t => t.projectId && t.status === 'DONE').length;
+                      const executorPortion = totalProjectDoneTasks > 0 ? Math.floor((executorPool * founderProjectTasks) / totalProjectDoneTasks) : 0;
                       const totalFounderShare = perFounderEqual + executorPortion;
 
                       return `
@@ -3049,9 +2673,9 @@ function renderFinanceView() {
               <div>
                 <label class="block font-semibold mb-1">Pilih Proyek Klien</label>
                 <select id="inv-project-select" class="w-full border rounded p-2">
-                  ${store.state.projects.map(p => `
+                  ${store.state.projects.length > 0 ? store.state.projects.map(p => `
                     <option value="${p.id}">${p.title} (${p.clientName})</option>
-                  `).join('')}
+                  `).join('') : '<option value="" disabled selected>Belum ada proyek terdaftar</option>'}
                 </select>
               </div>
               <div>
@@ -3334,12 +2958,28 @@ function renderAcademyView() {
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span>Salin WA Peserta Lunas</span>
           </button>
+          <button onclick="openCreateBatchModal()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Buat Batch Baru</span>
+          </button>
         </div>
       </div>
 
       <!-- Batch Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        ${batches.map(b => `
+        ${batches.length === 0 ? `
+          <div class="col-span-full card-surface p-12 text-center text-gray-400">
+            <i data-lucide="graduation-cap" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+            <h4 class="font-bold text-gray-800 text-sm">Belum Ada Batch Pelatihan AI</h4>
+            <p class="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+              Buat batch workshop publik (Rp75.000) atau pelatihan korporat B2B untuk mulai mengumpulkan peserta dan mencatat pemasukan berulang.
+            </p>
+            <button onclick="openCreateBatchModal()" class="mt-4 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Buat Batch Pelatihan Baru</span>
+            </button>
+          </div>
+        ` : batches.map(b => `
           <div class="card-surface p-5 space-y-4">
             <div class="flex items-start justify-between gap-3">
               <div>
@@ -3358,32 +2998,38 @@ function renderAcademyView() {
             <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg text-xs">
               <div>
                 <span class="text-[10px] text-gray-500 block">Peserta Terdaftar</span>
-                <strong class="text-gray-900 text-sm font-mono">${b.registeredCount} / ${b.quota} Kuota</strong>
+                <strong class="text-gray-900 text-sm font-mono">${b.registeredCount || 0} / ${b.quota || 30} Kuota</strong>
               </div>
               <div>
                 <span class="text-[10px] text-gray-500 block">Pemasukan Terverifikasi</span>
-                <strong class="text-brand-emerald text-sm font-mono">Rp${(b.verifiedCount * b.priceIdr).toLocaleString('id-ID')}</strong>
+                <strong class="text-brand-emerald text-sm font-mono">Rp${((b.verifiedCount || 0) * (b.priceIdr || 0)).toLocaleString('id-ID')}</strong>
               </div>
             </div>
 
             <!-- Daftar Peserta Singkat -->
             <div>
-              <span class="text-xs font-bold text-gray-800 block mb-2">Daftar Peserta (${b.participants.length}):</span>
-              <div class="space-y-1.5 max-h-36 overflow-y-auto">
-                ${b.participants.map(p => `
-                  <div class="p-2 rounded bg-white border border-gray-200 flex items-center justify-between text-xs">
-                    <div>
-                      <p class="font-bold text-gray-900">${p.name}</p>
-                      <span class="text-[10px] text-gray-500 font-mono">${p.phone}</span>
+              <span class="text-xs font-bold text-gray-800 block mb-2">Daftar Peserta (${(b.participants || []).length}):</span>
+              ${(!b.participants || b.participants.length === 0) ? `
+                <div class="p-3 text-center text-gray-400 text-[11px] border border-dashed rounded-lg">
+                  Belum ada peserta yang mendaftar pada batch ini.
+                </div>
+              ` : `
+                <div class="space-y-1.5 max-h-36 overflow-y-auto">
+                  ${b.participants.map(p => `
+                    <div class="p-2 rounded bg-white border border-gray-200 flex items-center justify-between text-xs">
+                      <div>
+                        <p class="font-bold text-gray-900">${p.name}</p>
+                        <span class="text-[10px] text-gray-500 font-mono">${p.phone}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${p.paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                          ${p.paid ? 'Lunas' : 'Menunggu'}
+                        </span>
+                      </div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${p.paid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                        ${p.paid ? 'Lunas' : 'Menunggu'}
-                      </span>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
+                  `).join('')}
+                </div>
+              `}
             </div>
 
           </div>
@@ -3397,10 +3043,105 @@ function renderAcademyView() {
 function initAcademyEvents() {}
 
 function copyPaidParticipantsWa() {
-  const batch = store.state.academyBatches[0];
-  const paidPhones = batch.participants.filter(p => p.paid).map(p => p.phone).join('\n');
-  navigator.clipboard.writeText(paidPhones);
-  showToast('Daftar nomor WhatsApp peserta lunas berhasil disalin!');
+  if (!store.state.academyBatches || store.state.academyBatches.length === 0) {
+    showToast('Belum ada batch pelatihan yang terdaftar.', 'warning');
+    return;
+  }
+  const allPaidPhones = [];
+  store.state.academyBatches.forEach(b => {
+    (b.participants || []).filter(p => p.paid && p.phone).forEach(p => allPaidPhones.push(p.phone));
+  });
+  if (allPaidPhones.length === 0) {
+    showToast('Belum ada peserta berstatus lunas.', 'info');
+    return;
+  }
+  navigator.clipboard.writeText(allPaidPhones.join('\n'));
+  showToast('Nomor WhatsApp peserta lunas berhasil disalin!');
+}
+
+function openCreateBatchModal() {
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-emerald"></i>
+          Buat Batch Pelatihan AI Baru (Lini 5)
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Judul Workshop / Pelatihan *</label>
+          <input type="text" id="new-batch-title" placeholder="Misal: Workshop Praktik AI untuk Mahasiswa & Profesional" class="w-full border border-gray-300 rounded px-3 py-2">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Tipe Pelatihan *</label>
+            <select id="new-batch-type" class="w-full border border-gray-300 rounded px-2.5 py-2">
+              <option value="PUBLIC_WORKSHOP">Workshop Publik (B2C — Rp75.000)</option>
+              <option value="CORPORATE_B2B">Corporate Training (B2B)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Tanggal Pelaksanaan *</label>
+            <input type="date" id="new-batch-date" class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Harga Tiket / Nilai Kontrak (Rp) *</label>
+            <input type="number" id="new-batch-price" value="75000" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Kuota Maksimal Peserta</label>
+            <input type="number" id="new-batch-quota" value="30" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-brand-border pt-4 flex justify-end gap-2">
+        <button onclick="closeModal()" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-xs">Batal</button>
+        <button onclick="submitNewBatch()" class="px-4 py-1.5 rounded bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold">Buat Batch</button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function submitNewBatch() {
+  const title = document.getElementById('new-batch-title')?.value.trim();
+  const type = document.getElementById('new-batch-type')?.value;
+  const date = document.getElementById('new-batch-date')?.value || new Date().toISOString().split('T')[0];
+  const price = parseInt(document.getElementById('new-batch-price')?.value) || 75000;
+  const quota = parseInt(document.getElementById('new-batch-quota')?.value) || 30;
+
+  if (!title) {
+    showToast('Judul pelatihan wajib diisi!', 'error');
+    return;
+  }
+
+  const newBatch = {
+    id: 'batch-' + Date.now(),
+    title: title,
+    type: type,
+    priceIdr: price,
+    date: date,
+    quota: quota,
+    registeredCount: 0,
+    verifiedCount: 0,
+    status: 'REGISTRATION_OPEN',
+    participants: []
+  };
+
+  store.state.academyBatches.unshift(newBatch);
+  store.logAudit('ACADEMY_BATCH_CREATED', 'Batch: ' + title, `Batch baru dibuat dengan kuota ${quota} peserta.`);
+  store.saveState();
+  closeModal();
+  showToast('Batch pelatihan AI berhasil dibuat!');
+  renderActiveView();
 }
 
 // ------------------------------------------------------------------------------
@@ -3423,11 +3164,20 @@ function renderAffiliateView() {
             </h3>
             <p class="text-xs text-gray-500">TikTok, Instagram Reels & YouTube Shorts untuk membangun awareness.</p>
           </div>
-          <span class="text-xs bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded">Lini 4</span>
+          <button onclick="openAddContentModal()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Tambah Konten</span>
+          </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          ${contents.map(c => `
+          ${contents.length === 0 ? `
+            <div class="col-span-full border border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-400 text-xs">
+              <i data-lucide="video" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+              <p class="font-semibold text-gray-600">Belum ada draf atau rencana konten video.</p>
+              <p class="text-[11px] text-gray-400 mt-1">Klik <strong>+ Tambah Konten</strong> untuk mendaftarkan ide konten edukasi/promo.</p>
+            </div>
+          ` : contents.map(c => `
             <div class="p-3.5 rounded-lg border border-gray-200 bg-white space-y-2">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-50 text-orange-700">
@@ -3446,10 +3196,19 @@ function renderAffiliateView() {
 
       <!-- Affiliate Ledger -->
       <div class="card-surface p-5 space-y-4">
-        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-          <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
-          Buku Pelacakan Komisi Afiliasi (End-Buyer Growth Network)
-        </h3>
+        <div class="flex items-center justify-between border-b border-brand-border pb-3">
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+              Buku Pelacakan Komisi Afiliasi (End-Buyer Growth Network)
+            </h3>
+            <p class="text-xs text-gray-500">Pelacakan pendapatan pasif dari program afiliasi tools & referral.</p>
+          </div>
+          <button onclick="openAddCommissionModal()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Catat Komisi</span>
+          </button>
+        </div>
         
         <div class="overflow-x-auto border border-brand-border rounded-lg">
           <table class="w-full text-xs text-left">
@@ -3464,7 +3223,15 @@ function renderAffiliateView() {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              ${commissions.map(cm => `
+              ${commissions.length === 0 ? `
+                <tr>
+                  <td colspan="6" class="p-8 text-center text-gray-400">
+                    <i data-lucide="coins" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+                    <p class="font-semibold text-gray-600">Belum ada catatan komisi afiliasi.</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Klik <strong>+ Catat Komisi</strong> untuk mencatat pemasukan referral.</p>
+                  </td>
+                </tr>
+              ` : commissions.map(cm => `
                 <tr>
                   <td class="p-3 font-bold text-gray-900">${cm.partnerName}</td>
                   <td class="p-3 text-gray-600">${cm.period}</td>
@@ -3488,6 +3255,176 @@ function renderAffiliateView() {
 }
 
 function initAffiliateEvents() {}
+
+function openAddContentModal() {
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-emerald"></i>
+          Tambah Ide / Rencana Konten Media (Lini 4)
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Judul / Konsep Konten *</label>
+          <input type="text" id="new-content-title" placeholder="Misal: 3 AI Tools Gratis untuk Skripsi Mahasiswa" class="w-full border border-gray-300 rounded px-3 py-2">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Platform *</label>
+            <select id="new-content-platform" class="w-full border border-gray-300 rounded px-2.5 py-2">
+              <option value="TikTok">TikTok</option>
+              <option value="Instagram Reels">Instagram Reels</option>
+              <option value="YouTube Shorts">YouTube Shorts</option>
+              <option value="LinkedIn Post">LinkedIn Post</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Tahap Produksi</label>
+            <select id="new-content-stage" class="w-full border border-gray-300 rounded px-2.5 py-2">
+              <option value="IDE_RISET">Ide & Riset Skrip</option>
+              <option value="RECORDING">Shooting / Recording</option>
+              <option value="EDITING">Editing</option>
+              <option value="SIAP_TAYANG">Siap Tayang</option>
+              <option value="SUDAH_TAYANG">Sudah Tayang</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Target Program / Call-to-Action</label>
+          <input type="text" id="new-content-target" placeholder="Misal: Promo AI Academy / Referral Link" class="w-full border border-gray-300 rounded px-3 py-2">
+        </div>
+      </div>
+
+      <div class="border-t border-brand-border pt-4 flex justify-end gap-2">
+        <button onclick="closeModal()" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-xs">Batal</button>
+        <button onclick="submitNewContent()" class="px-4 py-1.5 rounded bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold">Simpan Konten</button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function submitNewContent() {
+  const title = document.getElementById('new-content-title')?.value.trim();
+  const platform = document.getElementById('new-content-platform')?.value;
+  const stage = document.getElementById('new-content-stage')?.value;
+  const target = document.getElementById('new-content-target')?.value.trim() || 'Branding Umum';
+
+  if (!title) {
+    showToast('Judul konten wajib diisi!', 'error');
+    return;
+  }
+
+  const newC = {
+    id: 'aff-c-' + Date.now(),
+    title: title,
+    platform: platform,
+    stage: stage,
+    picId: store.state.activeUserId,
+    postUrl: '',
+    targetProgram: target
+  };
+
+  store.state.affiliateContents.unshift(newC);
+  store.logAudit('CONTENT_ADDED', 'Media: ' + title, `Ide konten ditambahkan untuk platform ${platform}`);
+  store.saveState();
+  closeModal();
+  showToast('Ide konten baru berhasil ditambahkan!');
+  renderActiveView();
+}
+
+function openAddCommissionModal() {
+  const modalHtml = `
+    <div class="p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-brand-emerald"></i>
+          Catat Komisi Afiliasi Baru
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 mb-1">Mitra / Program Afiliasi *</label>
+          <input type="text" id="new-com-partner" placeholder="Misal: TikTok Shop / Referral Hosting" class="w-full border border-gray-300 rounded px-3 py-2">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Periode *</label>
+            <input type="text" id="new-com-period" value="${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}" class="w-full border border-gray-300 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Nominal Komisi (Rp) *</label>
+            <input type="number" id="new-com-amount" placeholder="250000" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Jumlah Klik</label>
+            <input type="number" id="new-com-clicks" value="0" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Konversi</label>
+            <input type="number" id="new-com-conv" value="0" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Status Pencairan</label>
+            <select id="new-com-status" class="w-full border border-gray-300 rounded px-2.5 py-2">
+              <option value="PENDING">Pending</option>
+              <option value="DISBURSED">Masuk ke Kas (Disbursed)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-brand-border pt-4 flex justify-end gap-2">
+        <button onclick="closeModal()" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-xs">Batal</button>
+        <button onclick="submitNewCommission()" class="px-4 py-1.5 rounded bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold">Simpan Komisi</button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function submitNewCommission() {
+  const partner = document.getElementById('new-com-partner')?.value.trim();
+  const period = document.getElementById('new-com-period')?.value.trim() || new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const amount = parseInt(document.getElementById('new-com-amount')?.value) || 0;
+  const clicks = parseInt(document.getElementById('new-com-clicks')?.value) || 0;
+  const conv = parseInt(document.getElementById('new-com-conv')?.value) || 0;
+  const status = document.getElementById('new-com-status')?.value || 'PENDING';
+
+  if (!partner || amount <= 0) {
+    showToast('Lengkapi nama mitra dan nominal komisi yang valid!', 'error');
+    return;
+  }
+
+  const newCom = {
+    id: 'com-' + Date.now(),
+    partnerName: partner,
+    period: period,
+    clicks: clicks,
+    conversions: conv,
+    commissionIdr: amount,
+    status: status
+  };
+
+  store.state.affiliateCommissions.unshift(newCom);
+  store.logAudit('COMMISSION_RECORDED', 'Afiliasi: ' + partner, `Komisi Rp${amount.toLocaleString('id-ID')} dicatat (${status})`);
+  store.saveState();
+  closeModal();
+  showToast('Komisi afiliasi berhasil dicatat!');
+  renderActiveView();
+}
 
 // ------------------------------------------------------------------------------
 // VIEW 10: BOT WA / TELEGRAM / INTEGRATIONS (Tahap 2)
@@ -3560,7 +3497,13 @@ function renderIntegrationsView() {
       <div class="card-surface p-5 space-y-3">
         <h4 class="font-heading font-bold text-xs text-gray-900 uppercase tracking-wider">Log Pengiriman Pesan Bot:</h4>
         <div class="space-y-2">
-          ${store.state.botLogs.map(log => `
+          ${store.state.botLogs.length === 0 ? `
+            <div class="p-6 text-center text-gray-400 text-xs">
+              <i data-lucide="message-square-dashed" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+              <p class="font-semibold text-gray-600">Belum ada riwayat pengiriman notifikasi bot.</p>
+              <p class="text-[11px] text-gray-400 mt-1">Klik <strong>Kirim Pesan Uji Coba ke WhatsApp</strong> di atas untuk menguji coba koneksi bot.</p>
+            </div>
+          ` : store.state.botLogs.map(log => `
             <div class="p-2.5 rounded bg-gray-50 border border-gray-200 flex items-center justify-between text-xs">
               <div>
                 <strong class="text-gray-900">${log.type}</strong>
@@ -3597,6 +3540,10 @@ function sendTestBotMessage() {
 // VIEW 11: ANALITIK & LAPORAN AKADEMIK / ANALYTICS (Tahap 3)
 // ------------------------------------------------------------------------------
 function renderAnalyticsView() {
+  const totalIncome = store.state.cashflow
+    .filter(c => c.type === 'INCOME' || c.type === 'IN')
+    .reduce((sum, c) => sum + Number(c.amountIdr || 0), 0);
+
   return `
     <div class="space-y-6">
       
@@ -3624,7 +3571,7 @@ function renderAnalyticsView() {
         <div class="card-surface p-5 space-y-3">
           <h4 class="font-heading font-bold text-xs text-gray-900 flex items-center justify-between">
             <span>Kontribusi Pendapatan per 5 Unit Bisnis (Q1 2026)</span>
-            <span class="text-[10px] text-brand-emerald font-mono">Rp12.000.000 Total</span>
+            <span class="text-[10px] text-brand-emerald font-mono">Rp${totalIncome.toLocaleString('id-ID')} Total</span>
           </h4>
           <div class="h-64 relative">
             <canvas id="chart-units-revenue"></canvas>
@@ -3651,13 +3598,40 @@ function renderAnalyticsView() {
 function initAnalyticsCharts() {
   const ctxUnits = document.getElementById('chart-units-revenue');
   if (ctxUnits) {
+    const unitMap = {
+      'LINI_1_DESIGN': 0,
+      'LINI_2_WEBTECH': 0,
+      'LINI_3_ASSIST_DATA': 0,
+      'LINI_4_MEDIA_AFFILIATE': 0,
+      'LINI_5_AI_ACADEMY': 0
+    };
+
+    store.state.cashflow.filter(c => c.type === 'INCOME' || c.type === 'IN').forEach(c => {
+      if (c.projectId) {
+        const p = store.state.projects.find(proj => proj.id === c.projectId);
+        if (p && unitMap[p.unitId] !== undefined) {
+          unitMap[p.unitId] += Number(c.amountIdr || 0) / 1000000;
+        }
+      } else if (c.unitId && unitMap[c.unitId] !== undefined) {
+        unitMap[c.unitId] += Number(c.amountIdr || 0) / 1000000;
+      }
+    });
+
+    const unitData = [
+      unitMap['LINI_1_DESIGN'],
+      unitMap['LINI_2_WEBTECH'],
+      unitMap['LINI_3_ASSIST_DATA'],
+      unitMap['LINI_4_MEDIA_AFFILIATE'],
+      unitMap['LINI_5_AI_ACADEMY']
+    ];
+
     new Chart(ctxUnits, {
       type: 'bar',
       data: {
         labels: ['Lini 1 Design', 'Lini 2 WebTech', 'Lini 3 Data', 'Lini 4 Media', 'Lini 5 AI Academy'],
         datasets: [{
           label: 'Pendapatan (Juta Rp)',
-          data: [2.25, 0.0, 1.5, 0.75, 7.5],
+          data: unitData,
           backgroundColor: ['#7C3AED', '#0284C7', '#0D9488', '#EA580C', '#0F4C3A'],
           borderRadius: 6
         }]
@@ -3673,13 +3647,22 @@ function initAnalyticsCharts() {
 
   const ctxBurnout = document.getElementById('chart-burnout-radar');
   if (ctxBurnout) {
-    const founders = ['Alfatih', 'Hilwa', 'Novita', 'Ilham', 'Syarah', 'Aywa', 'Ahmad'];
-    const hours = [3.0, 2.0, 1.5, 2.0, 2.0, 4.5, 2.5];
+    const founders = [
+      { id: 'alfatih', name: 'Alfatih' },
+      { id: 'hilwa', name: 'Hilwa' },
+      { id: 'novita', name: 'Novita' },
+      { id: 'ilham', name: 'Ilham' },
+      { id: 'syarah', name: 'Syarah' },
+      { id: 'aywa', name: 'Aywa' },
+      { id: 'ahmad', name: 'Ahmad' }
+    ];
+    const labels = founders.map(f => f.name);
+    const hours = founders.map(f => store.calculateUserWeeklyHours(f.id));
 
     new Chart(ctxBurnout, {
       type: 'bar',
       data: {
-        labels: founders,
+        labels: labels,
         datasets: [{
           label: 'Jam Aktual / Pekan',
           data: hours,
@@ -3704,31 +3687,41 @@ function initAnalyticsCharts() {
 
 function exportMkutPdfReport() {
   const printContainer = document.getElementById('printable-content');
+  const totalIncome = store.state.cashflow
+    .filter(c => c.type === 'INCOME' || c.type === 'IN')
+    .reduce((sum, c) => sum + Number(c.amountIdr || 0), 0);
+  const currentCash = store.calculateCashBalance();
+  const zakatEstimated = Math.round(totalIncome * 0.025);
+
+  const checkins = store.state.checkins;
+  const compliantCount = checkins.filter(c => !c.isLate).length;
+  const complianceRate = checkins.length > 0 ? Math.round((compliantCount / checkins.length) * 100) : 100;
+
   printContainer.innerHTML = `
     <div style="font-family: Arial, sans-serif; max-width: 750px; margin: 0 auto; padding: 25px;">
       <div style="text-align: center; border-bottom: 2px solid #0F4C3A; padding-bottom: 15px; margin-bottom: 25px;">
         <h2 style="color: #0F4C3A; margin: 0;">LAPORAN EVALUASI AKADEMIK & TRACTION REPORT</h2>
         <p style="margin: 5px 0; font-size: 13px; color: #555;">Mata Kuliah Kewirausahaan (MKUT.102) • Program Studi Sistem Informasi STMIK Tazkia</p>
-        <p style="margin: 0; font-size: 12px; font-weight: bold; color: #0F4C3A;">KaryaKita AI & Venture Studio (Kuartal 1 2026)</p>
+        <p style="margin: 0; font-size: 12px; font-weight: bold; color: #0F4C3A;">KaryaKita AI & Venture Studio (Sprint ${store.state.currentSprint || 1})</p>
       </div>
 
       <h3 style="color: #333; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">1. Ringkasan Kinerja Usaha (Traction)</h3>
       <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-bottom: 20px;">
         <tr>
           <td style="padding: 6px; border: 1px solid #ddd; width: 50%;">Total Pemasukan Bruto Terverifikasi:</td>
-          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp12.000.000</td>
+          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp${totalIncome.toLocaleString('id-ID')}</td>
         </tr>
         <tr>
           <td style="padding: 6px; border: 1px solid #ddd;">Saldo Kas Mandiri Aktif:</td>
-          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp9.850.000 (Lulus Graduation Rule)</td>
+          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp${currentCash.toLocaleString('id-ID')} ${currentCash >= store.state.settings.graduationThresholdIdr ? '(Lulus Graduation Rule)' : '(Mode Bootstrapping)'}</td>
         </tr>
         <tr>
-          <td style="padding: 6px; border: 1px solid #ddd;">Kewajiban Zakat/Infaq (2,5%):</td>
-          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp295.000</td>
+          <td style="padding: 6px; border: 1px solid #ddd;">Estimasi Kewajiban Zakat/Infaq Usaha (2,5%):</td>
+          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">Rp${zakatEstimated.toLocaleString('id-ID')}</td>
         </tr>
         <tr>
           <td style="padding: 6px; border: 1px solid #ddd;">Tingkat Kepatuhan Async Check-In:</td>
-          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">92% (> Target 85%)</td>
+          <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${complianceRate}%</td>
         </tr>
       </table>
 
@@ -3864,7 +3857,26 @@ function initSystemEvents() {
 // VIEW 13: PORTAL KLIEN B2B / CLIENT PORTAL (Tahap 3)
 // ------------------------------------------------------------------------------
 function renderClientPortalView() {
-  const proj = store.state.projects[0]; // PT Halal Mart
+  if (!store.state.projects || store.state.projects.length === 0) {
+    return `
+      <div class="max-w-2xl mx-auto py-12 px-4 text-center card-surface bg-white space-y-4">
+        <div class="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-brand-emerald flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-8 h-8"></i>
+        </div>
+        <h3 class="font-heading font-bold text-base text-gray-900">Portal Klien B2B KaryaKita</h3>
+        <p class="text-xs text-gray-500 max-w-md mx-auto">
+          Belum ada proyek aktif yang tercatat di sistem. Ketika proyek klien dibuat di menu <strong>Proyek</strong>, tautan pemantauan progres transparan untuk klien B2B akan otomatis aktif di sini.
+        </p>
+        <button onclick="navigateTo('projects')" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition">
+          <i data-lucide="folder-plus" class="w-4 h-4"></i>
+          <span>Buka Menu Proyek</span>
+        </button>
+      </div>
+    `;
+  }
+
+  const proj = store.state.projects[0];
+  const clientVisibleTasks = store.state.tasks.filter(t => t.projectId === proj.id && t.isClientVisible);
 
   return `
     <div class="space-y-6 max-w-4xl mx-auto">
@@ -3876,7 +3888,7 @@ function renderClientPortalView() {
             Portal Pemantauan Klien Resmi KaryaKita
           </span>
           <h2 class="font-heading font-bold text-lg text-gray-900 mt-2">${proj.title}</h2>
-          <p class="text-xs text-gray-500">Klien Terhormat: <strong>${proj.clientName}</strong> • PM: Hilwa (COO)</p>
+          <p class="text-xs text-gray-500">Klien Terhormat: <strong>${proj.clientName}</strong> • PM: ${store.state.users[proj.picId]?.name || 'Tim KaryaKita'}</p>
         </div>
         <a href="https://wa.me/6281234567890" target="_blank" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition flex-shrink-0">
           <i data-lucide="message-circle" class="w-4 h-4"></i>
@@ -3889,32 +3901,24 @@ function renderClientPortalView() {
         <h4 class="font-heading font-bold text-sm text-gray-900">Linimasa & Tahapan Proyek</h4>
         
         <div class="space-y-3">
-          <div class="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs">
-            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-700"></i>
-            <div class="flex-1">
-              <strong class="text-emerald-950">1. Discovery & Konsep Desain Identitas</strong>
-              <p class="text-[11px] text-emerald-800">Selesai disetujui (100%)</p>
+          ${clientVisibleTasks.length === 0 ? `
+            <div class="p-6 text-center text-gray-400 text-xs border border-dashed rounded-lg">
+              <i data-lucide="list-checks" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
+              <p class="font-semibold text-gray-600">Tahapan progres belum ditambahkan untuk proyek ini.</p>
+              <p class="text-[11px] text-gray-400 mt-0.5">Tugas dengan opsi "Tampilkan ke Klien" di Papan Tugas akan tampil transparan di linimasa ini.</p>
             </div>
-            <span class="text-[10px] font-bold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">Selesai</span>
-          </div>
-
-          <div class="flex items-center gap-3 p-3 rounded-lg bg-sky-50 border border-sky-200 text-xs">
-            <i data-lucide="clock" class="w-5 h-5 text-sky-700"></i>
-            <div class="flex-1">
-              <strong class="text-sky-950">2. Penyusunan Moodboard & Eksplorasi Logo</strong>
-              <p class="text-[11px] text-sky-800">Sedang dikerjakan oleh tim desain KaryaKita (Progres 65%)</p>
+          ` : clientVisibleTasks.map((t, idx) => `
+            <div class="flex items-center gap-3 p-3 rounded-lg ${t.status === 'DONE' ? 'bg-emerald-50 border border-emerald-200' : t.status === 'IN_PROGRESS' ? 'bg-sky-50 border border-sky-200' : 'bg-gray-50 border border-gray-200'} text-xs">
+              <i data-lucide="${t.status === 'DONE' ? 'check-circle-2' : t.status === 'IN_PROGRESS' ? 'clock' : 'circle'}" class="w-5 h-5 ${t.status === 'DONE' ? 'text-emerald-700' : t.status === 'IN_PROGRESS' ? 'text-sky-700' : 'text-gray-400'}"></i>
+              <div class="flex-1">
+                <strong class="${t.status === 'DONE' ? 'text-emerald-950' : t.status === 'IN_PROGRESS' ? 'text-sky-950' : 'text-gray-700'}">${idx + 1}. ${t.title}</strong>
+                <p class="text-[11px] ${t.status === 'DONE' ? 'text-emerald-800' : t.status === 'IN_PROGRESS' ? 'text-sky-800' : 'text-gray-500'}">${t.description || 'Pengerjaan sesuai scope proyek.'}</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${t.status === 'DONE' ? 'bg-emerald-200 text-emerald-900' : t.status === 'IN_PROGRESS' ? 'bg-sky-200 text-sky-900' : 'bg-gray-200 text-gray-600'}">
+                ${t.status === 'DONE' ? 'Selesai' : t.status === 'IN_PROGRESS' ? 'In Progress' : 'Menunggu'}
+              </span>
             </div>
-            <span class="text-[10px] font-bold bg-sky-200 text-sky-900 px-2 py-0.5 rounded">In Progress</span>
-          </div>
-
-          <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-400">
-            <i data-lucide="circle" class="w-5 h-5"></i>
-            <div class="flex-1">
-              <strong class="text-gray-700">3. Finalisasi Brand Guideline & Serah Terima Master</strong>
-              <p class="text-[11px] text-gray-400">Menunggu tahapan sebelumnya selesai</p>
-            </div>
-            <span class="text-[10px] font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Menunggu</span>
-          </div>
+          `).join('')}
         </div>
       </div>
 
@@ -3923,7 +3927,7 @@ function renderClientPortalView() {
         <div class="flex items-center justify-between border-b border-brand-border pb-3">
           <h4 class="font-heading font-bold text-sm text-gray-900">Kirim Catatan Masukan / Revisi</h4>
           <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded">
-            Sisa Kuota Revisi: ${proj.revisionQuota - proj.revisionUsed} / ${proj.revisionQuota}
+            Sisa Kuota Revisi: ${Math.max(0, (proj.revisionQuota || 2) - (proj.revisionUsed || 0))} / ${proj.revisionQuota || 2}
           </span>
         </div>
 
@@ -3956,11 +3960,11 @@ function submitClientRevision(projectId) {
 
   const proj = store.state.projects.find(p => p.id === projectId);
   if (proj) {
-    if (proj.revisionUsed >= proj.revisionQuota) {
+    if (proj.revisionUsed >= (proj.revisionQuota || 2)) {
       showToast('Kuota revisi gratis telah habis sesuai kontrak.', 'error');
       return;
     }
-    proj.revisionUsed += 1;
+    proj.revisionUsed = (proj.revisionUsed || 0) + 1;
 
     // Automatically create a new review task in Kanban!
     const newTask = {
@@ -3970,13 +3974,13 @@ function submitClientRevision(projectId) {
       unitId: proj.unitId,
       projectId: proj.id,
       assigneeId: proj.picId,
-      createdById: 'client_guest',
-      sprintNumber: store.state.currentSprint,
+      createdById: store.state.activeUserId,
+      sprintNumber: store.state.currentSprint || 1,
       status: 'TODO',
       isBlocked: false,
       blockedReason: null,
       hoursEstimate: 1.5,
-      dueDate: '2026-03-20',
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       dodChecklist: [{ label: 'Tuntaskan catatan revisi klien', checked: false }],
       workProofUrl: '',
       isClientVisible: true
@@ -4010,7 +4014,7 @@ function updateTopBanners() {
 
   const cash = store.calculateCashBalance();
   const threshold = store.state.settings.graduationThresholdIdr;
-  const pct = Math.min(100, Math.round((cash / threshold) * 100));
+  const pct = threshold > 0 ? Math.min(100, Math.round((cash / threshold) * 100)) : 0;
 
   const gradText = document.getElementById('grad-rule-text');
   const gradBar = document.getElementById('grad-rule-bar');
@@ -4026,6 +4030,16 @@ function updateTopBanners() {
       gradBadge.textContent = 'Mode Bootstrapping (Kas Ditahan 70%)';
       gradBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300';
     }
+  }
+
+  // Update Topbar Sprint and Tasks Badge
+  const sprintBadge = document.getElementById('topbar-sprint-badge');
+  if (sprintBadge) {
+    sprintBadge.textContent = `Sprint ${store.state.currentSprint || 1} (Q1)`;
+  }
+  const taskBadge = document.getElementById('badge-count-tasks');
+  if (taskBadge) {
+    taskBadge.textContent = store.state.tasks.length;
   }
 
   // Update Sidebar user profile display
@@ -4058,7 +4072,7 @@ document.addEventListener('DOMContentLoaded', () => {
       store.state.activeUserId = e.target.value;
       store.saveState();
       updateTopBanners();
-      showToast('Beralih simulasi peran: ' + store.getCurrentUser().name);
+      showToast('Beralih peran: ' + store.getCurrentUser().name);
       renderActiveView();
     });
   }
@@ -4067,7 +4081,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReset = document.getElementById('btn-reset-data');
   if (btnReset) {
     btnReset.addEventListener('click', () => {
-      if (confirm('Kembalikan seluruh data ke kondisi awal prototype?')) {
+      if (confirm('Kosongkan dan atur ulang data ke kondisi awal bersih?')) {
         store.resetState();
         updateTopBanners();
         showToast('Data berhasil dikembalikan ke kondisi awal!');
