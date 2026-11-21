@@ -1,0 +1,32 @@
+{
+  "name": "karyakita-hub",
+  "version": "1.0.0",
+  "description": "KaryaKita Hub — Internal Venture Studio Operating System (7 Mahasiswa Sistem Informasi STMIK Tazkia)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node prisma/seed.ts"
+  },
+  "keywords": [
+    "karyakita",
+    "venture-studio",
+    "dashboard",
+    "syariah",
+    "syirkah-abdan",
+    "nextjs",
+    "tazkia"
+  ],
+  "author": "Alfatih (CEO & CTO) - KaryaKita AI & Venture Studio",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
