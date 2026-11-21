@@ -2,10 +2,10 @@
   "name": "karyakita-hub",
   "version": "1.0.0",
   "description": "KaryaKita Hub — Internal Venture Studio Operating System (7 Mahasiswa Sistem Informasi STMIK Tazkia)",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "echo 'Build static ready'",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts"
   },
