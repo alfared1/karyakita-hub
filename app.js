@@ -4908,354 +4908,565 @@ function updateTopBanners() {
 // ENTERPRISE AUTHENTICATION & ROLE-TAILORED ONBOARDING TOUR
 // ==============================================================================
 
-const ROLE_ONBOARDING_DATA = {
+// ==============================================================================
+// ROLE-TAILORED ONBOARDING: TOOLTIPS & HOTSPOTS
+// ==============================================================================
+
+const ROLE_HOTSPOT_ONBOARDING_DATA = {
   SUPER_ADMIN: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Sistem operasi venture studio mandiri berbasis syariah (Syirkah 'Abdan, zero-riba, zero-gharar). 13 modul terintegrasi untuk mendukung 7 mahasiswa berkolaborasi seimbang dengan jadwal kuliah STMIK Tazkia.",
-        icon: "shield-check",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Indikator Kapasitas Kuliah & Studio',
+        desc: 'Klik tombol ini untuk mengatur status ketersediaan Anda (\'Tersedia\', \'Padat Kuliah\', \'Mode Ujian\', atau \'Butuh Bantuan\'). 7 co-founder dapat saling memantau kesibukan akademik STMIK Tazkia tanpa rasa tertekan.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: CEO & CTO",
-        title: "Executive Command Center & Integrasi Sistem",
-        desc: "Sebagai CEO & CTO, Anda memegang kendali eksekutif: memantau KPI studio di Beranda, mengaktifkan Academic Freeze H-7 ujian, mengelola delegasi approver, serta memastikan kedaulatan data dan repositori GitHub.",
-        icon: "cpu",
-        color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
+        target: 'button[data-nav="system"]',
+        fallbackTarget: 'button[data-nav="overview"]',
+        badge: 'Executive Command Center',
+        title: 'Sistem, Academic Freeze & Kredensial',
+        desc: 'Sebagai CEO & CTO, akses menu Sistem untuk menyalakan Academic Freeze otomatis H-7 pekan UTS/UAS Tazkia, mengelola kredensial co-founder, mengatur delegasi Maker-Checker, serta mengawasi audit log keamanan.',
+        icon: 'shield-check',
+        placement: 'right'
       },
       {
-        badge: "Ritme Akademik",
-        title: "Supportive Rhythm Pulse & Kapasitas",
-        desc: "Gunakan Capacity Pill di Top Bar untuk mengatur status kapasitas ('Tersedia', 'Padat Kuliah', 'Mode Ujian', 'Butuh Bantuan'). Rekan tim dapat saling mendukung ritme tanpa rasa tertekan.",
-        icon: "heart-handshake",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Eksekusi Cepat',
+        title: 'Tombol Aksi Cepat: Tambah Tugas',
+        desc: 'Gunakan tombol ini kapan saja untuk membuat task baru secara instan, menetapkan penanggung jawab (PIC), mengatur deadline, dan menetapkan kriteria DoD (Definition of Done) tanpa berpindah halaman.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Siap Memimpin Studio?",
-        desc: "Bagikan kredensial awal kepada rekan co-founder, periksa Papan Tugas, dan pantau ritme mingguan studio. Selamat berkarya dengan itqan dan keberkahan!",
-        icon: "rocket",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Profil & Bantuan Tur',
+        title: 'Pusat Bantuan & Logout Aman',
+        desc: 'Ikon tanda tanya (?) ini dapat Anda klik kapan saja untuk mengulang tur interaktif Tooltips & Hotspots ini. Di sebelahnya terdapat badge profil terotentikasi Anda dan tombol keluar (Logout).',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   OPS_ADMIN: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Pusat tata kelola operasional dan manajemen proyek terpadu untuk 7 co-founder mahasiswa STMIK Tazkia. Menjamin seluruh delivery tepat waktu dengan standar Itqan.",
-        icon: "briefcase",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Sinkronisasi Beban & Kuliah',
+        desc: 'Pantau ketersediaan jam kerja seluruh rekan tim dan atur status kapasitas Anda agar ritme operasional proyek klien B2B tetap realistis dan sehat sejalan dengan jadwal akademik Tazkia.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: COO & Head of PM",
-        title: "Kanban Papan Tugas & Triage Revisi Klien",
-        desc: "Kelola Papan Tugas dengan DoD (Definition of Done), verifikasi jam kerja, dan kelola 'Inbox Triage Revisi' proyek B2B agar masukan klien tidak langsung membebani Kanban.",
-        icon: "check-square",
-        color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50"
+        target: 'button[data-nav="tasks"]',
+        badge: 'Pusat Operasional Harian',
+        title: 'Papan Tugas Kanban & Triage Klien',
+        desc: 'Sebagai COO & Head of PM, pusat kerja Anda ada di Papan Tugas: kelola status Kanban berstandar DoD, kontrol jam kerja tim, dan kelola Inbox Triage Revisi proyek klien agar delivery teratur.',
+        icon: 'check-square',
+        placement: 'right'
       },
       {
-        badge: "Maker-Checker & Delegasi",
-        title: "Backup Approver & Keuangan",
-        desc: "Saat CFO (Novita Rani) berada dalam 'Mode Ujian (EXAM_MODE)', Anda secara otomatis didelegasikan sebagai Backup Approver untuk memverifikasi pembayaran DP 50% dan termin proyek.",
-        icon: "shield-alert",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Distribusi Tugas',
+        title: 'Alokasi Task Baru',
+        desc: 'Pecah proyek klien menjadi tugas-tugas terukur dan delegasikan PIC rekan co-founder dengan cepat menggunakan tombol aksi cepat ini.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Siap Mengawal Operasional?",
-        desc: "Jadwalkan Syura mingguan di menu Lapor, pantau tugas berjalan, dan kelola antrean proyek studio.",
-        icon: "arrow-right-circle",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Maker-Checker & Tur',
+        title: 'Bantuan Tur & Backup Approver',
+        desc: 'Klik (?) kapan saja untuk mengulang panduan ini. Ingat: Anda otomatis menjadi Backup Approver keuangan saat CFO dalam Mode Ujian (EXAM_MODE).',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   FINANCE_ADMIN: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip Syariah",
-        title: "Buku Kas & Tata Kelola Syariah",
-        desc: "Sistem pencatatan kas zero-riba dan zero-gharar. Dilengkapi kalkulator otomatis Zakat Perusahaan 2,5%, Graduation Rule Rp3,5 Juta, dan pelacak Qardh Hasan 0% bunga.",
-        icon: "coins",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Kapasitas & Delegasi Ujian',
+        title: 'Status Kapasitas & Mode Ujian',
+        desc: 'Saat Anda mengaktifkan \'Mode Ujian\', sistem secara otomatis mendelegasikan verifikasi keuangan ke COO (Hilwa) sebagai Backup Approver agar fokus belajar Anda tetap terjaga.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: CFO",
-        title: "Payment Gate & Musyawarah 48 Jam",
-        desc: "Verifikasi bukti transfer DP 50% dan pelunasan proyek di menu Proyek. Sebelum mengunci buku bulanan, aktifkan 'Review & Musyawarah 48 Jam' agar seluruh co-founder dapat saling menelaah (taradhin).",
-        icon: "receipt",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: 'button[data-nav="finance"]',
+        badge: 'Tata Kelola Kas Syariah',
+        title: 'Buku Kas, Bagi Hasil 60/40 & Zakat',
+        desc: 'Sebagai CFO, kelola pencatatan kas syariah zero-riba, verifikasi bukti transfer termin DP 50%, buka Review & Musyawarah 48 Jam, dan pantau kalkulator bagi hasil 60% rata & 40% berbobot.',
+        icon: 'wallet',
+        placement: 'right'
       },
       {
-        badge: "Keadilan Bagi Hasil",
-        title: "Porsi 60% Rata & 40% Eksekutor Berbobot",
-        desc: "Bagi hasil dihitung otomatis secara dinamis: 60% dibagi rata kepada co-founder aktif, dan 40% dialokasikan berdasarkan 4-Pilar Poin Kontribusi berbobot.",
-        icon: "scale",
-        color: "text-sky-600 bg-sky-50 dark:bg-sky-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Pencatatan Cepat',
+        title: 'Task Keuangan & Invoice Cepat',
+        desc: 'Akses cepat untuk membuat task administrasi keuangan, menyiapkan invoice tagihan PDF untuk klien, atau mencatat pengeluaran operasional studio.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Cetak Invoice & Awasi Kas",
-        desc: "Gunakan Generator Invoice PDF otomatis untuk klien B2B dan pastikan arus kas studio tumbuh sehat menuju target kelulusan bootstrap.",
-        icon: "printer",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Keamanan Akun',
+        title: 'Bantuan Tur & Logout Keuangan',
+        desc: 'Buka kembali panduan interaktif kas syariah lewat tombol (?) ini kapan saja, dan selalu pastikan logout setelah menyelesaikan verifikasi kas.',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   UNIT_LEAD_TECH: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Sistem operasi venture studio tempat Anda memimpin pengembangan bisnis (B2B Deals) dan unit teknologi serta data assistance.",
-        icon: "trending-up",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Kapasitas Pitching & Delivery',
+        desc: 'Sesuaikan status kapasitas kerja Anda sebelum menjadwalkan pitching atau negosiasi kontrak dengan prospek klien baru agar selaras dengan jadwal kuliah.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: CBDO & CDO",
-        title: "Pipeline CRM 6-Tahap & Lini 3 Data",
-        desc: "Pantau pipeline prospek klien B2B dari Leads hingga Won. Konversikan deal yang dimenangkan menjadi proyek resmi dengan 1-klik, serta pimpin unit Assist & Data (Lini 3).",
-        icon: "target",
-        color: "text-blue-600 bg-blue-50 dark:bg-blue-950/50"
+        target: 'button[data-nav="crm"]',
+        badge: 'Pipeline Bisnis & Data',
+        title: 'Pipeline CRM 6-Tahap & Unit Data',
+        desc: 'Sebagai CBDO & CDO, pantau prospek klien dari Lead hingga Won di Pipeline CRM. Setiap deal B2B yang Anda menangkan menyumbang 5 poin kontribusi berbobot ke porsi eksekutor Syirkah Anda!',
+        icon: 'kanban',
+        placement: 'right'
       },
       {
-        badge: "Poin Kontribusi",
-        title: "Akuisisi Klien & Bobot Syirkah",
-        desc: "Setiap deal klien B2B yang berhasil Anda menangkan (Won) menyumbangkan 5 poin kontribusi berbobot ke porsi eksekutor Syirkah 'Abdan Anda.",
-        icon: "award",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Follow-Up Klien',
+        title: 'Tugas Prospek & Follow-up Cepat',
+        desc: 'Jadwalkan komunikasi follow-up prospek, pembuatan draft proposal solusi data & AI, atau pengiriman quotation dalam hitungan detik.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Buka Pipeline CRM",
-        desc: "Tambah calon klien pertama Anda di menu CRM dan pantau konversinya bersama tim penjualan.",
-        icon: "rocket",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Pusat Bantuan',
+        title: 'Bantuan Tur & Profil CBDO',
+        desc: 'Klik ikon (?) kapan saja untuk mempelajari ulang fitur pipeline CRM, konversi proyek 1-klik, dan pembobotan poin syirkah.',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   UNIT_LEAD_CREATIVE: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Pusat komando pemasaran, konten viral, dan pertumbuhan audiens KaryaKita AI & Venture Studio.",
-        icon: "sparkles",
-        color: "text-pink-600 bg-pink-50 dark:bg-pink-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Ritme Produksi Konten Viral',
+        desc: 'Sinkronkan status ketersediaan Anda sebelum merancang campaign promosi mingguan agar jadwal syuting dan editing konten TikTok & Reels tetap fleksibel bersama kuliah.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: CMO",
-        title: "Kalender Konten Media & Jaringan Afiliasi",
-        desc: "Rancang ide konten di TikTok, Instagram Reels, YouTube Shorts, dan LinkedIn di menu Media & Afiliasi (Lini 4). Kelola komisi mitra afiliasi yang mempromosikan layanan studio.",
-        icon: "video",
-        color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50"
+        target: 'button[data-nav="affiliate"]',
+        badge: 'Pusat Viral Marketing',
+        title: 'Kalender Konten Media & Afiliasi',
+        desc: 'Sebagai CMO, jadwalkan konten multi-platform (TikTok, Instagram Reels, LinkedIn), pantau performa viralitas, dan kelola komisi mitra afiliasi yang mempromosikan studio.',
+        icon: 'clapperboard',
+        placement: 'right'
       },
       {
-        badge: "Poin Kontribusi",
-        title: "Produksi Konten & Bobot Syirkah",
-        desc: "Setiap konten yang diterbitkan dan dipimpin oleh Anda otomatis tercatat menambah poin kontribusi Pilar Media & AI Academy pada evaluasi bulanan.",
-        icon: "award",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Produksi Konten',
+        title: 'Tugas Konten & Jadwal Posting',
+        desc: 'Catat ide hook video baru, tugaskan perancangan visual ke Creative Director, atau jadwalkan deadline posting dengan cepat.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Siap Viralkan KaryaKita?",
-        desc: "Masuk ke menu Media & Affiliate dan tambahkan rencana konten edukasi AI pekan ini!",
-        icon: "send",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Pusat Bantuan',
+        title: 'Bantuan Tur & Profil CMO',
+        desc: 'Buka kembali panduan interaktif ini melalui tombol (?) kapan saja untuk meninjau panduan alokasi poin kontribusi konten media dan sistem referral.',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   UNIT_LEAD_ACADEMY: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Pusat inkubasi talenta dan workshop kecerdasan buatan terdepan melalui lini KaryaKita AI Academy (Lini 5).",
-        icon: "graduation-cap",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Kapasitas Mentoring & Kelas',
+        desc: 'Atur status kapasitas Anda terutama di pekan persiapan modul workshop dan jadwal mentoring peserta AI Academy agar tidak bentrok dengan jadwal ujian kuliah.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: CRO & Lead Academy",
-        title: "Manajemen Batch Workshop & Peserta",
-        desc: "Buka batch workshop AI baru, import daftar peserta via CSV, verifikasi bukti pembayaran peserta, dan terbitkan sertifikat resmi di menu AI Academy.",
-        icon: "users",
-        color: "text-teal-600 bg-teal-50 dark:bg-teal-950/50"
+        target: 'button[data-nav="academy"]',
+        badge: 'Pusat Inkubasi Talenta',
+        title: 'Batch Workshop & Peserta AI Academy',
+        desc: 'Sebagai CRO & Lead Academy, buka batch kelas pelatihan AI baru, import peserta via CSV, verifikasi pembayaran tiket, dan terbitkan e-sertifikat digital berstandar resmi.',
+        icon: 'graduation-cap',
+        placement: 'right'
       },
       {
-        badge: "Poin Kontribusi",
-        title: "Eksekusi Batch & Poin Syirkah",
-        desc: "Setiap batch academy aktif yang Anda koordinasikan menyumbang poin berbobot ke dalam kalkulator bagi hasil studio secara proporsional dan adil.",
-        icon: "award",
-        color: "text-amber-600 bg-amber-50 dark:bg-amber-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Tugas Workshop',
+        title: 'Tambah Task Akademi Cepat',
+        desc: 'Buat task penyusunan silabus workshop AI, koordinasi pemateri tamu, atau penyiapan link zoom kelas dalam sekejap.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Siap Luncurkan Batch Baru?",
-        desc: "Buka menu AI Academy, periksa silabus workshop, dan kelola calon peserta yang mendaftar.",
-        icon: "book-open",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Pusat Bantuan',
+        title: 'Bantuan Tur & Profil Academy',
+        desc: 'Klik tombol (?) kapan saja jika ingin meninjau kembali otomatisasi penerbitan sertifikat, manajemen batch peserta, dan penghitungan poin syirkah.',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   },
   UNIT_LEAD_DESIGN: {
-    slides: [
+    steps: [
       {
-        badge: "Prinsip & Visi Studio",
-        title: "Selamat Datang di KaryaKita Hub OS",
-        desc: "Studio kreatif tempat identitas visual, brand asset, dan desain antarmuka kelas dunia dilahirkan untuk klien B2B.",
-        icon: "palette",
-        color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50"
+        target: '#btn-topbar-capacity',
+        badge: 'Ritme & Kapasitas',
+        title: 'Kapasitas Desain & Kuliah',
+        desc: 'Atur status ketersediaan Anda sebelum mengambil sprint desain identitas visual atau revisi aset klien agar beban kerja kreatif tetap seimbang dan sehat.',
+        icon: 'heart-handshake',
+        placement: 'bottom'
       },
       {
-        badge: "Peran Khusus Anda: Creative Director",
-        title: "Lini 1 Desain & Vault Arsip Dokumen",
-        desc: "Pimpin proyek branding & UI/UX, simpan deliverable resmi ke Vault Arsip dengan tag 'CLIENT_SAFE', dan lindungi file sensitif dengan tag 'NDA_RESTRICTED'.",
-        icon: "folder-check",
-        color: "text-violet-600 bg-violet-50 dark:bg-violet-950/50"
+        target: 'button[data-nav="archives"]',
+        badge: 'Vault Aset & Standar Itqan',
+        title: 'Arsip Dokumen & Deliverable Desain',
+        desc: 'Sebagai Creative Director, simpan seluruh deliverable desain resmi di Vault dengan label \'CLIENT_SAFE\' atau \'NDA_RESTRICTED\', dan pastikan standar Itqan terpenuhi sebelum pengiriman.',
+        icon: 'folder-archive',
+        placement: 'right'
       },
       {
-        badge: "Standar Kualitas",
-        title: "Itqan & Bukti Karya",
-        desc: "Sematkan tautan bukti karya Figma/Google Drive pada setiap kartu tugas sebelum digeser ke kolom 'Done (Itqan)' agar otomatis terindeks ke arsip.",
-        icon: "check-circle-2",
-        color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50"
+        target: '#btn-quick-create-task',
+        badge: 'Permintaan Desain',
+        title: 'Tambah Task Desain Baru',
+        desc: 'Buat kartu tugas baru untuk rancangan UI/UX, poster konten media sosial, atau proposal portofolio klien secara instan.',
+        icon: 'plus-circle',
+        placement: 'bottom'
       },
       {
-        badge: "Langkah Awal",
-        title: "Mulai Desain Mahakarya",
-        desc: "Buka Papan Tugas, cek permintaan desain dari proyek klien, dan unggah aset siap kirim ke portal klien.",
-        icon: "pen-tool",
-        color: "text-emerald-700 bg-emerald-100 dark:bg-emerald-900/50"
+        target: '#btn-topbar-tour',
+        fallbackTarget: '#topbar-user-avatar',
+        badge: 'Pusat Bantuan',
+        title: 'Bantuan Tur & Profil Desain',
+        desc: 'Buka kembali panduan interaktif lewat tombol (?) kapan saja untuk meninjau standar mutu Itqan dan prosedur pengarsipan aset resmi klien.',
+        icon: 'help-circle',
+        placement: 'bottom'
       }
     ]
   }
 };
 
-function getOnboardingDataForUser(user) {
-  if (!user) return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
-  if (user.role === 'SUPER_ADMIN') return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
-  if (user.role === 'OPS_ADMIN') return ROLE_ONBOARDING_DATA.OPS_ADMIN;
-  if (user.role === 'FINANCE_ADMIN') return ROLE_ONBOARDING_DATA.FINANCE_ADMIN;
-  if (user.id === 'ilham') return ROLE_ONBOARDING_DATA.UNIT_LEAD_TECH;
-  if (user.id === 'syarah' || user.id === 'syaraf') return ROLE_ONBOARDING_DATA.UNIT_LEAD_CREATIVE;
-  if (user.id === 'nazwa') return ROLE_ONBOARDING_DATA.UNIT_LEAD_ACADEMY;
-  if (user.id === 'ahmad') return ROLE_ONBOARDING_DATA.UNIT_LEAD_DESIGN;
-  return ROLE_ONBOARDING_DATA.SUPER_ADMIN;
+let currentHotspotIndex = 0;
+let currentHotspotUser = null;
+let tourScrollResizeHandler = null;
+let tourKeydownHandler = null;
+
+function getOnboardingHotspotSteps(user) {
+  if (!user) return ROLE_HOTSPOT_ONBOARDING_DATA.SUPER_ADMIN.steps;
+  if (user.role === 'SUPER_ADMIN') return ROLE_HOTSPOT_ONBOARDING_DATA.SUPER_ADMIN.steps;
+  if (user.role === 'OPS_ADMIN') return ROLE_HOTSPOT_ONBOARDING_DATA.OPS_ADMIN.steps;
+  if (user.role === 'FINANCE_ADMIN') return ROLE_HOTSPOT_ONBOARDING_DATA.FINANCE_ADMIN.steps;
+  if (user.id === 'ilham') return ROLE_HOTSPOT_ONBOARDING_DATA.UNIT_LEAD_TECH.steps;
+  if (user.id === 'syarah' || user.id === 'syaraf') return ROLE_HOTSPOT_ONBOARDING_DATA.UNIT_LEAD_CREATIVE.steps;
+  if (user.id === 'nazwa') return ROLE_HOTSPOT_ONBOARDING_DATA.UNIT_LEAD_ACADEMY.steps;
+  if (user.id === 'ahmad') return ROLE_HOTSPOT_ONBOARDING_DATA.UNIT_LEAD_DESIGN.steps;
+  return ROLE_HOTSPOT_ONBOARDING_DATA.SUPER_ADMIN.steps;
 }
 
-let currentOnboardingIndex = 0;
-let currentOnboardingUser = null;
+function clearTourHighlights() {
+  document.querySelectorAll('.tour-highlighted-target').forEach(el => {
+    el.classList.remove('tour-highlighted-target');
+  });
+  const container = document.getElementById('tour-overlay-container');
+  if (container) container.remove();
+}
 
 function openOnboardingTour(user) {
-  currentOnboardingUser = user || store.getCurrentUser();
-  currentOnboardingIndex = 0;
-  renderOnboardingModal();
+  currentHotspotUser = user || store.getCurrentUser();
+  currentHotspotIndex = 0;
+  closeModal();
+  renderHotspotStep();
 }
 
-function renderOnboardingModal() {
-  const tourData = getOnboardingDataForUser(currentOnboardingUser);
-  const slides = tourData.slides;
-  const currentSlide = slides[currentOnboardingIndex];
-  const isFirst = currentOnboardingIndex === 0;
-  const isLast = currentOnboardingIndex === slides.length - 1;
+function renderHotspotStep() {
+  clearTourHighlights();
 
-  const modalHtml = `
-    <div class="p-6 sm:p-8 space-y-6 max-w-lg mx-auto">
+  const steps = getOnboardingHotspotSteps(currentHotspotUser);
+  if (!steps || currentHotspotIndex >= steps.length) {
+    finishOnboardingTour();
+    return;
+  }
+
+  const step = steps[currentHotspotIndex];
+  let targetEl = document.querySelector(step.target);
+  
+  // Smart check for responsive / mobile navigation
+  const sidebar = document.getElementById('main-sidebar');
+  if (sidebar && sidebar.classList.contains('hidden') && targetEl && sidebar.contains(targetEl)) {
+    const navVal = targetEl.getAttribute('data-nav');
+    const mobileNavBtn = navVal ? document.querySelector(`.mobile-bottom-nav button[data-nav="${navVal}"]`) : null;
+    if (mobileNavBtn) {
+      targetEl = mobileNavBtn;
+    } else if (step.fallbackTarget) {
+      targetEl = document.querySelector(step.fallbackTarget) || targetEl;
+    }
+  }
+
+  if (!targetEl || targetEl.offsetParent === null) {
+    if (step.fallbackTarget) {
+      targetEl = document.querySelector(step.fallbackTarget);
+    }
+  }
+  if (!targetEl) {
+    targetEl = document.getElementById('topbar-simulator') || document.body;
+  }
+
+  // Smooth scroll target element into viewport
+  try {
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  } catch (e) {}
+
+  // Apply glowing highlight ring
+  targetEl.classList.add('tour-highlighted-target');
+
+  // Allow short animation frame for layout settling before calculating absolute viewport coordinates
+  setTimeout(() => {
+    updateTourPositions(targetEl, step, steps);
+  }, 40);
+
+  // Bind dynamic resize/scroll repositioning
+  if (!tourScrollResizeHandler) {
+    tourScrollResizeHandler = () => {
+      const activeSteps = getOnboardingHotspotSteps(currentHotspotUser);
+      const activeStep = activeSteps[currentHotspotIndex];
+      if (!activeStep) return;
+      let el = document.querySelector(activeStep.target) || (activeStep.fallbackTarget && document.querySelector(activeStep.fallbackTarget));
+      if (el) {
+        updateTourPositions(el, activeStep, activeSteps);
+      }
+    };
+    window.addEventListener('resize', tourScrollResizeHandler);
+    window.addEventListener('scroll', tourScrollResizeHandler, { passive: true });
+  }
+
+  // Bind keyboard navigation (Escape = Skip, Right = Next, Left = Prev)
+  if (!tourKeydownHandler) {
+    tourKeydownHandler = (e) => {
+      if (e.key === 'Escape') {
+        finishOnboardingTour();
+      } else if (e.key === 'ArrowRight') {
+        nextOnboardingStep();
+      } else if (e.key === 'ArrowLeft') {
+        prevOnboardingStep();
+      }
+    };
+    window.addEventListener('keydown', tourKeydownHandler);
+  }
+}
+
+function updateTourPositions(targetEl, step, steps) {
+  const rect = targetEl.getBoundingClientRect();
+  const winW = window.innerWidth;
+  const winH = window.innerHeight;
+
+  // Beacon hotspot coordinates (at edge or center of element)
+  const beaconLeft = Math.round(Math.max(16, Math.min(winW - 16, rect.right - 6)));
+  const beaconTop = Math.round(Math.max(16, Math.min(winH - 16, rect.top + 6)));
+
+  // Tooltip dimensions
+  const tooltipWidth = Math.min(350, winW - 24);
+  const tooltipHeight = 220;
+
+  let tooltipTop = 0;
+  let tooltipLeft = 0;
+  let arrowClasses = '';
+  let arrowStyle = '';
+
+  const placement = step.placement || 'bottom';
+
+  if (placement === 'right' && (rect.right + tooltipWidth + 24 < winW)) {
+    // Tooltip to the right of target (ideal for sidebar navigation)
+    tooltipLeft = Math.round(rect.right + 14);
+    tooltipTop = Math.round(Math.max(12, Math.min(winH - tooltipHeight - 12, rect.top + (rect.height / 2) - 80)));
+    const arrowTop = Math.max(16, Math.min(tooltipHeight - 24, beaconTop - tooltipTop - 6));
+    arrowClasses = 'border-l-2 border-b-2 -left-[7px]';
+    arrowStyle = `top: ${arrowTop}px;`;
+  } else if (placement === 'top' || (rect.bottom + tooltipHeight + 20 > winH && rect.top > tooltipHeight + 20)) {
+    // Tooltip above target
+    tooltipTop = Math.round(Math.max(12, rect.top - tooltipHeight - 14));
+    tooltipLeft = Math.round(Math.max(12, Math.min(winW - tooltipWidth - 12, rect.left + (rect.width / 2) - (tooltipWidth / 2))));
+    const arrowLeft = Math.max(16, Math.min(tooltipWidth - 24, beaconLeft - tooltipLeft - 6));
+    arrowClasses = 'border-r-2 border-b-2 -bottom-[7px]';
+    arrowStyle = `left: ${arrowLeft}px;`;
+  } else {
+    // Tooltip below target (default, best for topbar and main actions)
+    tooltipTop = Math.round(Math.min(winH - tooltipHeight - 12, rect.bottom + 14));
+    tooltipLeft = Math.round(Math.max(12, Math.min(winW - tooltipWidth - 12, rect.left + (rect.width / 2) - (tooltipWidth / 2))));
+    const arrowLeft = Math.max(16, Math.min(tooltipWidth - 24, beaconLeft - tooltipLeft - 6));
+    arrowClasses = 'border-l-2 border-t-2 -top-[7px]';
+    arrowStyle = `left: ${arrowLeft}px;`;
+  }
+
+  let container = document.getElementById('tour-overlay-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'tour-overlay-container';
+    container.className = 'fixed inset-0 z-[10000] pointer-events-none';
+    document.body.appendChild(container);
+  }
+
+  const isFirst = currentHotspotIndex === 0;
+  const isLast = currentHotspotIndex === steps.length - 1;
+
+  container.innerHTML = `
+    <!-- Semi-transparent Dimmed Backdrop -->
+    <div id="tour-backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-[1px] pointer-events-auto z-[10001] transition-opacity duration-300" onclick="nextOnboardingStep()" title="Klik untuk lanjut"></div>
+
+    <!-- Pulsing Hotspot Beacon (Titik Berkedip Interaktif) -->
+    <div id="tour-hotspot-beacon" class="fixed z-[10003] pointer-events-auto cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group transition-all duration-300" style="top: ${beaconTop}px; left: ${beaconLeft}px;" onclick="nextOnboardingStep()" title="Klik titik berkedip untuk lanjut">
+      <span class="relative flex h-8 w-8 items-center justify-center">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+        <span class="tour-pulse-ring absolute inline-flex h-7 w-7 rounded-full bg-emerald-500/40"></span>
+        <span class="relative inline-flex rounded-full h-6 w-6 bg-brand-emerald border-2 border-white shadow-xl items-center justify-center text-white text-[11px] font-bold ring-2 ring-emerald-500/40 group-hover:scale-110 transition-transform">
+          ${currentHotspotIndex + 1}
+        </span>
+      </span>
+    </div>
+
+    <!-- Tooltip Speech Bubble (Gelembung Teks Interaktif) -->
+    <div id="tour-tooltip-bubble" class="fixed z-[10004] tour-tooltip-enter bg-white dark:bg-[#1A2C24] border-2 border-brand-emerald dark:border-emerald-500 rounded-2xl shadow-2xl p-4 sm:p-5 w-[320px] sm:w-[350px] text-gray-800 dark:text-gray-100 pointer-events-auto transition-all duration-200" style="top: ${tooltipTop}px; left: ${tooltipLeft}px;">
       
-      <!-- Tour Header & Skip Button -->
-      <div class="flex items-center justify-between border-b border-brand-border dark:border-[#23362F] pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-            ${currentSlide.badge}
+      <!-- Caret Arrow Pointer -->
+      <div class="absolute w-3 h-3 bg-white dark:bg-[#1A2C24] border-brand-emerald dark:border-emerald-500 transform rotate-45 ${arrowClasses}" style="${arrowStyle}"></div>
+
+      <!-- Header: Badge & Counter + Skip Button -->
+      <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-100 dark:border-gray-800">
+        <div class="flex items-center gap-1.5">
+          <span class="inline-flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+            Hotspot ${currentHotspotIndex + 1} dari ${steps.length}
           </span>
-          <span class="text-xs text-gray-400">(${currentOnboardingIndex + 1} dari ${slides.length})</span>
         </div>
-        <button onclick="finishOnboardingTour()" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition font-medium flex items-center gap-1">
-          <span>Lewati Tur</span>
+        <button onclick="finishOnboardingTour()" class="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition font-medium flex items-center gap-0.5" title="Lewati panduan">
+          <span>Lewati</span>
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
       </div>
 
-      <!-- Slide Main Content (Interactive Carousel Card) -->
-      <div class="text-center py-4 space-y-4">
-        <div class="w-16 h-16 mx-auto rounded-2xl ${currentSlide.color} flex items-center justify-center shadow-sm">
-          <i data-lucide="${currentSlide.icon}" class="w-8 h-8"></i>
+      <!-- Body: Icon, Title & Role-specific Description -->
+      <div class="space-y-1.5 mb-3.5">
+        <div class="flex items-start gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 text-brand-emerald dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-800 mt-0.5">
+            <i data-lucide="${step.icon}" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-snug">${step.title}</h4>
+            <p class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">${step.badge}</p>
+          </div>
         </div>
-
-        <div class="space-y-2">
-          <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">${currentSlide.title}</h3>
-          <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto">
-            ${currentSlide.desc}
-          </p>
-        </div>
+        <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed pt-1">
+          ${step.desc}
+        </p>
       </div>
 
-      <!-- Carousel Navigation & Dots Indicator -->
-      <div class="flex flex-col gap-4 border-t border-brand-border dark:border-[#23362F] pt-4">
-        
-        <!-- Dots -->
-        <div class="flex items-center justify-center gap-2">
-          ${slides.map((_, idx) => `
-            <button onclick="goToOnboardingSlide(${idx})" class="w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === currentOnboardingIndex ? 'bg-brand-emerald dark:bg-emerald-400 w-6' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}" aria-label="Slide ${idx + 1}"></button>
+      <!-- Footer: Step Dots + Prev/Next Buttons -->
+      <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+        <!-- Step Dots Indicator -->
+        <div class="flex items-center gap-1.5">
+          ${steps.map((_, idx) => `
+            <button onclick="goToOnboardingStep(${idx})" class="h-1.5 rounded-full transition-all duration-300 ${idx === currentHotspotIndex ? 'bg-brand-emerald dark:bg-emerald-400 w-4' : 'bg-gray-300 dark:bg-gray-600 w-1.5 hover:bg-gray-400'}" aria-label="Hotspot ${idx + 1}"></button>
           `).join('')}
         </div>
 
-        <!-- Buttons -->
-        <div class="flex items-center justify-between gap-3">
-          <button onclick="prevOnboardingSlide()" ${isFirst ? 'disabled class="px-3.5 py-2 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-300 dark:text-gray-700 text-xs cursor-not-allowed"' : 'class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition"'} flex items-center gap-1.5>
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-            <span>Sebelumnya</span>
-          </button>
-
-          <button onclick="${isLast ? 'finishOnboardingTour()' : 'nextOnboardingSlide()'}" class="px-5 py-2 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
-            <span>${isLast ? 'Masuk ke Dashboard' : 'Selanjutnya'}</span>
-            <i data-lucide="${isLast ? 'check' : 'chevron-right'}" class="w-4 h-4"></i>
+        <!-- Action Controls -->
+        <div class="flex items-center gap-2">
+          ${!isFirst ? `
+            <button onclick="prevOnboardingStep()" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-[11px] font-semibold transition flex items-center gap-0.5">
+              <i data-lucide="chevron-left" class="w-3 h-3"></i>
+              <span>Sebelumnya</span>
+            </button>
+          ` : ''}
+          <button onclick="${isLast ? 'finishOnboardingTour()' : 'nextOnboardingStep()'}" class="px-3 py-1 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
+            <span>${isLast ? 'Selesai & Masuk' : 'Lanjut'}</span>
+            <i data-lucide="${isLast ? 'check' : 'chevron-right'}" class="w-3.5 h-3.5"></i>
           </button>
         </div>
-
       </div>
 
     </div>
   `;
 
-  openModal(modalHtml);
-  if (window.lucide) lucide.createIcons();
-}
-
-function nextOnboardingSlide() {
-  const tourData = getOnboardingDataForUser(currentOnboardingUser);
-  if (currentOnboardingIndex < tourData.slides.length - 1) {
-    currentOnboardingIndex++;
-    renderOnboardingModal();
+  if (window.lucide) {
+    lucide.createIcons();
   }
 }
 
-function prevOnboardingSlide() {
-  if (currentOnboardingIndex > 0) {
-    currentOnboardingIndex--;
-    renderOnboardingModal();
+function nextOnboardingStep() {
+  const steps = getOnboardingHotspotSteps(currentHotspotUser);
+  if (currentHotspotIndex < steps.length - 1) {
+    currentHotspotIndex++;
+    renderHotspotStep();
+  } else {
+    finishOnboardingTour();
   }
 }
 
-function goToOnboardingSlide(idx) {
-  currentOnboardingIndex = idx;
-  renderOnboardingModal();
+function prevOnboardingStep() {
+  if (currentHotspotIndex > 0) {
+    currentHotspotIndex--;
+    renderHotspotStep();
+  }
+}
+
+function goToOnboardingStep(idx) {
+  currentHotspotIndex = idx;
+  renderHotspotStep();
 }
 
 function finishOnboardingTour() {
-  if (currentOnboardingUser) {
-    currentOnboardingUser.hasCompletedOnboarding = true;
-    store.logAudit('ONBOARDING_COMPLETED', `Product Tour: ${currentOnboardingUser.name}`, `Tur panduan role ${currentOnboardingUser.roleLabel} telah diselesaikan.`);
+  clearTourHighlights();
+  if (tourScrollResizeHandler) {
+    window.removeEventListener('resize', tourScrollResizeHandler);
+    window.removeEventListener('scroll', tourScrollResizeHandler);
+    tourScrollResizeHandler = null;
+  }
+  if (tourKeydownHandler) {
+    window.removeEventListener('keydown', tourKeydownHandler);
+    tourKeydownHandler = null;
+  }
+  if (currentHotspotUser) {
+    currentHotspotUser.hasCompletedOnboarding = true;
+    store.logAudit('ONBOARDING_COMPLETED', `Tooltips & Hotspots Tour: ${currentHotspotUser.name}`, `Tur interaktif hotspot untuk peran ${currentHotspotUser.roleLabel} telah diselesaikan.`);
     store.saveState();
   }
-  closeModal();
   showToast('Selamat bekerja & berkolaborasi di KaryaKita Hub!');
   renderActiveView();
 }
+
+// Aliases for backwards compatibility
+const nextOnboardingSlide = nextOnboardingStep;
+const prevOnboardingSlide = prevOnboardingStep;
+const goToOnboardingSlide = goToOnboardingStep;
+const renderOnboardingModal = renderHotspotStep;
 
 // Authentication Helpers
 function checkPasswordStrength(pwd) {
