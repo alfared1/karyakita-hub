@@ -245,6 +245,9 @@ class AppStore {
             if (parsed.users[uid].hasCompletedOnboarding === undefined) {
               parsed.users[uid].hasCompletedOnboarding = false;
             }
+            if (parsed.users[uid].passwordChangedAt === undefined) {
+              parsed.users[uid].passwordChangedAt = INITIAL_STATE.users[uid].passwordChangedAt || null;
+            }
           }
         });
 
@@ -4499,22 +4502,25 @@ function exportMkutPdfReport() {
 // ------------------------------------------------------------------------------
 // VIEW 12: PENGATURAN & AUDIT LOG / SYSTEM (Tahap 3)
 // ------------------------------------------------------------------------------
-let systemActiveTab = 'users'; // 'users' | 'calendar' | 'audit'
+let systemActiveTab = 'users'; // 'users' | 'calendar' | 'audit' | 'sync'
 
 function renderSystemView() {
   return `
     <div class="space-y-6">
       
       <!-- Tabs -->
-      <div class="flex border-b border-brand-border bg-white px-4 pt-2 rounded-t-xl text-xs font-semibold gap-4">
-        <button id="tab-sys-users" class="py-2.5 border-b-2 ${systemActiveTab === 'users' ? 'border-brand-emerald text-brand-emerald' : 'border-transparent text-gray-500'}">
+      <div class="flex border-b border-brand-border bg-white px-4 pt-2 rounded-t-xl text-xs font-semibold gap-4 overflow-x-auto">
+        <button id="tab-sys-users" class="py-2.5 border-b-2 whitespace-nowrap ${systemActiveTab === 'users' ? 'border-brand-emerald text-brand-emerald font-bold' : 'border-transparent text-gray-500'}">
           Manajemen Whitelist 7 Co-Founder
         </button>
-        <button id="tab-sys-calendar" class="py-2.5 border-b-2 ${systemActiveTab === 'calendar' ? 'border-brand-emerald text-brand-emerald' : 'border-transparent text-gray-500'}">
+        <button id="tab-sys-calendar" class="py-2.5 border-b-2 whitespace-nowrap ${systemActiveTab === 'calendar' ? 'border-brand-emerald text-brand-emerald font-bold' : 'border-transparent text-gray-500'}">
           Kalender Akademik & Freeze Mode
         </button>
-        <button id="tab-sys-audit" class="py-2.5 border-b-2 ${systemActiveTab === 'audit' ? 'border-brand-emerald text-brand-emerald' : 'border-transparent text-gray-500'}">
+        <button id="tab-sys-audit" class="py-2.5 border-b-2 whitespace-nowrap ${systemActiveTab === 'audit' ? 'border-brand-emerald text-brand-emerald font-bold' : 'border-transparent text-gray-500'}">
           Audit Log Permanen (Immutable)
+        </button>
+        <button id="tab-sys-sync" class="py-2.5 border-b-2 whitespace-nowrap ${systemActiveTab === 'sync' ? 'border-brand-emerald text-brand-emerald font-bold' : 'border-transparent text-gray-500'}">
+          Sinkronisasi Antar-Perangkat (HP & Laptop)
         </button>
       </div>
 
@@ -4527,7 +4533,7 @@ function renderSystemView() {
                 <i data-lucide="key-round" class="w-4 h-4 text-brand-emerald"></i>
                 <span>Manajemen Kredensial & Aktivasi Akun 7 Co-Founder</span>
               </h3>
-              <p class="text-xs text-gray-500 mt-0.5">Kredensial awal diberikan oleh DevOps/Admin. Co-Founder wajib mengganti kata sandi baru saat login pertama kali.</p>
+              <p class="text-xs text-gray-500 mt-0.5">Kredensial awal diberikan oleh DevOps/Admin. Klik <strong>Ubah Sandi</strong> untuk mengaktifkan kata sandi pribadi atau menerbitkan kata sandi baru.</p>
             </div>
             <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
               Sistem Keamanan Tertutup (Zero-OAuth)
@@ -4570,10 +4576,17 @@ function renderSystemView() {
                           <span>Password Sementara Aktif</span>
                         </span>
                       ` : `
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
-                          <span>Aktif (Password Pribadi)</span>
-                        </span>
+                        <div class="space-y-0.5">
+                          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                            <span>Aktif (Password Pribadi)</span>
+                          </span>
+                          ${u.passwordChangedAt ? `
+                            <span class="block text-[9px] text-gray-400 font-mono">
+                              Diubah: ${new Date(u.passwordChangedAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </span>
+                          ` : ''}
+                        </div>
                       `}
                     </td>
                     <td class="p-3 text-center">
@@ -4584,7 +4597,11 @@ function renderSystemView() {
                       `}
                     </td>
                     <td class="p-3 text-right">
-                      <div class="flex items-center justify-end gap-1.5">
+                      <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                        <button onclick="openAdminChangePasswordModal('${u.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-brand-emerald border border-emerald-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Ubah kata sandi untuk ${u.name}">
+                          <i data-lucide="key-round" class="w-3 h-3"></i>
+                          <span>Ubah Sandi</span>
+                        </button>
                         <button onclick="openProfileModal('${u.id}')" class="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Ganti foto profil ${u.name}">
                           <i data-lucide="camera" class="w-3 h-3"></i>
                           <span>Foto</span>
@@ -4595,11 +4612,11 @@ function renderSystemView() {
                             <span>Salin Sandi</span>
                           </button>
                         ` : ''}
-                        <button onclick="resetUserCredentialsByAdmin('${u.id}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Terbitkan kata sandi sementara baru">
+                        <button onclick="resetUserCredentialsByAdmin('${u.id}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Terbitkan kata sandi sementara acak">
                           <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
                           <span>Reset</span>
                         </button>
-                        <button onclick="openOnboardingTour(store.state.users['${u.id}'])" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-brand-emerald border border-emerald-200 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Tinjau panduan tur role ini">
+                        <button onclick="openOnboardingTour(store.state.users['${u.id}'])" class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Tinjau panduan tur role ini">
                           <i data-lucide="play" class="w-3 h-3"></i>
                           <span>Tur</span>
                         </button>
@@ -4623,10 +4640,64 @@ function renderSystemView() {
             ${store.state.settings.academicFreezeMode ? 'Nonaktifkan Freeze Mode' : 'Aktifkan Freeze Mode Manual'}
           </button>
         </div>
+      ` : systemActiveTab === 'sync' ? `
+        <!-- TAB 4: SINKRONISASI ANTAR PERANGKAT (HP & LAPTOP) -->
+        <div class="card-surface p-5 space-y-4 text-xs">
+          <div class="flex items-center justify-between border-b border-brand-border pb-3">
+            <div>
+              <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-emerald"></i>
+                <span>Sinkronisasi Data Studio Antar-Perangkat (Laptop ↔ Handphone)</span>
+              </h3>
+              <p class="text-gray-500 mt-0.5">Sistem KaryaKita OS menyimpan basis data secara mandiri dan aman di peramban (Client-Side Storage). Fitur ini memudahkan penyalinan data dari Laptop ke HP seluruh rekan.</p>
+            </div>
+            <span class="text-[10px] bg-sky-100 text-sky-800 font-bold px-2.5 py-1 rounded-full">
+              Multi-Device Sync Helper
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
+              <h4 class="font-bold text-emerald-950 flex items-center gap-1.5">
+                <i data-lucide="upload" class="w-4 h-4 text-emerald-700"></i>
+                <span>Langkah 1: Ekspor Data dari Laptop (Alfatih / Admin)</span>
+              </h4>
+              <p class="text-gray-600">Salin seluruh data studio terkini (termasuk tugas, kas, kredensial password terbaru, dan log) ke clipboard untuk dibagikan ke HP rekan.</p>
+              <button onclick="exportStudioStateToClipboard()" class="w-full py-2 bg-brand-emerald hover:bg-brand-hover text-white rounded-lg font-semibold flex items-center justify-center gap-2 shadow-xs transition">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                <span>Salin Kode Sinkronisasi Studio</span>
+              </button>
+            </div>
+
+            <div class="p-4 bg-sky-50/70 border border-sky-200 rounded-xl space-y-3">
+              <h4 class="font-bold text-sky-950 flex items-center gap-1.5">
+                <i data-lucide="download" class="w-4 h-4 text-sky-700"></i>
+                <span>Langkah 2: Impor Data di Handphone</span>
+              </h4>
+              <p class="text-gray-600">Jika membuka di HP rekan, buka menu ini lalu tempelkan kode sinkronisasi agar seluruh data di HP sama persis dengan laptop.</p>
+              <button onclick="openImportStateModal()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 shadow-xs transition">
+                <i data-lucide="folder-input" class="w-4 h-4"></i>
+                <span>Tempel & Impor Data ke HP</span>
+              </button>
+            </div>
+          </div>
+        </div>
       ` : `
         <!-- TAB 3: AUDIT LOG -->
         <div class="card-surface p-5 space-y-3">
-          <h3 class="font-heading font-bold text-sm text-gray-900">Audit Log Permanen (Nilai Shiddiq & Amanah)</h3>
+          <div class="flex items-center justify-between border-b border-brand-border pb-2">
+            <div>
+              <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
+                <i data-lucide="file-check" class="w-4 h-4 text-brand-emerald"></i>
+                <span>Audit Log Permanen (Nilai Shiddiq & Amanah)</span>
+              </h3>
+              <p class="text-xs text-gray-500">Mencatat seluruh aksi operasional, login, perubahan password, dan tata kelola syariah secara real-time.</p>
+            </div>
+            <span class="text-[10px] font-mono font-bold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+              Total: ${store.state.auditLogs.length} Catatan
+            </span>
+          </div>
+
           <div class="overflow-x-auto border border-brand-border rounded-lg">
             <table class="w-full text-xs text-left">
               <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase">
@@ -4639,10 +4710,10 @@ function renderSystemView() {
               </thead>
               <tbody class="divide-y divide-gray-100">
                 ${store.state.auditLogs.map(a => `
-                  <tr>
+                  <tr class="hover:bg-gray-50/50">
                     <td class="p-3 font-mono text-gray-500 text-[11px] whitespace-nowrap">${a.timestamp}</td>
                     <td class="p-3 font-bold text-gray-900">${a.actorName}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 font-mono text-[10px] font-semibold">${a.action}</span></td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded ${a.action.includes('AUTH') ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'} font-mono text-[10px] font-semibold">${a.action}</span></td>
                     <td class="p-3 text-gray-700">${a.details}</td>
                   </tr>
                 `).join('')}
@@ -4660,10 +4731,12 @@ function initSystemEvents() {
   const tabUsers = document.getElementById('tab-sys-users');
   const tabCalendar = document.getElementById('tab-sys-calendar');
   const tabAudit = document.getElementById('tab-sys-audit');
+  const tabSync = document.getElementById('tab-sys-sync');
 
   if (tabUsers) tabUsers.addEventListener('click', () => { systemActiveTab = 'users'; renderActiveView(); });
   if (tabCalendar) tabCalendar.addEventListener('click', () => { systemActiveTab = 'calendar'; renderActiveView(); });
   if (tabAudit) tabAudit.addEventListener('click', () => { systemActiveTab = 'audit'; renderActiveView(); });
+  if (tabSync) tabSync.addEventListener('click', () => { systemActiveTab = 'sync'; renderActiveView(); });
 
   const btnFreeze = document.getElementById('btn-toggle-freeze-sys');
   if (btnFreeze) {
@@ -5604,6 +5677,20 @@ function openProfileModal(userId) {
         </div>
       </div>
 
+      <!-- Keamanan & Kata Sandi Akun -->
+      <div class="pt-3 border-t border-brand-border dark:border-gray-800">
+        <button type="button" onclick="closeModal(); openChangeMyPasswordModal('${user.id}')" class="w-full p-2.5 rounded-xl bg-gray-50 dark:bg-gray-850 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs font-semibold text-gray-800 dark:text-gray-200 transition">
+          <div class="flex items-center gap-2">
+            <i data-lucide="key-round" class="w-4 h-4 text-brand-emerald"></i>
+            <span>Ubah Kata Sandi Pribadi Akun Ini</span>
+          </div>
+          <span class="text-[11px] text-brand-emerald dark:text-emerald-400 font-bold flex items-center gap-1">
+            <span>Ubah Sekarang</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </button>
+      </div>
+
       <!-- Modal Footer -->
       <div class="flex items-center justify-between pt-3 border-t border-brand-border dark:border-gray-800">
         <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition">
@@ -5771,6 +5858,32 @@ function togglePasswordVisibility(inputId, iconId) {
   if (window.lucide) lucide.createIcons();
 }
 
+function toggleQuickLoginHelper() {
+  const list = document.getElementById('quick-login-helper-list');
+  const chevron = document.getElementById('quick-helper-chevron');
+  if (!list) return;
+  const isHidden = list.classList.contains('hidden');
+  if (isHidden) {
+    list.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-180');
+  } else {
+    list.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function quickFillLogin(userId) {
+  const user = store.state.users[userId];
+  if (!user) return;
+  const usernameField = document.getElementById('login-username');
+  const passwordField = document.getElementById('login-password');
+  if (usernameField && passwordField) {
+    usernameField.value = user.username || user.id;
+    passwordField.value = user.password.trim();
+    showToast(`Kredensial untuk ${user.name} berhasil diisi! Silakan klik Masuk.`);
+  }
+}
+
 function renderAuthForm(formType, userId = null) {
   const container = document.getElementById('auth-form-container');
   if (!container) return;
@@ -5788,7 +5901,7 @@ function renderAuthForm(formType, userId = null) {
             <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Username / Email Co-Founder *</label>
             <div class="relative">
               <i data-lucide="user" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="text" id="login-username" required placeholder="Misal: alfatih, novita, atau syarah" class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+              <input type="text" id="login-username" required placeholder="Misal: alfatih, ilham, atau novita" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald">
             </div>
           </div>
 
@@ -5796,7 +5909,7 @@ function renderAuthForm(formType, userId = null) {
             <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi *</label>
             <div class="relative">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <input type="password" id="login-password" required placeholder="••••••••••••" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
               <button type="button" onclick="togglePasswordVisibility('login-password', 'login-pwd-icon')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                 <i id="login-pwd-icon" data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -5814,12 +5927,39 @@ function renderAuthForm(formType, userId = null) {
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
 
-        <div class="p-3 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
-          <div class="font-bold flex items-center gap-1.5">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-600"></i>
-            <span>Login Pertama Kali?</span>
+        <!-- Mobile & Co-Founder Quick Assistant (Zero-Typo Helper) -->
+        <div class="pt-2 border-t border-gray-200 dark:border-[#23362F]">
+          <button type="button" onclick="toggleQuickLoginHelper()" class="w-full flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-[#192722] hover:bg-emerald-50/50 text-[11px] text-gray-700 dark:text-gray-300 transition">
+            <span class="flex items-center gap-1.5 font-semibold">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-brand-emerald"></i>
+              <span>Bantuan Kredensial 7 Co-Founder (Login Cepat HP)</span>
+            </span>
+            <i id="quick-helper-chevron" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400 transition-transform"></i>
+          </button>
+          
+          <div id="quick-login-helper-list" class="hidden mt-2 p-2 bg-gray-50/70 dark:bg-[#192722]/60 rounded-xl border border-gray-200 dark:border-gray-800 space-y-1.5 max-h-56 overflow-y-auto">
+            <p class="text-[10px] text-gray-500 dark:text-gray-400">Klik nama Anda untuk mengisi username & kata sandi secara otomatis tanpa risiko salah ketik:</p>
+            <div class="grid grid-cols-1 gap-1">
+              ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
+                <button type="button" onclick="quickFillLogin('${u.id}')" class="w-full text-left p-1.5 rounded-lg bg-white dark:bg-[#121C18] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-gray-200 dark:border-gray-700/60 flex items-center justify-between text-[11px] transition">
+                  <div class="flex items-center gap-2 truncate">
+                    <img src="${u.avatar}" class="w-5 h-5 rounded-full object-cover shrink-0">
+                    <div class="truncate">
+                      <strong class="text-gray-900 dark:text-white block truncate leading-tight">${u.name}</strong>
+                      <span class="text-[9px] text-gray-500 font-mono">@${u.username || u.id}</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-brand-emerald dark:text-emerald-400 font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                    Pilih & Isi
+                  </span>
+                </button>
+              `).join('')}
+            </div>
           </div>
-          <p>Gunakan password sementara dari DevOps (contoh: <code>Kk#Fatih2026!x9</code>). Anda akan langsung diminta menentukan password baru pribadi demi keamanan.</p>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[10px] text-emerald-800 dark:text-emerald-300">
+          <p>💡 <em>Tips Keamanan:</em> Setelah berhasil masuk, Anda dapat memperbarui kata sandi pribadi sewaktu-waktu melalui menu Profil atau modul Sistem.</p>
         </div>
       </form>
     `;
@@ -5845,7 +5985,7 @@ function renderAuthForm(formType, userId = null) {
             <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru Pribadi *</label>
             <div class="relative">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="reset-new-password" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <input type="password" id="reset-new-password" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
               <button type="button" onclick="togglePasswordVisibility('reset-new-password', 'reset-pwd-icon1')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                 <i id="reset-pwd-icon1" data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -5867,7 +6007,7 @@ function renderAuthForm(formType, userId = null) {
             <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Kata Sandi Baru *</label>
             <div class="relative">
               <i data-lucide="check-check" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="reset-confirm-password" required placeholder="Ulangi kata sandi baru" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
+              <input type="password" id="reset-confirm-password" required placeholder="Ulangi kata sandi baru" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
               <button type="button" onclick="togglePasswordVisibility('reset-confirm-password', 'reset-pwd-icon2')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                 <i id="reset-pwd-icon2" data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -5897,8 +6037,8 @@ function renderAuthForm(formType, userId = null) {
 
 function handleLoginSubmit(event) {
   event.preventDefault();
-  const usernameInput = document.getElementById('login-username')?.value.trim().toLowerCase();
-  const passwordInput = document.getElementById('login-password')?.value;
+  const usernameInput = document.getElementById('login-username')?.value?.trim().toLowerCase();
+  const passwordInput = document.getElementById('login-password')?.value?.trim();
   const errorBox = document.getElementById('login-error-msg');
   const errorText = document.getElementById('login-error-text');
 
@@ -5910,9 +6050,9 @@ function handleLoginSubmit(event) {
     (u.email && u.email.toLowerCase() === usernameInput)
   );
 
-  if (!user || user.password !== passwordInput) {
+  if (!user || user.password.trim() !== passwordInput) {
     if (errorBox && errorText) {
-      errorText.textContent = 'Username atau kata sandi tidak cocok. Silakan minta password sementara ke DevOps (Alfatih).';
+      errorText.textContent = 'Username atau kata sandi tidak cocok. Gunakan bantuan kredensial di bawah atau hubungi DevOps (Alfatih).';
       errorBox.classList.remove('hidden');
     }
     showToast('Kredensial tidak valid!', 'error');
@@ -5947,8 +6087,8 @@ function handleLoginSubmit(event) {
 
 function handleFirstTimeResetSubmit(event, userId) {
   event.preventDefault();
-  const newPassword = document.getElementById('reset-new-password')?.value;
-  const confirmPassword = document.getElementById('reset-confirm-password')?.value;
+  const newPassword = document.getElementById('reset-new-password')?.value?.trim();
+  const confirmPassword = document.getElementById('reset-confirm-password')?.value?.trim();
   const errorBox = document.getElementById('reset-error-msg');
   const errorText = document.getElementById('reset-error-text');
 
@@ -5984,7 +6124,7 @@ function handleFirstTimeResetSubmit(event, userId) {
   };
   store.state.activeUserId = user.id;
 
-  store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, 'Kata sandi baru berhasil dibuat. Akun co-founder aktif resmi.');
+  store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil membuat kata sandi baru. Akun resmi aktif.`);
   store.saveState();
 
   showToast('Alhamdulillah! Kata sandi baru Anda berhasil disimpan. Akun Anda resmi aktif!');
@@ -5993,6 +6133,314 @@ function handleFirstTimeResetSubmit(event, userId) {
   setTimeout(() => {
     openOnboardingTour(user);
   }, 400);
+}
+
+function openAdminChangePasswordModal(userId) {
+  const targetUser = store.state.users[userId];
+  if (!targetUser) return;
+  const actor = store.getCurrentUser();
+
+  const modalHtml = `
+    <div class="p-5 sm:p-7 space-y-4 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b border-brand-border dark:border-gray-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="key-round" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Ubah Kata Sandi Co-Founder</h3>
+            <p class="text-[11px] text-gray-500">${targetUser.name} • <span class="font-mono text-brand-emerald">@${targetUser.username || targetUser.id}</span></p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="form-admin-change-pwd" onsubmit="saveAdminChangePassword(event, '${targetUser.id}')" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru *</label>
+          <div class="relative">
+            <input type="text" id="admin-new-pwd-input" required value="${targetUser.password}" class="w-full pl-3 pr-20 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+            <button type="button" onclick="generateRandomPasswordForAdmin('${targetUser.name}')" class="absolute right-1.5 top-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-200 rounded text-[10px] font-semibold transition" title="Buat password acak yang kuat">
+              ⚡ Acak
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1">Anda dapat mengetik password kustom atau menekan tombol Acak.</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Status Aktivasi Kata Sandi *</label>
+          <select id="admin-pwd-status-select" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-semibold">
+            <option value="ACTIVE" ${!targetUser.mustChangePassword ? 'selected' : ''}>✅ Aktif Langsung (Password Pribadi Resmi - Tanpa Wajib Reset)</option>
+            <option value="TEMP" ${targetUser.mustChangePassword ? 'selected' : ''}>🔑 Password Sementara (Wajibkan Reset saat Login Pertama)</option>
+          </select>
+          <p class="text-[10px] text-gray-500 mt-1">Pilih <em>Aktif Langsung</em> jika ini adalah kata sandi definitif agar status di sistem langsung hijau (Aktif).</p>
+        </div>
+
+        <div class="pt-3 border-t border-brand-border dark:border-gray-800 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Simpan Kata Sandi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function generateRandomPasswordForAdmin(userName) {
+  const input = document.getElementById('admin-new-pwd-input');
+  if (!input) return;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+  let newPwd = 'Kk#' + (userName || 'Studio').split(' ')[0];
+  for (let i = 0; i < 4; i++) {
+    newPwd += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  newPwd += '!9';
+  input.value = newPwd;
+}
+
+function saveAdminChangePassword(event, userId) {
+  event.preventDefault();
+  const newPwd = document.getElementById('admin-new-pwd-input')?.value?.trim();
+  const statusSelect = document.getElementById('admin-pwd-status-select')?.value;
+  if (!newPwd || newPwd.length < 6) {
+    showToast('Kata sandi minimal 6 karakter!', 'error');
+    return;
+  }
+
+  const targetUser = store.state.users[userId];
+  if (!targetUser) return;
+  const actor = store.getCurrentUser();
+
+  const isPermanent = statusSelect === 'ACTIVE';
+  targetUser.password = newPwd;
+  targetUser.mustChangePassword = !isPermanent;
+  targetUser.passwordChangedAt = new Date().toISOString();
+
+  store.logAudit(
+    'AUTH_PASSWORD_UPDATED',
+    `Ubah Sandi: ${targetUser.name}`,
+    `DevOps/Admin (${actor.name}) memperbarui kata sandi untuk ${targetUser.name} (${targetUser.roleLabel}). Status: ${isPermanent ? 'Aktif (Password Pribadi)' : 'Password Sementara'}.`
+  );
+  store.saveState();
+
+  closeModal();
+  showToast(`Kata sandi untuk ${targetUser.name} berhasil disimpan (${isPermanent ? 'Aktif Pribadi' : 'Sementara'})!`);
+  renderActiveView();
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(newPwd).then(() => {
+      showToast(`Kata sandi baru untuk ${targetUser.name} disalin ke clipboard!`);
+    }).catch(() => {});
+  }
+}
+
+function openChangeMyPasswordModal(userId) {
+  const currentUserId = userId || (store.getCurrentUser() && store.getCurrentUser().id);
+  const user = store.state.users[currentUserId];
+  if (!user) return;
+
+  const modalHtml = `
+    <div class="p-5 sm:p-7 space-y-4 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b border-brand-border dark:border-gray-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Ubah Kata Sandi Pribadi</h3>
+            <p class="text-[11px] text-gray-500">${user.name} • ${user.roleLabel}</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="form-change-my-pwd" onsubmit="saveChangeMyPassword(event, '${user.id}')" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru Pribadi *</label>
+          <div class="relative">
+            <input type="password" id="my-new-pwd-input" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+            <button type="button" onclick="togglePasswordVisibility('my-new-pwd-input', 'my-pwd-icon1')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <i id="my-pwd-icon1" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-Time Password Strength Checklist -->
+        <div class="p-2.5 bg-gray-50 dark:bg-[#192722] rounded-lg border border-gray-200 dark:border-gray-700 space-y-1 text-[11px]">
+          <span class="font-semibold block text-gray-700 dark:text-gray-300">Kriteria Keamanan:</span>
+          <div class="grid grid-cols-2 gap-1 text-[10px]">
+            <div id="rule-length" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Min. 8 Karakter</div>
+            <div id="rule-upper" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Besar (A-Z)</div>
+            <div id="rule-lower" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Kecil (a-z)</div>
+            <div id="rule-number" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Angka / Simbol</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Kata Sandi Baru *</label>
+          <div class="relative">
+            <input type="password" id="my-confirm-pwd-input" required placeholder="Ulangi kata sandi baru" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+            <button type="button" onclick="togglePasswordVisibility('my-confirm-pwd-input', 'my-pwd-icon2')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <i id="my-pwd-icon2" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="my-pwd-error-msg" class="hidden p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs"></div>
+
+        <div class="pt-3 border-t border-brand-border dark:border-gray-800 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>Simpan Kata Sandi Pribadi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function saveChangeMyPassword(event, userId) {
+  event.preventDefault();
+  const newPassword = document.getElementById('my-new-pwd-input')?.value?.trim();
+  const confirmPassword = document.getElementById('my-confirm-pwd-input')?.value?.trim();
+  const errorBox = document.getElementById('my-pwd-error-msg');
+
+  const strength = checkPasswordStrength(newPassword);
+  if (!strength.isValid) {
+    if (errorBox) {
+      errorBox.textContent = 'Kata sandi baru wajib minimal 8 karakter dengan huruf besar, huruf kecil, dan angka/simbol.';
+      errorBox.classList.remove('hidden');
+    }
+    showToast('Kriteria kata sandi belum terpenuhi!', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    if (errorBox) {
+      errorBox.textContent = 'Konfirmasi kata sandi tidak cocok!';
+      errorBox.classList.remove('hidden');
+    }
+    showToast('Konfirmasi kata sandi tidak cocok!', 'error');
+    return;
+  }
+
+  const user = store.state.users[userId];
+  if (!user) return;
+
+  user.password = newPassword;
+  user.mustChangePassword = false;
+  user.passwordChangedAt = new Date().toISOString();
+
+  store.logAudit(
+    'AUTH_PASSWORD_CHANGED',
+    `Ganti Kata Sandi: ${user.name}`,
+    `Co-Founder ${user.name} (${user.roleLabel}) berhasil memperbarui kata sandi pribadi secara mandiri.`
+  );
+  store.saveState();
+
+  closeModal();
+  showToast('Alhamdulillah! Kata sandi pribadi Anda berhasil diperbarui dan akun berstatus Aktif Resmi.');
+  renderActiveView();
+}
+
+function exportStudioStateToClipboard() {
+  try {
+    const rawData = JSON.stringify(store.state);
+    const b64Data = btoa(encodeURIComponent(rawData));
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(b64Data).then(() => {
+        showToast('Kode sinkronisasi studio berhasil disalin ke clipboard! Bagikan ke HP rekan.');
+      }).catch(() => {
+        prompt('Salin seluruh teks sinkronisasi berikut untuk diimpor ke HP:', b64Data);
+      });
+    } else {
+      prompt('Salin seluruh teks sinkronisasi berikut untuk diimpor ke HP:', b64Data);
+    }
+  } catch (err) {
+    showToast('Gagal mengekspor data: ' + err.message, 'error');
+  }
+}
+
+function openImportStateModal() {
+  const modalHtml = `
+    <div class="p-5 sm:p-7 space-y-4 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b border-brand-border dark:border-gray-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 flex items-center justify-center">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Impor Data Sinkronisasi Studio</h3>
+            <p class="text-[11px] text-gray-500">Salin dari laptop lalu tempelkan kode di bawah</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="form-import-state" onsubmit="saveImportedStudioState(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kode Sinkronisasi Data Studio *</label>
+          <textarea id="import-state-code" rows="5" required placeholder="Tempelkan kode hasil ekspor dari laptop di sini..." class="w-full p-2.5 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white font-mono text-[10px] focus:outline-none focus:ring-1 focus:ring-brand-emerald"></textarea>
+        </div>
+
+        <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 rounded-lg text-amber-800 dark:text-amber-200 text-[11px]">
+          ⚠️ <strong>Perhatian:</strong> Mengimpor data akan memperbarui basis data studio di peramban perangkat ini agar identik dengan data laptop.
+        </div>
+
+        <div class="pt-3 border-t border-brand-border dark:border-gray-800 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Terapkan Sinkronisasi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function saveImportedStudioState(event) {
+  event.preventDefault();
+  const rawCode = document.getElementById('import-state-code')?.value?.trim();
+  if (!rawCode) return;
+
+  try {
+    const jsonStr = decodeURIComponent(atob(rawCode));
+    const parsed = JSON.parse(jsonStr);
+    if (!parsed || !parsed.users) {
+      throw new Error('Format kode sinkronisasi tidak valid.');
+    }
+
+    store.state = parsed;
+    store.saveState();
+    closeModal();
+    showToast('Alhamdulillah! Sinkronisasi data studio berhasil diterapkan di perangkat ini.');
+    checkAuthAndRender();
+    renderActiveView();
+  } catch (err) {
+    showToast('Gagal menerapkan sinkronisasi: ' + err.message, 'error');
+  }
 }
 
 function copyTempPassword(userId) {
