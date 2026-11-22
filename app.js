@@ -45,7 +45,7 @@ const INITIAL_STATE = {
   themePreference: 'light',
   geminiChatSessions: {},
   geminiApiKey: DEFAULT_GEMINI_KEY,
-  geminiModel: 'gemini-flash-latest',
+  geminiModel: 'gemini-flash-lite-latest',
   settings: {
     academicFreezeMode: false,
     graduationThresholdIdr: 3500000,
@@ -259,8 +259,8 @@ class AppStore {
         if (!parsed.geminiChatSessions) {
           parsed.geminiChatSessions = {};
         }
-        if (!parsed.geminiModel || parsed.geminiModel === 'gemini-1.5-flash' || parsed.geminiModel === 'gemini-2.0-flash') {
-          parsed.geminiModel = 'gemini-flash-latest';
+        if (!parsed.geminiModel || ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-pro-latest'].includes(parsed.geminiModel)) {
+          parsed.geminiModel = 'gemini-flash-lite-latest';
         }
         if (!parsed.geminiApiKey || parsed.geminiApiKey.length < 10) {
           parsed.geminiApiKey = localStorage.getItem('karyakita_gemini_api_key') || DEFAULT_GEMINI_KEY;
@@ -6263,7 +6263,7 @@ function initGeminiCopilotUI() {
   // Update model selector
   const modelSelect = document.getElementById('gemini-model-select');
   if (modelSelect) {
-    modelSelect.value = store.state.geminiModel || 'gemini-flash-latest';
+    modelSelect.value = store.state.geminiModel || 'gemini-flash-lite-latest';
   }
 
   // Render quick prompts
@@ -6537,7 +6537,7 @@ function callGeminiAPI(userQuery, attachedDoc, callback) {
   const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih', roleLabel: 'CEO & CTO' };
   const persona = getCopilotPersonaForUser(user);
   const apiKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey || DEFAULT_GEMINI_KEY;
-  const preferredModel = store.state.geminiModel || 'gemini-flash-latest';
+  const preferredModel = store.state.geminiModel || 'gemini-flash-lite-latest';
 
   let contextDocPrompt = '';
   if (attachedDoc) {
@@ -6557,12 +6557,18 @@ INSTRUKSI PENTING:
 3. Selalu perhatikan nilai-nilai amanah, itqan, syirkah 'abdan, dan keseimbangan kuliah di STMIK Tazkia.`;
 
   if (apiKey && apiKey.trim().length > 10) {
-    const candidateModels = Array.from(new Set([preferredModel, 'gemini-flash-latest', 'gemini-pro-latest', 'gemini-2.5-flash', 'gemini-1.5-flash']));
+    const candidateModels = Array.from(new Set([
+      preferredModel,
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash-lite',
+      'gemini-3-flash-preview',
+      'gemini-flash-latest'
+    ]));
 
     const tryFetchModel = (modelIndex) => {
       if (modelIndex >= candidateModels.length) {
         console.warn('Semua endpoint Gemini Live API gagal, beralih ke engine internal studio.');
-        const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc, 'Semua model API Gemini tidak merespon');
+        const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc);
         callback(fallbackReply);
         return;
       }
@@ -6712,12 +6718,10 @@ function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
   if (!hasKey) {
     analysis += `\n\n---\n` +
       `> 💡 **Mode Studio Offline (Data Internal Terhubung)**\n` +
-      `> Asisten saat ini menjawab menggunakan basis data lokal studio. Untuk mengaktifkan **Gemini 2.0 Flash (Penalaran AI Penuh & Bebas Topik)** tanpa batasan, masukkan API Key Google gratis Anda.\n\n` +
+      `> Asisten saat ini menjawab menggunakan basis data lokal studio. Untuk mengaktifkan **Gemini AI (Penalaran AI Penuh & Bebas Topik)** tanpa batasan, masukkan API Key Google gratis Anda.\n\n` +
       `<button type="button" onclick="openGeminiApiKeyModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition mt-1">` +
       `<i data-lucide="key" class="w-3.5 h-3.5"></i> Masukkan Kunci API Gemini Gratis` +
       `</button>`;
-  } else if (errorMsg) {
-    analysis += `\n\n> ⚠️ *Info: Panggilan API Gemini mengalami kendala (${errorMsg}). Sistem otomatis menjawab dengan data internal studio.*`;
   }
 
   return analysis;
@@ -7058,9 +7062,9 @@ function testGeminiApiKey() {
   }
 
   statusEl.className = 'p-2.5 rounded-lg text-xs bg-sky-50 text-sky-800 border border-sky-300 block animate-pulse';
-  statusEl.textContent = 'Sedang menguji koneksi ke Google Gemini Flash...';
+  statusEl.textContent = 'Sedang menguji koneksi ke Google Gemini Flash Lite...';
 
-  const testEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(key)}`;
+  const testEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${encodeURIComponent(key)}`;
   fetch(testEndpoint, {
     method: 'POST',
     headers: {
@@ -7077,10 +7081,10 @@ function testGeminiApiKey() {
   })
   .then(data => {
     statusEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 block';
-    statusEl.textContent = '✅ Koneksi Sukses! Kunci API valid dan model Gemini siap digunakan.';
+    statusEl.textContent = '✅ Koneksi Sukses! Kunci API valid dan Gemini Flash Lite siap digunakan.';
   })
   .catch(err => {
-    const backupEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key=${encodeURIComponent(key)}`;
+    const backupEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${encodeURIComponent(key)}`;
     fetch(backupEndpoint, {
       method: 'POST',
       headers: {
@@ -7097,7 +7101,7 @@ function testGeminiApiKey() {
     })
     .then(() => {
       statusEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 block';
-      statusEl.textContent = '✅ Koneksi Sukses! Kunci API terhubung ke Gemini Pro.';
+      statusEl.textContent = '✅ Koneksi Sukses! Kunci API terhubung ke Gemini 3.5 Flash Lite.';
     })
     .catch(e => {
       statusEl.className = 'p-2.5 rounded-lg text-xs bg-red-50 text-red-800 border border-red-300 block';
@@ -7159,10 +7163,10 @@ function changeGeminiModel(modelName) {
   store.saveState();
 
   const modelLabels = {
-    'gemini-flash-latest': 'Gemini Flash Latest (Cepat & Responsif)',
-    'gemini-pro-latest': 'Gemini Pro Latest (Penalaran Mendalam)',
-    'gemini-2.5-flash': 'Gemini 2.5 Flash',
-    'gemini-1.5-flash': 'Gemini 1.5 Flash'
+    'gemini-flash-lite-latest': 'Gemini Flash Lite (Super Cepat & Stabil)',
+    'gemini-3.5-flash-lite': 'Gemini 3.5 Flash Lite',
+    'gemini-3-flash-preview': 'Gemini 3 Flash Preview',
+    'gemini-flash-latest': 'Gemini Flash Latest'
   };
 
   showToast(`Model dialihkan ke: ${modelLabels[modelName] || modelName}`);
