@@ -26,6 +26,9 @@ const INITIAL_STATE = {
   },
   currentSprint: 1,
   themePreference: 'light',
+  geminiChatSessions: {},
+  geminiApiKey: '',
+  geminiModel: 'gemini-1.5-flash',
   settings: {
     academicFreezeMode: false,
     graduationThresholdIdr: 3500000,
@@ -235,6 +238,15 @@ class AppStore {
 
         if (!parsed.authSession) {
           parsed.authSession = { isAuthenticated: false, userId: null };
+        }
+        if (!parsed.geminiChatSessions) {
+          parsed.geminiChatSessions = {};
+        }
+        if (!parsed.geminiModel) {
+          parsed.geminiModel = 'gemini-1.5-flash';
+        }
+        if (!parsed.geminiApiKey) {
+          parsed.geminiApiKey = localStorage.getItem('karyakita_gemini_api_key') || '';
         }
         return parsed;
       }
@@ -6048,6 +6060,879 @@ function checkAuthAndRender() {
   if (window.lucide) lucide.createIcons();
 }
 
+// ==============================================================================
+// GEMINI AI STUDIO COPILOT & GOOGLE DRIVE INTEGRATION
+// ==============================================================================
+
+const ROLE_COPILOT_PERSONAS = {
+  SUPER_ADMIN: {
+    roleTitle: 'CEO & CTO Executive Advisor',
+    greeting: 'Halo Syauqi! Saya Gemini Copilot untuk peran CEO & CTO Anda. Saya siap membantu evaluasi KPI studio, strategi venture Syirkah \'Abdan, roadmap teknologi, dan manajemen kapasitas 7 co-founder.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Syauqi Muhammad Al Fatih (CEO & CTO) di KaryaKita Hub OS. 
+Studio ini beroperasi dengan akad Syirkah 'Abdan (zero-riba, zero-gharar) oleh 7 mahasiswa STMIK Tazkia. 
+Tugas utama Anda:
+1. Memberikan saran eksekutif berbasis data KPI studio.
+2. Membantu perencanaan Academic Freeze Mode H-7 UTS dan UAS Tazkia.
+3. Menjaga arsitektur teknis sistem, kedaulatan data, dan integrasi GitHub.
+4. Menjaga keseimbangan antara capaian bisnis studio dan keberhasilan akademik seluruh co-founder.
+Berikan jawaban yang taktis, berstruktur rapi, berwawasan kewirausahaan syariah, dan langsung dapat ditindaklanjuti.`,
+    quickPrompts: [
+      'Analisis KPI & beban kerja 7 co-founder pekan ini',
+      'Rancang strategi sprint menuju target kas mandiri Rp3,5 Juta',
+      'Review kesiapan sistem menjelang Academic Freeze UTS Tazkia'
+    ]
+  },
+  OPS_ADMIN: {
+    roleTitle: 'COO & Project Management Specialist',
+    greeting: 'Halo Hilwa! Saya Gemini Copilot untuk peran COO & Head of PM. Saya siap membantu Anda memecah brief klien menjadi task Kanban dengan DoD jelas, SOP triage revisi, dan penjadwalan tim.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Hilwa Mufida (COO & Head of PM) di KaryaKita Hub OS. 
+Tugas utama Anda:
+1. Menerjemahkan kebutuhan klien B2B menjadi tiket tugas terukur dengan kriteria DoD (Definition of Done).
+2. Membantu alur Triage Tiket Revisi agar revisi klien terverifikasi sebelum masuk ke Kanban eksekusi.
+3. Membantu pembagian jam kerja rekan tim agar tidak terjadi bottle-neck atau burnout.
+4. Siap bertindak sebagai Backup Approver verifikasi keuangan saat CFO dalam Mode Ujian (EXAM_MODE).
+Gunakan bahasa operasional yang tegas, terorganisir dengan checklist, dan praktis.`,
+    quickPrompts: [
+      'Breakdown brief proyek klien B2B menjadi tiket tugas Kanban',
+      'Buat checklist DoD (Definition of Done) untuk verifikasi tugas',
+      'Susun draft SOP penanganan triage revisi dari klien'
+    ]
+  },
+  FINANCE_ADMIN: {
+    roleTitle: 'CFO & Syariah Finance Advisor',
+    greeting: 'Halo Novita! Saya Gemini Copilot untuk peran CFO Anda. Saya siap membantu verifikasi pembayaran termin DP 50%, simulasi bagi hasil 60/40, audit kas syariah, dan kalkulasi Zakat Perusahaan.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Novita Rani (CFO & VP Growth Systems) di KaryaKita Hub OS. 
+Tugas utama Anda:
+1. Menjaga tata kelola kas syariah zero-riba, zero-gharar, dan pelacak qardh hasan 0%.
+2. Menghitung formula Bagi Hasil Syirkah 'Abdan dinamis: 60% dibagi rata kepada co-founder aktif + 40% dialokasikan berdasarkan 4-Pilar Poin Kontribusi berbobot.
+3. Memastikan Payment Gate termin proyek dipatuhi (DP 50% sebelum pengerjaan dimulai, pelunasan sebelum serah terima).
+4. Menghitung Zakat Perniagaan 2,5% dari surplus kas bersih dan monitoring Graduation Rule Rp3,5 Juta.
+5. Menyiapkan agenda 'Review & Musyawarah 48 Jam' sebelum penguncian buku kas bulanan.
+Berikan perhitungan matematis yang transparan, teliti, dan berlandaskan muamalah syariah yang adil (taradhin).`,
+    quickPrompts: [
+      'Simulasi hitungan bagi hasil 60% rata & 40% poin kontribusi',
+      'Buat draft template invoice penagihan DP 50% untuk klien B2B',
+      'Hitung zakat perniagaan 2,5% dari surplus kas studio saat ini'
+    ]
+  },
+  UNIT_LEAD_TECH: {
+    roleTitle: 'CBDO & CDO Growth Strategist',
+    greeting: 'Halo Ilham! Saya Gemini Copilot untuk peran CBDO & CDO Anda. Saya siap membantu strategi pipeline CRM B2B 6-tahap, pembuatan proposal penawaran, dan pengembangan unit Data & AI Assistance.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Ilham Akbar (CBDO & CDO) di KaryaKita Hub OS.
+Tugas utama Anda:
+1. Mengembangkan pipeline penjualan B2B dari Leads, Discovery, Pitch, Proposal, Negotiation hingga Won.
+2. Membantu drafting proposal solusi teknologi, data entry/cleaning, dan integrasi AI untuk calon klien.
+3. Merancang strategi follow-up prospek yang persuasif dan profesional.
+4. Memaksimalkan perolehan 5 poin kontribusi berbobot untuk setiap deal klien yang berhasil dimenangkan (Won).
+Berikan saran sales B2B yang tajam, persuasif, elegan, dan berorientasi pada penyelesaian masalah klien.`,
+    quickPrompts: [
+      'Buat draft pesan follow-up prospek B2B yang belum merespon proposal',
+      'Susun penawaran paket layanan Lini 3 Data & AI Assistance',
+      'Tips negosiasi closing klien korporat dengan termin syariah'
+    ]
+  },
+  UNIT_LEAD_CREATIVE: {
+    roleTitle: 'CMO & Viral Growth Specialist',
+    greeting: 'Halo Syarah! Saya Gemini Copilot untuk peran CMO Anda. Saya siap membantu Anda menyusun kalender konten edukasi AI viral di TikTok/Reels/LinkedIn, formula hook video, dan program kemitraan affiliate.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Syarah Fauziah (CMO) di KaryaKita Hub OS.
+Tugas utama Anda:
+1. Merancang kalender konten media multi-platform mingguan untuk mempromosikan layanan studio dan AI Academy.
+2. Menciptakan hook video 3 detik pertama yang menarik perhatian (attention-grabbing) dan skrip video pendek edukatif.
+3. Mengembangkan strategi pertumbuhan jaringan mitra afiliasi (Lini 4) dan kampanye peluncuran layanan.
+4. Menganalisis metrik viralitas dan konversi audiens menjadi prospek klien atau peserta academy.
+Berikan ide-ide kreatif yang segar, trendi, berdaya tular tinggi, dan selaras dengan etika islami.`,
+    quickPrompts: [
+      'Buat 5 ide hook video pendek seputar tips AI untuk mahasiswa & UMKM',
+      'Susun kalender jadwal konten 7 hari untuk TikTok dan Instagram Reels',
+      'Tulis skrip promosi program kemitraan affiliate komisi 10%'
+    ]
+  },
+  UNIT_LEAD_ACADEMY: {
+    roleTitle: 'CRO & AI Academy Curriculum Lead',
+    greeting: 'Halo Nazwa! Saya Gemini Copilot untuk peran CRO & Lead Academy Anda. Saya siap membantu Anda merancang silabus batch workshop AI, soal latihan/kuis, materi sertifikasi, dan kurikulum inkubasi talenta.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Nazwa Azahra (CRO & Lead AI Academy) di KaryaKita Hub OS.
+Tugas utama Anda:
+1. Merancang silabus dan modul workshop AI praktis (Prompt Engineering, AI Tools untuk Produktivitas, Otomasi Bisnis).
+2. Membuat materi kuis interaktif, studi kasus praktis, dan kriteria penilaian kelulusan peserta.
+3. Membantu strategi pembukaan batch pelatihan baru dan pesan rekrutmen peserta workshop.
+4. Menyusun format sertifikat resmi dan panduan pasca-workshop.
+Berikan struktur materi edukasi yang runtut, mudah dipahami mahasiswa pemula hingga menengah, dan inspiratif.`,
+    quickPrompts: [
+      'Susun silabus workshop praktis AI Productivity 3 Jam',
+      'Buat 5 studi kasus latihan prompting untuk peserta kelas AI',
+      'Tulis draft pengumuman pembukaan pendaftaran Batch Baru Academy'
+    ]
+  },
+  UNIT_LEAD_DESIGN: {
+    roleTitle: 'Creative Director & Visual Strategist',
+    greeting: 'Halo Ahmad! Saya Gemini Copilot untuk peran Creative Director Anda. Saya siap membantu konsep visual brand, prompt generasi aset gambar AI, review UI/UX, dan verifikasi standar mutu Itqan.',
+    systemPrompt: `Anda adalah Gemini Studio Copilot khusus untuk Ahmad Maulana (Creative Director) di KaryaKita Hub OS.
+Tugas utama Anda:
+1. Memberikan ide visual art direction, palet warna, tipografi, dan komposisi desain identitas brand.
+2. Merumuskan prompt AI image generator (Midjourney, Stable Diffusion, Google Imagen) untuk aset kreatif studio.
+3. Memastikan prinsip Itqan (kesempurnaan mutu karya dan ketelitian detail) terpenuhi sebelum file diarsipkan ke Vault.
+4. Mengklasifikasikan aset deliverable resmi dengan tag 'CLIENT_SAFE' atau 'NDA_RESTRICTED'.
+Gunakan bahasa kreatif visual yang estetis, kaya referensi desain modern, dan berstandar profesional tinggi.`,
+    quickPrompts: [
+      'Brainstorming konsep visual & moodboard brand identity studio modern',
+      'Buat prompt AI image generator untuk ilustrasi landing page',
+      'Checklist audit kualitas Itqan sebelum deliverable dikirim ke klien'
+    ]
+  }
+};
+
+let activeGeminiSessionId = null;
+let activeAttachedDriveDoc = null;
+
+function getCopilotPersonaForUser(user) {
+  if (!user) return ROLE_COPILOT_PERSONAS.SUPER_ADMIN;
+  if (user.role === 'SUPER_ADMIN') return ROLE_COPILOT_PERSONAS.SUPER_ADMIN;
+  if (user.role === 'OPS_ADMIN') return ROLE_COPILOT_PERSONAS.OPS_ADMIN;
+  if (user.role === 'FINANCE_ADMIN') return ROLE_COPILOT_PERSONAS.FINANCE_ADMIN;
+  if (user.id === 'ilham') return ROLE_COPILOT_PERSONAS.UNIT_LEAD_TECH;
+  if (user.id === 'syarah' || user.id === 'syaraf') return ROLE_COPILOT_PERSONAS.UNIT_LEAD_CREATIVE;
+  if (user.id === 'nazwa') return ROLE_COPILOT_PERSONAS.UNIT_LEAD_ACADEMY;
+  if (user.id === 'ahmad') return ROLE_COPILOT_PERSONAS.UNIT_LEAD_DESIGN;
+  return ROLE_COPILOT_PERSONAS.SUPER_ADMIN;
+}
+
+function toggleGeminiCopilot() {
+  const drawer = document.getElementById('gemini-copilot-drawer');
+  if (!drawer) return;
+
+  const isHidden = drawer.classList.contains('hidden');
+  if (isHidden) {
+    drawer.classList.remove('hidden');
+    drawer.classList.add('gemini-drawer-enter');
+    initGeminiCopilotUI();
+  } else {
+    drawer.classList.add('hidden');
+    drawer.classList.remove('gemini-drawer-enter');
+  }
+}
+
+function initGeminiCopilotUI() {
+  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih', roleLabel: 'CEO & CTO' };
+  const persona = getCopilotPersonaForUser(user);
+
+  // Update header labels
+  const roleLabel = document.getElementById('gemini-role-label');
+  if (roleLabel) {
+    roleLabel.textContent = `Mode: ${user.name.split(' ')[0]} (${user.roleLabel})`;
+  }
+
+  // Update key status indicator
+  const keyStatus = document.getElementById('gemini-key-status-text');
+  const savedKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey;
+  if (keyStatus) {
+    keyStatus.textContent = (savedKey && savedKey.length > 10) ? 'API Key Terhubung' : 'Set API Key Gratis';
+  }
+
+  // Update model selector
+  const modelSelect = document.getElementById('gemini-model-select');
+  if (modelSelect) {
+    modelSelect.value = store.state.geminiModel || 'gemini-1.5-flash';
+  }
+
+  // Render quick prompts
+  renderGeminiQuickPrompts(persona.quickPrompts);
+
+  // Initialize or load active session
+  if (!store.state.geminiChatSessions) store.state.geminiChatSessions = {};
+  if (!store.state.geminiChatSessions[user.id]) store.state.geminiChatSessions[user.id] = [];
+
+  const userSessions = store.state.geminiChatSessions[user.id];
+  if (userSessions.length === 0 || !activeGeminiSessionId) {
+    startNewGeminiChat(true);
+  } else {
+    renderGeminiMessages(activeGeminiSessionId);
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderGeminiQuickPrompts(prompts) {
+  const container = document.getElementById('gemini-quick-prompts-container');
+  if (!container || !prompts) return;
+
+  container.innerHTML = prompts.map(p => `
+    <button type="button" onclick="sendQuickPrompt(decodeURIComponent('${encodeURIComponent(p)}'))" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-200 dark:border-emerald-800 text-[10px] font-medium text-brand-emerald dark:text-emerald-300 transition shrink-0 flex items-center gap-1 shadow-2xs">
+      <i data-lucide="sparkle" class="w-2.5 h-2.5 text-amber-500"></i>
+      <span>${escapeHtml(p)}</span>
+    </button>
+  `).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function sendQuickPrompt(promptText) {
+  const input = document.getElementById('gemini-chat-input');
+  if (input) {
+    input.value = promptText;
+    handleSendGeminiMessage();
+  }
+}
+
+function startNewGeminiChat(isInitialSilent) {
+  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih', roleLabel: 'CEO & CTO' };
+  const persona = getCopilotPersonaForUser(user);
+
+  const sessionId = 'session_' + Date.now();
+  activeGeminiSessionId = sessionId;
+
+  const newSession = {
+    id: sessionId,
+    title: 'Obrolan Baru',
+    createdAt: new Date().toISOString(),
+    messages: [
+      {
+        id: 'msg_' + Date.now(),
+        sender: 'gemini',
+        text: persona.greeting,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]
+  };
+
+  if (!store.state.geminiChatSessions[user.id]) {
+    store.state.geminiChatSessions[user.id] = [];
+  }
+  store.state.geminiChatSessions[user.id].unshift(newSession);
+  store.saveState();
+
+  renderGeminiMessages(sessionId);
+  if (!isInitialSilent) {
+    showToast('Sesi obrolan baru Gemini Copilot siap!');
+  }
+}
+
+function renderGeminiMessages(sessionId) {
+  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih' };
+  const canvas = document.getElementById('gemini-messages-canvas');
+  if (!canvas) return;
+
+  const userSessions = store.state.geminiChatSessions[user.id] || [];
+  const session = userSessions.find(s => s.id === sessionId) || userSessions[0];
+  if (!session) {
+    canvas.innerHTML = '<div class="text-center py-10 text-gray-400">Belum ada pesan. Mulai obrolan dengan Gemini Copilot!</div>';
+    return;
+  }
+
+  activeGeminiSessionId = session.id;
+
+  canvas.innerHTML = session.messages.map(msg => {
+    const isUser = msg.sender === 'user';
+    return `
+      <div class="flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} group">
+        ${!isUser ? `
+          <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-xs mt-0.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </div>
+        ` : ''}
+
+        <div class="max-w-[85%] sm:max-w-[80%] space-y-1">
+          <div class="p-3 rounded-2xl ${isUser ? 'gemini-bubble-user rounded-tr-none' : 'gemini-bubble-ai rounded-tl-none'} shadow-sm text-xs leading-relaxed">
+            ${isUser ? `<div>${escapeHtml(msg.text)}</div>` : `<div>${formatGeminiMarkdown(msg.text)}</div>`}
+            ${msg.attachedDoc ? `
+              <div class="mt-2 p-1.5 rounded-lg bg-black/10 text-[10px] flex items-center gap-1 border border-white/20">
+                <i data-lucide="file-text" class="w-3 h-3"></i>
+                <span class="font-semibold truncate">Ref: ${escapeHtml(msg.attachedDoc.title)}</span>
+              </div>
+            ` : ''}
+          </div>
+          <div class="flex items-center gap-2 ${isUser ? 'justify-end' : 'justify-start'} text-[10px] text-gray-400 px-1">
+            <span>${msg.timestamp || ''}</span>
+            ${!isUser ? `
+              <button type="button" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(msg.text)}')); showToast('Pesan disalin!');" class="opacity-0 group-hover:opacity-100 hover:text-brand-emerald transition" title="Salin jawaban">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        ${isUser ? `
+          <img src="${user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}" alt="${user.name}" class="w-6 h-6 rounded-full object-cover border border-emerald-500/40 shrink-0 mt-0.5">
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  canvas.scrollTop = canvas.scrollHeight;
+  if (window.lucide) lucide.createIcons();
+}
+
+function handleSendGeminiMessage(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('gemini-chat-input');
+  if (!input) return;
+
+  const userText = input.value.trim();
+  if (!userText && !activeAttachedDriveDoc) return;
+
+  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih' };
+  const userSessions = store.state.geminiChatSessions[user.id] || [];
+  let session = userSessions.find(s => s.id === activeGeminiSessionId);
+  if (!session) {
+    startNewGeminiChat(true);
+    session = store.state.geminiChatSessions[user.id][0];
+  }
+
+  // Update session title on first message
+  if (session.messages.length <= 1) {
+    session.title = userText.slice(0, 30) + (userText.length > 30 ? '...' : '');
+  }
+
+  const userMsg = {
+    id: 'msg_' + Date.now(),
+    sender: 'user',
+    text: userText,
+    attachedDoc: activeAttachedDriveDoc ? { ...activeAttachedDriveDoc } : null,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+
+  session.messages.push(userMsg);
+  store.saveState();
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Render immediately with typing indicator
+  renderGeminiMessages(session.id);
+  showGeminiTypingIndicator();
+
+  const docToSend = activeAttachedDriveDoc;
+  removeAttachedDriveDoc();
+
+  callGeminiAPI(userText, docToSend, (replyText) => {
+    hideGeminiTypingIndicator();
+    const aiMsg = {
+      id: 'msg_' + Date.now(),
+      sender: 'gemini',
+      text: replyText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    session.messages.push(aiMsg);
+    store.saveState();
+    renderGeminiMessages(session.id);
+  });
+}
+
+function showGeminiTypingIndicator() {
+  const canvas = document.getElementById('gemini-messages-canvas');
+  if (!canvas) return;
+
+  hideGeminiTypingIndicator();
+
+  const typingHtml = `
+    <div id="gemini-typing-box" class="flex gap-2.5 justify-start">
+      <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-xs mt-0.5">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+      </div>
+      <div class="gemini-bubble-ai p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-brand-emerald gemini-typing-dot"></span>
+        <span class="w-2 h-2 rounded-full bg-teal-500 gemini-typing-dot"></span>
+        <span class="w-2 h-2 rounded-full bg-sky-500 gemini-typing-dot"></span>
+        <span class="text-[10px] text-gray-500 font-medium ml-1">Gemini sedang berpikir...</span>
+      </div>
+    </div>
+  `;
+  canvas.insertAdjacentHTML('beforeend', typingHtml);
+  canvas.scrollTop = canvas.scrollHeight;
+  if (window.lucide) lucide.createIcons();
+}
+
+function hideGeminiTypingIndicator() {
+  const el = document.getElementById('gemini-typing-box');
+  if (el) el.remove();
+}
+
+function callGeminiAPI(userQuery, attachedDoc, callback) {
+  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih', roleLabel: 'CEO & CTO' };
+  const persona = getCopilotPersonaForUser(user);
+  const apiKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey;
+  const model = store.state.geminiModel || 'gemini-1.5-flash';
+
+  let contextDocPrompt = '';
+  if (attachedDoc) {
+    contextDocPrompt = `\n\n[DOKUMEN GOOGLE DRIVE / FILE TERLAMPIR]\nJudul: ${attachedDoc.title}\nTautan: ${attachedDoc.url}\n${attachedDoc.content ? `Isi Dokumen:\n${attachedDoc.content}` : ''}\nMohon gunakan dokumen di atas sebagai rujukan analisis Anda.`;
+  }
+
+  // Real-time studio state context
+  const tasksCount = store.state.tasks ? store.state.tasks.length : 0;
+  const projectsCount = store.state.projects ? store.state.projects.length : 0;
+  const currentSprint = store.state.currentSprint || 1;
+  const freezeMode = store.state.settings && store.state.settings.academicFreezeMode ? 'AKTIF (Pekan UTS/UAS Tazkia)' : 'TIDAK AKTIF (Reguler)';
+
+  const systemInstructionText = `${persona.systemPrompt}
+
+[KONTEKS REAL-TIME STUDIO KARYAKITA HUB]:
+- Co-Founder Aktif: ${user.name} (${user.roleLabel})
+- Kapasitas Kuliah Saat Ini: ${user.capacityStatus || 'Tersedia'}
+- Sprint Berjalan: Sprint ${currentSprint}
+- Status Academic Freeze STMIK Tazkia: ${freezeMode}
+- Total Tiket Tugas Berjalan: ${tasksCount} tugas
+- Total Proyek Klien Aktif: ${projectsCount} proyek
+${contextDocPrompt}`;
+
+  if (apiKey && apiKey.trim().length > 10) {
+    // Live Google Gemini API Request
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemInstructionText }]
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userQuery + contextDocPrompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048
+        }
+      })
+    })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: API Gemini merespon status tidak berhasil`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        callback(text);
+      } else {
+        throw new Error('Respon kosong dari endpoint Gemini');
+      }
+    })
+    .catch(err => {
+      console.warn('Gemini Live API fallback:', err);
+      const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc, err.message);
+      callback(fallbackReply);
+    });
+  } else {
+    // Intelligent Offline & Studio Engine (Ready-to-use instantly!)
+    setTimeout(() => {
+      const reply = generateStudioFallbackReply(user, userQuery, attachedDoc);
+      callback(reply);
+    }, 650);
+  }
+}
+
+function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
+  const q = (query || '').toLowerCase();
+  let analysis = '';
+
+  if (attachedDoc) {
+    analysis += `### Rujukan Dokumen Google Drive: ${attachedDoc.title}\n` +
+      `Saya telah menelaah referensi dokumen **${attachedDoc.title}** (${attachedDoc.url}). ` +
+      `Dokumen ini siap diselaraskan dengan tata kelola studio dan peran Anda sebagai **${user.roleLabel}**.\n\n`;
+  }
+
+  if (q.includes('kpi') || q.includes('ritme') || q.includes('beban')) {
+    analysis += `### Analisis Ritme & Kinerja Studio (Sprint ${store.state.currentSprint || 1})\n` +
+      `- **Keseimbangan Kuliah & Studio:** Status kapasitas co-founder terpantau sehat. Saat ini Academic Freeze dalam mode **${store.state.settings?.academicFreezeMode ? 'AKTIF' : 'Standar'}**.\n` +
+      `- **Rekomendasi Eksekutif:** Pastikan setiap co-founder memperbarui Capacity Pill di navigasi atas setiap Senin pagi agar beban sprint dapat disesuaikan dengan jadwal ujian kuliah STMIK Tazkia.\n` +
+      `- **Target Kelulusan:** Pantau progres menuju target kas mandiri Rp3,5 Juta (Graduation Rule).`;
+  } else if (q.includes('tugas') || q.includes('kanban') || q.includes('dod') || q.includes('brief')) {
+    analysis += `### Rekomendasi Alur Tugas & Definition of Done (DoD)\n` +
+      `1. **Pemecahan Task:** Pastikan setiap tugas memiliki estimasi jam kerja realistis (maksimal 4–5 jam per pekan per mahasiswa).\n` +
+      `2. **Kriteria DoD (Definition of Done):**\n` +
+      `   - Kode/desain telah melalui self-review sesuai standar mutu Itqan.\n` +
+      `   - Lampiran bukti pengerjaan (link Figma / GitHub PR / Dokumen Drive) telah disematkan.\n` +
+      `   - Diverifikasi oleh PIC atau Backup Approver sebelum dipindahkan ke kolom Done.`;
+  } else if (q.includes('bagi hasil') || q.includes('kas') || q.includes('zakat') || q.includes('invoice') || q.includes('keuangan')) {
+    analysis += `### Panduan Keuangan Syariah & Formula 60/40\n` +
+      `- **Prinsip Kas:** Zero-riba, zero-gharar, dan pelacak qardh hasan 0% bunga.\n` +
+      `- **Bagi Hasil Syirkah 'Abdan:** Surplus kas operasional dialokasikan **60% dibagi rata** kepada co-founder aktif + **40% dialokasikan secara proporsional** berdasarkan 4-Pilar Poin Kontribusi berbobot.\n` +
+      `- **Zakat Perusahaan:** Otomatis dihitung sebesar **2,5%** dari kas surplus setelah dikurangi cadangan kelulusan bootstrap Rp3,5 Juta.\n` +
+      `- **Payment Gate:** Wajibkan termin DP 50% sebelum pengerjaan proyek klien dimulai.`;
+  } else if (q.includes('crm') || q.includes('prospek') || q.includes('proposal') || q.includes('leads') || q.includes('closing')) {
+    analysis += `### Strategi Pipeline B2B & Akuisisi Klien (Lini CRM)\n` +
+      `- **6-Tahap Konversi:** Leads ➔ Discovery ➔ Pitch ➔ Proposal ➔ Negotiation ➔ Won.\n` +
+      `- **Insentif Eksekutor:** Setiap deal yang berhasil Anda konversikan menjadi status **Won** otomatis memberikan **5 poin kontribusi berbobot** ke porsi bagi hasil Syirkah Anda.\n` +
+      `- **Tips Follow-up:** Kirim pesan bernada konsultatif, tawarkan audit efisiensi alur kerja berbasis AI, dan lampirkan portofolio klien resmi studio.`;
+  } else if (q.includes('konten') || q.includes('viral') || q.includes('tiktok') || q.includes('reels') || q.includes('affiliate')) {
+    analysis += `### Formula Konten AI Viral & Jadwal CMO\n` +
+      `1. **Hook 3 Detik:** "Ini cara rahasia mahasiswa selesaikan tugas 5 jam jadi 15 menit pakai tools AI gratis..."\n` +
+      `2. **Pilar Edukasi:** 60% Tutorial AI praktis, 25% Studi kasus proyek studio, 15% Ajakan program referral/affiliate komisi 10%.\n` +
+      `3. **Distribusi Multi-Platform:** Publikasikan serentak ke TikTok, Instagram Reels, YouTube Shorts, dan ringkasan carousel di LinkedIn.`;
+  } else if (q.includes('workshop') || q.includes('academy') || q.includes('silabus') || q.includes('quiz')) {
+    analysis += `### Kurikulum & Workshop AI Academy (Lini 5)\n` +
+      `- **Silabus 3 Jam:** Sesi 1: Dasar Prompt Engineering (45m), Sesi 2: Praktik AI Workflow Automation (60m), Sesi 3: Studi Kasus Bisnis Nyata & Sertifikasi (75m).\n` +
+      `- **Standar Kelulusan:** Peserta wajib menyelesaikan 3 studi kasus prompt dan mengisi formulir evaluasi sebelum penerbitan e-sertifikat digital studio.`;
+  } else if (q.includes('desain') || q.includes('itqan') || q.includes('moodboard') || q.includes('prompt')) {
+    analysis += `### Prinsip Desain Identitas & Standar Mutu Itqan\n` +
+      `- **Standar Itqan:** Cek kontras warna, kerapian grid layout, hierarki tipografi, dan konsistensi ikon sebelum diserahkan ke klien.\n` +
+      `- **Klasifikasi Vault:** Beri label 'CLIENT_SAFE' untuk deliverable siap pakai dan 'NDA_RESTRICTED' untuk aset internal yang dilindungi perjanjian kerahasiaan.`;
+  } else {
+    analysis += `Halo **${user.name}**! Sebagai **${user.roleLabel}**, saya telah menganalisis pertanyaan Anda: *"${query}"*.\n\n` +
+      `Saran taktis saya untuk Anda:\n` +
+      `1. Selaraskan rencana kerja ini dengan Papan Tugas Sprint ${store.state.currentSprint || 1} studio.\n` +
+      `2. Manfaatkan menu navigasi khusus Anda di panel kiri untuk mencatat hasil koordinasi.\n` +
+      `3. Koordinasikan bersama rekan co-founder dalam sesi Syura mingguan agar seluruh keputusan dilandasi musyawarah dan ridha bersama (*taradhin*).`;
+  }
+
+  const liveApiNotice = (!localStorage.getItem('karyakita_gemini_api_key') && (!store.state.geminiApiKey || store.state.geminiApiKey.length < 10))
+    ? `\n\n> 💡 **Mode Studio Asisten Siap Pakai:** Untuk mengaktifkan respon penalaran *frontier AI* tanpa batas dari server Google Gemini, masukkan Gemini API Key gratis Anda melalui tombol **🔑 Set API Key** di atas.`
+    : (errorMsg ? `\n\n> ⚠️ *Koneksi live API mengalami kendala (${errorMsg}). Sistem otomatis menggunakan penalaran internal studio.*` : '');
+
+  return analysis + liveApiNotice;
+}
+
+function formatGeminiMarkdown(text) {
+  if (!text) return '';
+  let escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Code blocks: ```language\ncode\n```
+  escaped = escaped.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<div class="my-2 rounded-lg bg-gray-900 text-gray-100 p-2.5 font-mono text-[11px] overflow-x-auto relative group">
+      <div class="flex items-center justify-between text-[10px] text-gray-400 border-b border-gray-800 pb-1 mb-1">
+        <span>${lang || 'code'}</span>
+        <button type="button" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(code)}')); showToast('Kode disalin!');" class="hover:text-white">Salin</button>
+      </div>
+      <pre><code>${code}</code></pre>
+    </div>`;
+  });
+
+  // Inline code: `code`
+  escaped = escaped.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-800 font-mono text-[11px]">$1</code>');
+
+  // Bold: **text**
+  escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic: *text*
+  escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // Headings: ### Header
+  escaped = escaped.replace(/^### (.*$)/gim, '<h4 class="font-heading font-bold text-xs mt-2 mb-1 text-emerald-800 dark:text-emerald-300">$1</h4>');
+  escaped = escaped.replace(/^## (.*$)/gim, '<h3 class="font-heading font-bold text-sm mt-2 mb-1 text-emerald-900 dark:text-emerald-200">$1</h3>');
+
+  // Bullet list: - item or * item
+  escaped = escaped.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 list-disc">$1</li>');
+
+  // Blockquotes: > quote
+  escaped = escaped.replace(/^>\s*(.*$)/gim, '<div class="p-2 my-1.5 bg-emerald-50/70 dark:bg-emerald-950/50 border-l-3 border-brand-emerald rounded-r text-[11px] text-emerald-900 dark:text-emerald-200">$1</div>');
+
+  // Line breaks to <br>
+  escaped = escaped.replace(/\n/g, '<br>');
+
+  return escaped;
+}
+
+function toggleGeminiSessionsHistory() {
+  const panel = document.getElementById('gemini-history-panel');
+  if (!panel) return;
+
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    renderGeminiSessionsHistoryList();
+    panel.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+function renderGeminiSessionsHistoryList() {
+  const user = store.getCurrentUser() || { id: 'alfatih' };
+  const listContainer = document.getElementById('gemini-sessions-list');
+  if (!listContainer) return;
+
+  const userSessions = store.state.geminiChatSessions[user.id] || [];
+  if (userSessions.length === 0) {
+    listContainer.innerHTML = '<p class="text-gray-400 text-[11px] py-1 text-center">Belum ada riwayat percakapan.</p>';
+    return;
+  }
+
+  listContainer.innerHTML = userSessions.map(s => `
+    <div class="flex items-center justify-between p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition ${s.id === activeGeminiSessionId ? 'bg-emerald-50 dark:bg-emerald-950/60 font-semibold text-brand-emerald' : 'text-gray-700 dark:text-gray-300'}">
+      <button type="button" onclick="loadGeminiSession('${s.id}')" class="text-left flex-1 min-w-0 flex items-center gap-1.5">
+        <i data-lucide="message-square" class="w-3 h-3 shrink-0"></i>
+        <span class="truncate text-[11px]">${escapeHtml(s.title || 'Obrolan')}</span>
+      </button>
+      <button type="button" onclick="deleteGeminiSession('${s.id}', event)" class="text-gray-400 hover:text-red-600 transition p-1" title="Hapus sesi">
+        <i data-lucide="trash-2" class="w-3 h-3"></i>
+      </button>
+    </div>
+  `).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function loadGeminiSession(sessionId) {
+  activeGeminiSessionId = sessionId;
+  renderGeminiMessages(sessionId);
+  const panel = document.getElementById('gemini-history-panel');
+  if (panel) panel.classList.add('hidden');
+}
+
+function deleteGeminiSession(sessionId, event) {
+  if (event) event.stopPropagation();
+  const user = store.getCurrentUser() || { id: 'alfatih' };
+  let sessions = store.state.geminiChatSessions[user.id] || [];
+  sessions = sessions.filter(s => s.id !== sessionId);
+  store.state.geminiChatSessions[user.id] = sessions;
+  store.saveState();
+
+  if (activeGeminiSessionId === sessionId) {
+    activeGeminiSessionId = sessions.length > 0 ? sessions[0].id : null;
+    if (!activeGeminiSessionId) {
+      startNewGeminiChat(true);
+    } else {
+      renderGeminiMessages(activeGeminiSessionId);
+    }
+  }
+
+  renderGeminiSessionsHistoryList();
+  showToast('Sesi obrolan dihapus.');
+}
+
+function clearAllGeminiHistory() {
+  const user = store.getCurrentUser() || { id: 'alfatih' };
+  if (confirm('Hapus seluruh riwayat percakapan Gemini Copilot untuk akun Anda?')) {
+    store.state.geminiChatSessions[user.id] = [];
+    store.saveState();
+    startNewGeminiChat(true);
+    const panel = document.getElementById('gemini-history-panel');
+    if (panel) panel.classList.add('hidden');
+    showToast('Seluruh riwayat obrolan berhasil dibersihkan.');
+  }
+}
+
+// ==============================================================================
+// GOOGLE DRIVE & ATTACHMENT MODAL
+// ==============================================================================
+
+function openAttachDriveModal() {
+  const modalHtml = `
+    <div class="p-6 space-y-5 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+            <i data-lucide="folder-git-2" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Hubungkan Google Drive & Dokumen</h3>
+            <p class="text-[11px] text-gray-500">Jadikan dokumen rujukan analisis AI Gemini</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Tautan Google Drive / Docs / Sheets -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">1. Tautan Google Drive / Docs / Sheets</label>
+        <input id="input-drive-link" type="url" placeholder="https://docs.google.com/document/d/.../edit" class="w-full text-xs p-2.5 border rounded-lg bg-white dark:bg-[#1A2C24] text-gray-900 dark:text-white">
+        <input id="input-drive-title" type="text" placeholder="Nama Dokumen (Contoh: Brief Proyek Klien PT ABC)" class="w-full text-xs p-2.5 border rounded-lg bg-white dark:bg-[#1A2C24] text-gray-900 dark:text-white mt-1.5">
+      </div>
+
+      <!-- Preset Dokumen Studio -->
+      <div class="space-y-1.5 pt-1">
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Preset Dokumen Studio Cepat</label>
+        <div class="grid grid-cols-1 gap-1.5">
+          <button type="button" onclick="setDriveLinkPreset('Blueprint Master KaryaKita Hub OS', 'https://docs.google.com/document/d/karyakita-master-blueprint')" class="text-left text-xs p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950 border border-gray-200 dark:border-gray-700 flex items-center justify-between transition">
+            <span class="font-medium text-gray-800 dark:text-gray-200">📘 Blueprint Master KaryaKita Hub OS</span>
+            <span class="text-[10px] text-brand-emerald font-bold">Pilih</span>
+          </button>
+          <button type="button" onclick="setDriveLinkPreset('Buku Kas & Formula Syirkah Studio', 'https://docs.google.com/spreadsheets/d/karyakita-buku-kas')" class="text-left text-xs p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950 border border-gray-200 dark:border-gray-700 flex items-center justify-between transition">
+            <span class="font-medium text-gray-800 dark:text-gray-200">📊 Google Sheets: Kas & Syirkah Studio</span>
+            <span class="text-[10px] text-brand-emerald font-bold">Pilih</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Catatan Teks Lokal -->
+      <div class="space-y-1.5 pt-1">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">2. Atau Unggah Catatan Teks Rujukan (.txt, .md, .csv)</label>
+        <input type="file" id="input-drive-file" accept=".txt,.md,.csv,.json" class="w-full text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:bg-emerald-50 file:text-brand-emerald text-gray-500">
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border text-xs font-semibold">Batal</button>
+        <button type="button" onclick="applyAttachedDriveDoc()" class="px-4 py-1.5 rounded-lg bg-brand-emerald text-white text-xs font-semibold shadow-sm">Lampirkan ke Obrolan</button>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function setDriveLinkPreset(title, url) {
+  const inTitle = document.getElementById('input-drive-title');
+  const inLink = document.getElementById('input-drive-link');
+  if (inTitle) inTitle.value = title;
+  if (inLink) inLink.value = url;
+}
+
+function applyAttachedDriveDoc() {
+  const inLink = document.getElementById('input-drive-link');
+  const inTitle = document.getElementById('input-drive-title');
+  const inFile = document.getElementById('input-drive-file');
+
+  const file = inFile && inFile.files && inFile.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      activeAttachedDriveDoc = {
+        title: file.name,
+        url: 'File Lokal: ' + file.name,
+        content: e.target.result.slice(0, 5000)
+      };
+      updateAttachedDriveUI();
+      closeModal();
+      showToast(`File "${file.name}" dilampirkan ke Gemini Copilot!`);
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  const url = inLink ? inLink.value.trim() : '';
+  const title = (inTitle && inTitle.value.trim()) || (url ? 'Tautan Google Drive' : '');
+
+  if (!url) {
+    showToast('Masukkan URL Google Drive atau pilih file terlebih dahulu!', 'error');
+    return;
+  }
+
+  activeAttachedDriveDoc = {
+    title: title || 'Dokumen Google Drive',
+    url: url
+  };
+
+  updateAttachedDriveUI();
+  closeModal();
+  showToast(`Dokumen "${activeAttachedDriveDoc.title}" dilampirkan ke Gemini Copilot!`);
+}
+
+function updateAttachedDriveUI() {
+  const bar = document.getElementById('gemini-attached-drive-bar');
+  const nameEl = document.getElementById('gemini-attached-drive-name');
+  if (!bar || !nameEl) return;
+
+  if (activeAttachedDriveDoc) {
+    nameEl.textContent = activeAttachedDriveDoc.title;
+    bar.classList.remove('hidden');
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function removeAttachedDriveDoc() {
+  activeAttachedDriveDoc = null;
+  updateAttachedDriveUI();
+}
+
+// ==============================================================================
+// GEMINI API KEY SETTINGS MODAL
+// ==============================================================================
+
+function openGeminiApiKeyModal() {
+  const currentKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey || '';
+  const modalHtml = `
+    <div class="p-6 space-y-5 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-400 text-white flex items-center justify-center shadow-sm">
+            <i data-lucide="key" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Google Gemini API Key</h3>
+            <p class="text-[11px] text-gray-500">Aktivasi model Gemini 1.5 Flash & Pro Live</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">Google Gemini API Key</label>
+        <div class="relative">
+          <input id="gemini-api-key-input" type="password" value="${escapeHtml(currentKey)}" placeholder="AIzaSy..." class="w-full text-xs px-3 py-2.5 pr-10 border rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+          <button type="button" onclick="togglePasswordVisibility('gemini-api-key-input')" class="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p class="text-[10px] text-gray-500">Kunci disimpan aman di peramban lokal perangkat Anda (localStorage).</p>
+      </div>
+
+      <div class="p-3 bg-sky-50 dark:bg-sky-950/60 rounded-xl border border-sky-200 dark:border-sky-800 text-xs space-y-1.5 text-sky-950 dark:text-sky-200">
+        <div class="flex items-center gap-1.5 font-bold">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-sky-600"></i>
+          <span>Cara Mendapatkan Kunci Gratis (1 Menit):</span>
+        </div>
+        <ol class="list-decimal list-inside space-y-0.5 text-[11px] text-sky-900 dark:text-sky-300">
+          <li>Kunjungi <a href="https://aistudio.google.com/" target="_blank" class="underline font-bold text-sky-700 dark:text-sky-400">Google AI Studio</a></li>
+          <li>Login dengan akun Google / Gmail Anda</li>
+          <li>Klik tombol <strong>Get API key</strong> lalu <strong>Create API key</strong></li>
+          <li>Salin dan tempelkan kuncinya ke kolom di atas</li>
+        </ol>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+        <button type="button" onclick="clearGeminiApiKey()" class="text-xs text-red-600 hover:underline">Hapus Kunci</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border text-xs font-semibold">Tutup</button>
+          <button type="button" onclick="saveGeminiApiKey()" class="px-4 py-1.5 rounded-lg bg-brand-emerald text-white text-xs font-semibold shadow-sm">Simpan Kunci</button>
+        </div>
+      </div>
+    </div>
+  `;
+  openModal(modalHtml);
+}
+
+function saveGeminiApiKey() {
+  const input = document.getElementById('gemini-api-key-input');
+  if (!input) return;
+  const key = input.value.trim();
+  localStorage.setItem('karyakita_gemini_api_key', key);
+  store.state.geminiApiKey = key;
+  store.saveState();
+
+  const keyStatus = document.getElementById('gemini-key-status-text');
+  if (keyStatus) {
+    keyStatus.textContent = (key && key.length > 10) ? 'API Key Terhubung' : 'Set API Key Gratis';
+  }
+
+  closeModal();
+  showToast(key ? 'Google Gemini API Key berhasil disimpan & terhubung!' : 'API Key dikosongkan.');
+}
+
+function clearGeminiApiKey() {
+  localStorage.removeItem('karyakita_gemini_api_key');
+  store.state.geminiApiKey = '';
+  store.saveState();
+  const input = document.getElementById('gemini-api-key-input');
+  if (input) input.value = '';
+  const keyStatus = document.getElementById('gemini-key-status-text');
+  if (keyStatus) keyStatus.textContent = 'Set API Key Gratis';
+  closeModal();
+  showToast('Google Gemini API Key dihapus.');
+}
+
+function togglePasswordVisibility(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function changeGeminiModel(modelName) {
+  store.state.geminiModel = modelName;
+  store.saveState();
+  showToast(`Model dialihkan ke: ${modelName === 'gemini-1.5-pro' ? 'Gemini 1.5 Pro' : 'Gemini 1.5 Flash'}`);
+}
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Adaptive Theme
@@ -6142,6 +7027,30 @@ document.addEventListener('DOMContentLoaded', () => {
       sidebar.classList.toggle('fixed');
       sidebar.classList.toggle('inset-0');
       sidebar.classList.toggle('z-50');
+    });
+  }
+
+  // Gemini Copilot Shortcut (Ctrl+Shift+G or Alt+G)
+  window.addEventListener('keydown', (e) => {
+    if (((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'g' || e.key === 'G')) ||
+        (e.altKey && (e.key === 'g' || e.key === 'G'))) {
+      e.preventDefault();
+      toggleGeminiCopilot();
+    }
+  });
+
+  // Gemini Chat input Enter key & auto-expand
+  const geminiInput = document.getElementById('gemini-chat-input');
+  if (geminiInput) {
+    geminiInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    geminiInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendGeminiMessage();
+      }
     });
   }
 

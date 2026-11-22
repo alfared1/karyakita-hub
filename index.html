@@ -108,6 +108,12 @@
         <i id="theme-toggle-icon" data-lucide="moon" class="w-4 h-4"></i>
       </button>
 
+      <!-- Gemini Studio Copilot Button -->
+      <button id="btn-topbar-gemini" onclick="toggleGeminiCopilot()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-teal-700 to-sky-700 hover:from-teal-600 hover:to-sky-600 border border-sky-400/40 text-white shadow-sm transition group" title="Buka Asisten AI Gemini Copilot (Ctrl+Shift+G)">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 animate-pulse"></i>
+        <span class="hidden sm:inline font-bold">Gemini AI</span>
+      </button>
+
       <!-- Product Tour / Walkthrough Button -->
       <button id="btn-topbar-tour" onclick="openOnboardingTour(store.getCurrentUser())" class="p-1 rounded-lg hover:bg-emerald-800/80 text-emerald-200 transition" title="Buka Tur Panduan Aplikasi Sesuai Role">
         <i data-lucide="help-circle" class="w-4 h-4"></i>
@@ -412,6 +418,128 @@
       <span>Proyek</span>
     </button>
   </nav>
+
+  <!-- ========================================================================
+       GEMINI AI STUDIO COPILOT (FLOATING BUTTON & INTERACTIVE CHAT DRAWER)
+       ======================================================================== -->
+  <!-- Floating Button -->
+  <button id="btn-floating-gemini" onclick="toggleGeminiCopilot()" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[950] flex items-center gap-2 px-3.5 py-2.5 md:px-4 md:py-3 rounded-full bg-gradient-to-r from-emerald-800 via-teal-800 to-sky-800 hover:from-emerald-700 hover:to-sky-700 text-white font-semibold text-xs shadow-2xl border border-emerald-400/50 hover:scale-105 active:scale-95 transition-all duration-200 group" aria-label="Buka AI Copilot Gemini" title="Asisten AI Gemini Studio (Ctrl+Shift+G)">
+    <div class="relative">
+      <i data-lucide="sparkles" class="w-4 h-4 text-amber-300 animate-pulse"></i>
+      <span class="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+    </div>
+    <span class="font-heading tracking-wide hidden sm:inline">Gemini AI</span>
+  </button>
+
+  <!-- Gemini Copilot Panel / Drawer -->
+  <div id="gemini-copilot-drawer" class="fixed bottom-0 right-0 md:bottom-6 md:right-6 w-full md:w-[480px] h-[92vh] md:h-[650px] max-h-[100vh] z-[980] hidden flex flex-col bg-white dark:bg-[#162520] border border-brand-border dark:border-[#23362F] rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300">
+    
+    <!-- Top Header -->
+    <div class="p-3.5 bg-gradient-to-r from-emerald-950 via-[#0F3528] to-sky-950 text-white flex items-center justify-between border-b border-emerald-800/60 shrink-0">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-400 flex items-center justify-center text-white shadow-md shrink-0">
+          <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h4 class="font-heading font-bold text-xs text-white">Gemini Studio Copilot</h4>
+            <span id="gemini-status-indicator" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Online & Siap"></span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[10px] text-emerald-300 truncate">
+            <span id="gemini-role-label">Mode: CEO & CTO</span>
+            <span>•</span>
+            <select id="gemini-model-select" onchange="changeGeminiModel(this.value)" class="bg-transparent text-sky-200 border-none text-[10px] p-0 font-medium cursor-pointer focus:outline-none">
+              <option value="gemini-1.5-flash" class="bg-gray-900 text-white">Gemini 1.5 Flash (Cepat)</option>
+              <option value="gemini-1.5-pro" class="bg-gray-900 text-white">Gemini 1.5 Pro (Penalaran)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons in Header -->
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="toggleGeminiSessionsHistory()" class="p-1.5 rounded-lg hover:bg-white/10 text-emerald-200 hover:text-white transition" title="Riwayat Percakapan">
+          <i data-lucide="history" class="w-4 h-4"></i>
+        </button>
+        <button type="button" onclick="openGeminiApiKeyModal()" class="p-1.5 rounded-lg hover:bg-white/10 text-emerald-200 hover:text-white transition" title="Pengaturan Gemini API Key">
+          <i data-lucide="key" class="w-4 h-4"></i>
+        </button>
+        <button type="button" onclick="startNewGeminiChat()" class="p-1.5 rounded-lg hover:bg-white/10 text-emerald-200 hover:text-white transition" title="Percakapan Baru">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        </button>
+        <button type="button" onclick="toggleGeminiCopilot()" class="p-1.5 rounded-lg hover:bg-red-500/20 text-gray-300 hover:text-white transition" title="Tutup Copilot">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sessions History Drawer (Collapsible) -->
+    <div id="gemini-history-panel" class="hidden bg-gray-50 dark:bg-[#121E1A] border-b border-brand-border dark:border-[#23362F] p-3 max-h-48 overflow-y-auto text-xs shrink-0">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-gray-200 dark:border-gray-800">
+        <span class="font-bold text-[11px] text-gray-700 dark:text-gray-300 flex items-center gap-1">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-brand-emerald"></i>
+          Riwayat Percakapan Co-Founder
+        </span>
+        <button type="button" onclick="clearAllGeminiHistory()" class="text-[10px] text-red-600 hover:underline">Hapus Semua</button>
+      </div>
+      <div id="gemini-sessions-list" class="space-y-1">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Active Drive Attachment Indicator -->
+    <div id="gemini-attached-drive-bar" class="hidden px-3.5 py-1.5 bg-sky-50 dark:bg-sky-950/60 border-b border-sky-200 dark:border-sky-800 text-xs flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-1.5 text-sky-800 dark:text-sky-300 text-[11px] min-w-0">
+        <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600 shrink-0"></i>
+        <span class="font-semibold shrink-0">Dokumen Rujukan:</span>
+        <span id="gemini-attached-drive-name" class="truncate font-mono text-[10px]"></span>
+      </div>
+      <button type="button" onclick="removeAttachedDriveDoc()" class="text-gray-400 hover:text-red-600 transition p-0.5" title="Lepas lampiran">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Chat Messages Scroll Canvas -->
+    <div id="gemini-messages-canvas" class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
+      <!-- Injected messages -->
+    </div>
+
+    <!-- Quick Role-specific Prompt Starters (Pills) -->
+    <div id="gemini-quick-prompts-container" class="px-3.5 py-2 bg-gray-50/80 dark:bg-[#121E1A]/80 border-t border-brand-border dark:border-[#23362F] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+      <!-- Injected prompt chips -->
+    </div>
+
+    <!-- Chat Input Composer Form -->
+    <div class="p-3 bg-white dark:bg-[#162520] border-t border-brand-border dark:border-[#23362F] shrink-0">
+      <form id="form-gemini-chat" onsubmit="handleSendGeminiMessage(event)" class="space-y-2">
+        <div class="flex items-end gap-2">
+          <!-- Attach Google Drive Button -->
+          <button type="button" onclick="openAttachDriveModal()" class="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-gray-600 dark:text-gray-300 hover:text-brand-emerald transition shrink-0" title="Lampirkan Dokumen Google Drive / File Studio">
+            <i data-lucide="paperclip" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Textarea -->
+          <div class="flex-1 relative">
+            <textarea id="gemini-chat-input" rows="1" placeholder="Tanyakan apa saja ke Gemini Copilot... (Shift+Enter untuk baris baru)" class="w-full text-xs p-2.5 max-h-32 min-h-[40px] resize-none border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-[#121E1A] text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald focus:bg-white dark:focus:bg-[#162520] transition leading-relaxed"></textarea>
+          </div>
+
+          <!-- Send Button -->
+          <button type="submit" id="btn-send-gemini" class="p-2.5 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white transition flex items-center justify-center shrink-0 shadow-sm" title="Kirim Pesan">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between text-[10px] text-gray-400 px-1">
+          <span>Tekan <strong>Enter</strong> untuk mengirim</span>
+          <button type="button" onclick="openGeminiApiKeyModal()" class="hover:underline flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+            <i data-lucide="key" class="w-2.5 h-2.5"></i>
+            <span id="gemini-key-status-text">Set API Key</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
 
   <!-- ========================================================================
        GLOBAL MODALS & DRAWERS
