@@ -217,6 +217,10 @@ class AppStore {
   constructor() {
     this.state = this.loadState();
     this.listeners = [];
+    this._syncTimeout = null;
+    this.isCloudSyncing = false;
+    this.lastCloudSyncTime = null;
+    this.syncFromCloud();
   }
 
   loadState() {
@@ -276,13 +280,106 @@ class AppStore {
     return JSON.parse(JSON.stringify(INITIAL_STATE));
   }
 
-  saveState() {
+  saveState(skipCloud = false) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     } catch (e) {
       console.warn('Gagal menyimpan state ke localStorage:', e);
     }
     this.notify();
+
+    if (!skipCloud) {
+      this.syncToCloudDebounced();
+    }
+  }
+
+  async syncFromCloud() {
+    if (this.isCloudSyncing) return;
+    this.isCloudSyncing = true;
+    try {
+      const res = await fetch('/api/sync');
+      if (!res.ok) {
+        this.isCloudSyncing = false;
+        return;
+      }
+      const json = await res.json();
+      if (json && json.success && json.data) {
+        const cloudState = json.data;
+        const currentSession = this.state.authSession;
+        const currentActiveUserId = this.state.activeUserId;
+
+        // Merge users while respecting current auth session
+        if (cloudState.users) {
+          Object.keys(cloudState.users).forEach(uid => {
+            if (this.state.users[uid]) {
+              this.state.users[uid] = { ...this.state.users[uid], ...cloudState.users[uid] };
+            } else {
+              this.state.users[uid] = cloudState.users[uid];
+            }
+          });
+        }
+
+        // Merge global settings, tasks, cashflow, audit logs
+        if (cloudState.tasks) this.state.tasks = cloudState.tasks;
+        if (cloudState.cashflow) this.state.cashflow = cloudState.cashflow;
+        if (cloudState.cashTransactions) this.state.cashTransactions = cloudState.cashTransactions;
+        if (cloudState.projects) this.state.projects = cloudState.projects;
+        if (cloudState.crmLeads) this.state.crmLeads = cloudState.crmLeads;
+        if (cloudState.auditLogs) this.state.auditLogs = cloudState.auditLogs;
+        if (cloudState.settings) this.state.settings = { ...this.state.settings, ...cloudState.settings };
+        if (cloudState.archives) this.state.archives = cloudState.archives;
+        if (cloudState.currentSprint) this.state.currentSprint = cloudState.currentSprint;
+
+        // Preserve local session if already logged in on this device
+        if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
+          this.state.authSession = currentSession;
+          this.state.activeUserId = currentActiveUserId;
+        }
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+        } catch (e) {}
+
+        this.lastCloudSyncTime = new Date();
+        this.notify();
+
+        if (typeof renderActiveView === 'function') {
+          renderActiveView();
+        }
+        if (typeof checkAuthAndRender === 'function') {
+          checkAuthAndRender();
+        }
+        console.log('✅ Cloud Neon Sync: State studio otomatis tersinkronisasi antar-perangkat!');
+      } else if (json && json.success && !json.data) {
+        // Cloud is empty on first setup, seed it with initial state
+        this.syncToCloud();
+      }
+    } catch (err) {
+      console.warn('Cloud sync offline / local fallback:', err.message);
+    } finally {
+      this.isCloudSyncing = false;
+    }
+  }
+
+  syncToCloudDebounced() {
+    if (this._syncTimeout) clearTimeout(this._syncTimeout);
+    this._syncTimeout = setTimeout(() => {
+      this.syncToCloud();
+    }, 1200);
+  }
+
+  async syncToCloud() {
+    try {
+      await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.state)
+      });
+      this.lastCloudSyncTime = new Date();
+      console.log('☁️ Cloud Neon Sync: Perubahan studio tersimpan ke cloud.');
+    } catch (err) {
+      console.warn('Gagal sinkronisasi ke cloud:', err.message);
+    }
   }
 
   resetState() {
@@ -5888,6 +5985,10 @@ function renderAuthForm(formType, userId = null) {
   const container = document.getElementById('auth-form-container');
   if (!container) return;
 
+  if (typeof store !== 'undefined' && store.syncFromCloud) {
+    store.syncFromCloud();
+  }
+
   if (formType === 'login') {
     container.innerHTML = `
       <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
@@ -7744,3 +7845,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check Authentication State and Render
   checkAuthAndRender();
 });
+
+// Automatic Cross-Device Cloud Sync Listeners
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && typeof store !== 'undefined' && store.syncFromCloud) {
+    store.syncFromCloud();
+  }
+});
+
+setInterval(() => {
+  if (typeof store !== 'undefined' && store.syncFromCloud) {
+    store.syncFromCloud();
+  }
+}, 30000);
