@@ -343,11 +343,14 @@ class AppStore {
         this.lastCloudSyncTime = new Date();
         this.notify();
 
-        if (typeof renderActiveView === 'function') {
-          renderActiveView();
-        }
-        if (typeof checkAuthAndRender === 'function') {
-          checkAuthAndRender();
+        // Only re-render full views if already authenticated, avoiding disruption on login screen
+        if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
+          if (typeof renderActiveView === 'function') {
+            renderActiveView();
+          }
+          if (typeof checkAuthAndRender === 'function') {
+            checkAuthAndRender();
+          }
         }
         console.log('✅ Cloud Neon Sync: State studio otomatis tersinkronisasi antar-perangkat!');
       } else if (json && json.success && !json.data) {
@@ -6160,14 +6163,7 @@ function handleLoginSubmit(event) {
     return;
   }
 
-  // If user must change password (first time login)
-  if (user.mustChangePassword) {
-    if (errorBox) errorBox.classList.add('hidden');
-    renderAuthForm('reset', user.id);
-    return;
-  }
-
-  // Normal successful login
+  // Direct successful authentication straight to main dashboard
   store.state.authSession = {
     isAuthenticated: true,
     userId: user.id
@@ -6179,7 +6175,12 @@ function handleLoginSubmit(event) {
   showToast(`Alhamdulillah! Selamat datang, ${user.name}.`);
   checkAuthAndRender();
 
-  if (!user.hasCompletedOnboarding) {
+  // If first-time login or password temporary, allow changing password smoothly from dashboard
+  if (user.mustChangePassword) {
+    setTimeout(() => {
+      openChangeMyPasswordModal(user.id);
+    }, 700);
+  } else if (!user.hasCompletedOnboarding) {
     setTimeout(() => {
       openOnboardingTour(user);
     }, 400);
@@ -6610,7 +6611,10 @@ function checkAuthAndRender() {
     if (topbarSimulator) topbarSimulator.classList.add('hidden');
     if (dynamicBanners) dynamicBanners.classList.add('hidden');
     if (mobileNav) mobileNav.classList.add('hidden');
-    renderAuthForm('login');
+    const container = document.getElementById('auth-form-container');
+    if (!container || !container.querySelector('form')) {
+      renderAuthForm('login');
+    }
   } else {
     // Synchronize activeUserId with authSession.userId
     store.state.activeUserId = store.state.authSession.userId;
