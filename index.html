@@ -449,8 +449,10 @@
             <span id="gemini-role-label">Mode: CEO & CTO</span>
             <span>•</span>
             <select id="gemini-model-select" onchange="changeGeminiModel(this.value)" class="bg-transparent text-sky-200 border-none text-[10px] p-0 font-medium cursor-pointer focus:outline-none">
-              <option value="gemini-1.5-flash" class="bg-gray-900 text-white">Gemini 1.5 Flash (Cepat)</option>
-              <option value="gemini-1.5-pro" class="bg-gray-900 text-white">Gemini 1.5 Pro (Penalaran)</option>
+              <option value="gemini-2.0-flash" class="bg-gray-900 text-white">Gemini 2.0 Flash (Tercerdas & Cepat)</option>
+              <option value="gemini-2.5-flash" class="bg-gray-900 text-white">Gemini 2.5 Flash (Generasi Terbaru)</option>
+              <option value="gemini-1.5-pro" class="bg-gray-900 text-white">Gemini 1.5 Pro (Penalaran Dokumen)</option>
+              <option value="gemini-1.5-flash" class="bg-gray-900 text-white">Gemini 1.5 Flash (Ringan)</option>
             </select>
           </div>
         </div>
@@ -471,6 +473,17 @@
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
+    </div>
+
+    <!-- API Key Notice Banner (Conditional when key is missing) -->
+    <div id="gemini-apikey-banner" class="hidden px-3.5 py-2 bg-gradient-to-r from-amber-500/15 to-orange-500/15 border-b border-amber-300/40 text-[11px] text-amber-900 dark:text-amber-200 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0"></i>
+        <span class="truncate">Mode Terbatas: Hubungkan Kunci API Gemini untuk AI penuh.</span>
+      </div>
+      <button type="button" onclick="openGeminiApiKeyModal()" class="ml-2 px-2.5 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0 transition shadow-xs">
+        Set Kunci Gratis
+      </button>
     </div>
 
     <!-- Sessions History Drawer (Collapsible) -->

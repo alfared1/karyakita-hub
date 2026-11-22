@@ -28,7 +28,7 @@ const INITIAL_STATE = {
   themePreference: 'light',
   geminiChatSessions: {},
   geminiApiKey: '',
-  geminiModel: 'gemini-1.5-flash',
+  geminiModel: 'gemini-2.0-flash',
   settings: {
     academicFreezeMode: false,
     graduationThresholdIdr: 3500000,
@@ -242,8 +242,8 @@ class AppStore {
         if (!parsed.geminiChatSessions) {
           parsed.geminiChatSessions = {};
         }
-        if (!parsed.geminiModel) {
-          parsed.geminiModel = 'gemini-1.5-flash';
+        if (!parsed.geminiModel || parsed.geminiModel === 'gemini-1.5-flash') {
+          parsed.geminiModel = 'gemini-2.0-flash';
         }
         if (!parsed.geminiApiKey) {
           parsed.geminiApiKey = localStorage.getItem('karyakita_gemini_api_key') || '';
@@ -6221,17 +6221,26 @@ function initGeminiCopilotUI() {
     roleLabel.textContent = `Mode: ${user.name.split(' ')[0]} (${user.roleLabel})`;
   }
 
-  // Update key status indicator
+  // Update key status indicator and alert banner
   const keyStatus = document.getElementById('gemini-key-status-text');
   const savedKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey;
   if (keyStatus) {
     keyStatus.textContent = (savedKey && savedKey.length > 10) ? 'API Key Terhubung' : 'Set API Key Gratis';
   }
 
+  const apikeyBanner = document.getElementById('gemini-apikey-banner');
+  if (apikeyBanner) {
+    if (!savedKey || savedKey.length <= 10) {
+      apikeyBanner.classList.remove('hidden');
+    } else {
+      apikeyBanner.classList.add('hidden');
+    }
+  }
+
   // Update model selector
   const modelSelect = document.getElementById('gemini-model-select');
   if (modelSelect) {
-    modelSelect.value = store.state.geminiModel || 'gemini-1.5-flash';
+    modelSelect.value = store.state.geminiModel || 'gemini-2.0-flash';
   }
 
   // Render quick prompts
@@ -6446,82 +6455,125 @@ function hideGeminiTypingIndicator() {
   if (el) el.remove();
 }
 
+function getStudioComprehensiveContext() {
+  const users = Object.values(store.state.users || {});
+  const usersListStr = users.map(u => `- ${u.name} (@${u.id}): ${u.roleLabel} (Kapasitas: ${u.capacityStatus || 'Tersedia 4-5j/pekan'})`).join('\n');
+
+  const tasks = store.state.tasks || [];
+  const tasksCount = tasks.length;
+  const doneTasks = tasks.filter(t => t.status === 'DONE').length;
+  const activeTasks = tasks.filter(t => t.status !== 'DONE');
+  const sampleTasksStr = activeTasks.slice(0, 8).map(t => `  * [${t.status}] ${t.title} (PIC: ${t.assigneeId || 'Unassigned'})`).join('\n');
+
+  const projects = store.state.projects || [];
+  const projectsStr = projects.map(p => `  * ${p.title} (${p.clientName}) - Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')}, Status: ${p.status}, DP: ${p.dpPaid ? 'LUNAS 50%' : 'BELUM'}`).join('\n');
+
+  const currentSprint = store.state.currentSprint || 1;
+  const freezeMode = store.state.settings && store.state.settings.academicFreezeMode ? 'AKTIF (Pekan UTS/UAS Tazkia, kapasitas dialihkan ke akademik)' : 'TIDAK AKTIF (Reguler)';
+  const cashBalance = store.state.cashTransactions ? store.state.cashTransactions.reduce((acc, t) => acc + (t.type === 'IN' ? t.amount : -t.amount), 0) : 0;
+
+  return `
+[DATA REAL-TIME STUDIO KARYAKITA HUB]:
+- 7 Co-Founder Studio (Mahasiswa SI STMIK Tazkia):
+${usersListStr}
+- Keuangan Syariah Studio:
+  * Saldo Kas Saat Ini: Rp${cashBalance.toLocaleString('id-ID')}
+  * Formula Syirkah 'Abdan: 60% surplus dibagi rata kepada 7 co-founder + 40% proporsional berdasarkan poin kontribusi berbobot.
+  * Zakat Perusahaan: 2,5% dari surplus kas setelah dikurangi cadangan kelulusan bootstrap Rp3.500.000 (Graduation Threshold).
+  * Aturan Pembayaran Klien: Wajib DP minimal 50% sebelum pengerjaan proyek dimulai.
+- Operasional & Sprint:
+  * Sprint Berjalan: Sprint ${currentSprint}
+  * Mode Academic Freeze STMIK Tazkia: ${freezeMode}
+  * Total Tiket Tugas: ${tasksCount} tugas (${doneTasks} selesai, ${activeTasks.length} aktif)
+  * Contoh Tugas Berjalan:
+${sampleTasksStr || '  * (Belum ada tiket aktif)'}
+- Proyek Klien Aktif:
+${projectsStr || '  * (Belum ada proyek aktif)'}
+`;
+}
+
 function callGeminiAPI(userQuery, attachedDoc, callback) {
   const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih', roleLabel: 'CEO & CTO' };
   const persona = getCopilotPersonaForUser(user);
   const apiKey = localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey;
-  const model = store.state.geminiModel || 'gemini-1.5-flash';
+  const preferredModel = store.state.geminiModel || 'gemini-2.0-flash';
 
   let contextDocPrompt = '';
   if (attachedDoc) {
     contextDocPrompt = `\n\n[DOKUMEN GOOGLE DRIVE / FILE TERLAMPIR]\nJudul: ${attachedDoc.title}\nTautan: ${attachedDoc.url}\n${attachedDoc.content ? `Isi Dokumen:\n${attachedDoc.content}` : ''}\nMohon gunakan dokumen di atas sebagai rujukan analisis Anda.`;
   }
 
-  // Real-time studio state context
-  const tasksCount = store.state.tasks ? store.state.tasks.length : 0;
-  const projectsCount = store.state.projects ? store.state.projects.length : 0;
-  const currentSprint = store.state.currentSprint || 1;
-  const freezeMode = store.state.settings && store.state.settings.academicFreezeMode ? 'AKTIF (Pekan UTS/UAS Tazkia)' : 'TIDAK AKTIF (Reguler)';
+  const studioContext = getStudioComprehensiveContext();
 
   const systemInstructionText = `${persona.systemPrompt}
 
-[KONTEKS REAL-TIME STUDIO KARYAKITA HUB]:
-- Co-Founder Aktif: ${user.name} (${user.roleLabel})
-- Kapasitas Kuliah Saat Ini: ${user.capacityStatus || 'Tersedia'}
-- Sprint Berjalan: Sprint ${currentSprint}
-- Status Academic Freeze STMIK Tazkia: ${freezeMode}
-- Total Tiket Tugas Berjalan: ${tasksCount} tugas
-- Total Proyek Klien Aktif: ${projectsCount} proyek
-${contextDocPrompt}`;
+${studioContext}
+${contextDocPrompt}
+
+INSTRUKSI PENTING:
+1. Anda adalah AI Copilot Resmi untuk ${user.name} (${user.roleLabel}) di KaryaKita Hub OS.
+2. Jawablah secara spesifik, taktis, solutif, dan berbasis data real-time studio di atas.
+3. Selalu perhatikan nilai-nilai amanah, itqan, syirkah 'abdan, dan keseimbangan kuliah di STMIK Tazkia.`;
 
   if (apiKey && apiKey.trim().length > 10) {
-    // Live Google Gemini API Request
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-    
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemInstructionText }]
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: userQuery + contextDocPrompt }]
+    const candidateModels = Array.from(new Set([preferredModel, 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']));
+
+    const tryFetchModel = (modelIndex) => {
+      if (modelIndex >= candidateModels.length) {
+        console.warn('Semua endpoint Gemini Live API gagal, beralih ke engine internal studio.');
+        const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc, 'Semua model API Gemini tidak merespon');
+        callback(fallbackReply);
+        return;
+      }
+
+      const activeModel = candidateModels[modelIndex];
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemInstructionText }]
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userQuery + contextDocPrompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048
           }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048
+        })
+      })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} pada model ${activeModel}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          callback(text);
+        } else {
+          throw new Error(`Respon kosong dari model ${activeModel}`);
         }
       })
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: API Gemini merespon status tidak berhasil`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        callback(text);
-      } else {
-        throw new Error('Respon kosong dari endpoint Gemini');
-      }
-    })
-    .catch(err => {
-      console.warn('Gemini Live API fallback:', err);
-      const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc, err.message);
-      callback(fallbackReply);
-    });
+      .catch(err => {
+        console.warn(`Model ${activeModel} gagal: ${err.message}`);
+        tryFetchModel(modelIndex + 1);
+      });
+    };
+
+    tryFetchModel(0);
   } else {
-    // Intelligent Offline & Studio Engine (Ready-to-use instantly!)
     setTimeout(() => {
       const reply = generateStudioFallbackReply(user, userQuery, attachedDoc);
       callback(reply);
-    }, 650);
+    }, 400);
   }
 }
 
@@ -6535,55 +6587,91 @@ function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
       `Dokumen ini siap diselaraskan dengan tata kelola studio dan peran Anda sebagai **${user.roleLabel}**.\n\n`;
   }
 
-  if (q.includes('kpi') || q.includes('ritme') || q.includes('beban')) {
-    analysis += `### Analisis Ritme & Kinerja Studio (Sprint ${store.state.currentSprint || 1})\n` +
-      `- **Keseimbangan Kuliah & Studio:** Status kapasitas co-founder terpantau sehat. Saat ini Academic Freeze dalam mode **${store.state.settings?.academicFreezeMode ? 'AKTIF' : 'Standar'}**.\n` +
-      `- **Rekomendasi Eksekutif:** Pastikan setiap co-founder memperbarui Capacity Pill di navigasi atas setiap Senin pagi agar beban sprint dapat disesuaikan dengan jadwal ujian kuliah STMIK Tazkia.\n` +
-      `- **Target Kelulusan:** Pantau progres menuju target kas mandiri Rp3,5 Juta (Graduation Rule).`;
-  } else if (q.includes('tugas') || q.includes('kanban') || q.includes('dod') || q.includes('brief')) {
-    analysis += `### Rekomendasi Alur Tugas & Definition of Done (DoD)\n` +
-      `1. **Pemecahan Task:** Pastikan setiap tugas memiliki estimasi jam kerja realistis (maksimal 4–5 jam per pekan per mahasiswa).\n` +
-      `2. **Kriteria DoD (Definition of Done):**\n` +
-      `   - Kode/desain telah melalui self-review sesuai standar mutu Itqan.\n` +
-      `   - Lampiran bukti pengerjaan (link Figma / GitHub PR / Dokumen Drive) telah disematkan.\n` +
-      `   - Diverifikasi oleh PIC atau Backup Approver sebelum dipindahkan ke kolom Done.`;
-  } else if (q.includes('bagi hasil') || q.includes('kas') || q.includes('zakat') || q.includes('invoice') || q.includes('keuangan')) {
-    analysis += `### Panduan Keuangan Syariah & Formula 60/40\n` +
-      `- **Prinsip Kas:** Zero-riba, zero-gharar, dan pelacak qardh hasan 0% bunga.\n` +
-      `- **Bagi Hasil Syirkah 'Abdan:** Surplus kas operasional dialokasikan **60% dibagi rata** kepada co-founder aktif + **40% dialokasikan secara proporsional** berdasarkan 4-Pilar Poin Kontribusi berbobot.\n` +
-      `- **Zakat Perusahaan:** Otomatis dihitung sebesar **2,5%** dari kas surplus setelah dikurangi cadangan kelulusan bootstrap Rp3,5 Juta.\n` +
-      `- **Payment Gate:** Wajibkan termin DP 50% sebelum pengerjaan proyek klien dimulai.`;
-  } else if (q.includes('crm') || q.includes('prospek') || q.includes('proposal') || q.includes('leads') || q.includes('closing')) {
-    analysis += `### Strategi Pipeline B2B & Akuisisi Klien (Lini CRM)\n` +
-      `- **6-Tahap Konversi:** Leads ➔ Discovery ➔ Pitch ➔ Proposal ➔ Negotiation ➔ Won.\n` +
-      `- **Insentif Eksekutor:** Setiap deal yang berhasil Anda konversikan menjadi status **Won** otomatis memberikan **5 poin kontribusi berbobot** ke porsi bagi hasil Syirkah Anda.\n` +
-      `- **Tips Follow-up:** Kirim pesan bernada konsultatif, tawarkan audit efisiensi alur kerja berbasis AI, dan lampirkan portofolio klien resmi studio.`;
-  } else if (q.includes('konten') || q.includes('viral') || q.includes('tiktok') || q.includes('reels') || q.includes('affiliate')) {
-    analysis += `### Formula Konten AI Viral & Jadwal CMO\n` +
-      `1. **Hook 3 Detik:** "Ini cara rahasia mahasiswa selesaikan tugas 5 jam jadi 15 menit pakai tools AI gratis..."\n` +
-      `2. **Pilar Edukasi:** 60% Tutorial AI praktis, 25% Studi kasus proyek studio, 15% Ajakan program referral/affiliate komisi 10%.\n` +
-      `3. **Distribusi Multi-Platform:** Publikasikan serentak ke TikTok, Instagram Reels, YouTube Shorts, dan ringkasan carousel di LinkedIn.`;
-  } else if (q.includes('workshop') || q.includes('academy') || q.includes('silabus') || q.includes('quiz')) {
-    analysis += `### Kurikulum & Workshop AI Academy (Lini 5)\n` +
-      `- **Silabus 3 Jam:** Sesi 1: Dasar Prompt Engineering (45m), Sesi 2: Praktik AI Workflow Automation (60m), Sesi 3: Studi Kasus Bisnis Nyata & Sertifikasi (75m).\n` +
-      `- **Standar Kelulusan:** Peserta wajib menyelesaikan 3 studi kasus prompt dan mengisi formulir evaluasi sebelum penerbitan e-sertifikat digital studio.`;
-  } else if (q.includes('desain') || q.includes('itqan') || q.includes('moodboard') || q.includes('prompt')) {
-    analysis += `### Prinsip Desain Identitas & Standar Mutu Itqan\n` +
-      `- **Standar Itqan:** Cek kontras warna, kerapian grid layout, hierarki tipografi, dan konsistensi ikon sebelum diserahkan ke klien.\n` +
-      `- **Klasifikasi Vault:** Beri label 'CLIENT_SAFE' untuk deliverable siap pakai dan 'NDA_RESTRICTED' untuk aset internal yang dilindungi perjanjian kerahasiaan.`;
+  const allUsers = Object.values(store.state.users || {});
+  const cashBalance = store.state.cashTransactions ? store.state.cashTransactions.reduce((acc, t) => acc + (t.type === 'IN' ? t.amount : -t.amount), 0) : 0;
+  const currentSprint = store.state.currentSprint || 1;
+  const activeTasks = (store.state.tasks || []).filter(t => t.status !== 'DONE');
+  const projects = store.state.projects || [];
+
+  if (q.includes('co-founder') || q.includes('cofounder') || q.includes('tim') || q.includes('anggota') || q.includes('rekan') || q.includes('siapa saja')) {
+    analysis += `### Struktur 7 Co-Founder KaryaKita Hub (STMIK Tazkia)\n` +
+      `Studio KaryaKita digerakkan oleh 7 mahasiswa Sistem Informasi STMIK Tazkia:\n` +
+      allUsers.map((u, i) => `${i + 1}. **${u.name}** (@${u.id}) — **${u.roleLabel}** (Kapasitas: *${u.capacityStatus || 'Tersedia 4-5j'}*)`).join('\n') +
+      `\n\nSeluruh keputusan strategis dan alokasi tugas diputuskan secara syura dengan prinsip kesetaraan dan keadilan Syirkah 'Abdan.`;
+  } else if (q.includes('syauqi') || q.includes('alfatih')) {
+    analysis += `### Profil & Tanggung Jawab: Syauqi Muhammad Al Fatih (CEO & CTO)\n` +
+      `- **Fokus Utama:** Arsitektur sistem & teknologi, visi startup, penjadwalan sprint, dan manajemen kapasitas 7 co-founder.\n` +
+      `- **Otoritas Khusus:** Aktivasi mode Academic Freeze (H-7 UTS/UAS Tazkia), maker-checker approval, dan audit log studio.`;
+  } else if (q.includes('hilwa')) {
+    analysis += `### Profil & Tanggung Jawab: Hilwa Mufida (COO & Head of PM)\n` +
+      `- **Fokus Utama:** Operasional harian, alur Kanban tugas, verifikasi Definition of Done (DoD), dan koordinasi antar divisi studio.`;
+  } else if (q.includes('novita')) {
+    analysis += `### Profil & Tanggung Jawab: Novita Rani (CFO & VP Growth Systems)\n` +
+      `- **Fokus Utama:** Pembukuan kas zero-riba, pelacakan Qardh Hasan 0%, formula bagi hasil Syirkah 'Abdan 60/40, dan otomasi zakat perusahaan 2,5%.`;
+  } else if (q.includes('ilham')) {
+    analysis += `### Profil & Tanggung Jawab: Ilham Akbar (CBDO & CDO)\n` +
+      `- **Fokus Utama:** Kemitraan bisnis B2B, inovasi produk digital, pipeline CRM, dan kolaborasi strategis eksternal.`;
+  } else if (q.includes('syarah')) {
+    analysis += `### Profil & Tanggung Jawab: Syarah Fauziah (CMO)\n` +
+      `- **Fokus Utama:** Strategi pemasaran, kampanye media sosial multi-platform (TikTok, Reels, LinkedIn), materi edukasi AI, dan program referral affiliate.`;
+  } else if (q.includes('nazwa')) {
+    analysis += `### Profil & Tanggung Jawab: Nazwa Azahra (CRO)\n` +
+      `- **Fokus Utama:** Hubungan klien, kepuasan pengguna (*customer retention*), manajemen testimoni, dan penagihan termin DP 50% / Pelunasan.\n` +
+      `- **Otoritas Khusus:** Konfirmasi pembayaran DP 50% dan alur serah terima hasil proyek.`;
+  } else if (q.includes('ahmad')) {
+    analysis += `### Profil & Tanggung Jawab: Ahmad Maulana (Creative Director)\n` +
+      `- **Fokus Utama:** Arah visual & UI/UX, brand identity, aset grafis, dan penerapan standar mutu Itqan pada seluruh materi desain klien.`;
+  } else if (q.includes('bagi hasil') || q.includes('kas') || q.includes('zakat') || q.includes('invoice') || q.includes('keuangan') || q.includes('uang') || q.includes('qardh')) {
+    analysis += `### Laporan Keuangan Real-time & Prinsip Syariah\n` +
+      `- **Saldo Kas Terkini:** **Rp${cashBalance.toLocaleString('id-ID')}** (Dikelola dengan sistem pencatatan zero-riba & zero-gharar).\n` +
+      `- **Formula Syirkah 'Abdan:** Surplus kas operasional dialokasikan **60% dibagi rata** kepada co-founder aktif + **40% dibagi proporsional** berdasarkan poin kontribusi berbobot.\n` +
+      `- **Target Cadangan Bootstrap (Graduation Threshold):** Rp3.500.000 wajib dijaga sebelum pembagian surplus.\n` +
+      `- **Zakat Perusahaan:** Otomatis dihitung sebesar **2,5%** dari kas surplus setelah ambang bootstrap tercapai.\n` +
+      `- **Aturan DP Klien:** Minimal **50% uang muka** wajib diverifikasi masuk sebelum pengerjaan proyek dimulai.`;
+  } else if (q.includes('tugas') || q.includes('kanban') || q.includes('dod') || q.includes('tiket') || q.includes('sprint') || q.includes('pekerjaan')) {
+    analysis += `### Status Tugas & Kanban Sprint ${currentSprint}\n` +
+      `- **Tugas Sedang Berjalan:** ${activeTasks.length} tiket aktif di Kanban.\n` +
+      (activeTasks.length > 0
+        ? activeTasks.slice(0, 5).map(t => `  * **[${t.status}]** ${t.title} — PIC: ${t.assigneeId || 'Unassigned'}`).join('\n')
+        : '  * Saat ini seluruh tugas sprint telah selesai (Done).') +
+      `\n\n**Standar Definition of Done (DoD):**\n` +
+      `1. Hasil kerja memenuhi kriteria mutu Itqan.\n` +
+      `2. Lampiran tautan (Figma / GitHub PR / Dokumen Drive) telah disematkan.\n` +
+      `3. Telah disetujui oleh PIC atau Checker sebelum digeser ke kolom Selesai.`;
+  } else if (q.includes('proyek') || q.includes('project') || q.includes('klien') || q.includes('crm') || q.includes('proposal') || q.includes('closing')) {
+    analysis += `### Status Proyek Klien & Pipeline CRM\n` +
+      `- **Total Proyek Aktif:** ${projects.length} proyek.\n` +
+      (projects.length > 0
+        ? projects.map(p => `  * **${p.title}** (${p.clientName}) — Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')} | Status: ${p.status} | DP: ${p.dpPaid ? 'Lunas 50%' : 'Belum Bayar'}`).join('\n')
+        : '  * Belum ada proyek klien yang tercatat.') +
+      `\n\n**Aturan Eksekusi:** Pastikan status DP 50% terverifikasi di modul Keuangan sebelum tim memulai tahapan produksi.`;
+  } else if (q.includes('kampus') || q.includes('tazkia') || q.includes('freeze') || q.includes('uts') || q.includes('uas') || q.includes('kuliah') || q.includes('ujian')) {
+    const isFreeze = store.state.settings && store.state.settings.academicFreezeMode;
+    analysis += `### Regulasi Kuliah & Academic Freeze STMIK Tazkia\n` +
+      `- **Status Academic Freeze Saat Ini:** **${isFreeze ? 'AKTIF (Mode Ujian UTS/UAS)' : 'TIDAK AKTIF (Mode Kuliah Reguler)'}**.\n` +
+      `- **Aturan Freeze:** H-7 sebelum pekan ujian, seluruh beban tugas studio diturunkan atau ditunda agar seluruh co-founder dapat fokus meraih nilai akademik optimal.\n` +
+      `- **Kapasitas Mingguan:** Setiap co-founder dianjurkan mengalokasikan maksimal 4–5 jam/pekan untuk studio agar tidak mengganggu perkuliahan.`;
   } else {
-    analysis += `Halo **${user.name}**! Sebagai **${user.roleLabel}**, saya telah menganalisis pertanyaan Anda: *"${query}"*.\n\n` +
-      `Saran taktis saya untuk Anda:\n` +
-      `1. Selaraskan rencana kerja ini dengan Papan Tugas Sprint ${store.state.currentSprint || 1} studio.\n` +
-      `2. Manfaatkan menu navigasi khusus Anda di panel kiri untuk mencatat hasil koordinasi.\n` +
-      `3. Koordinasikan bersama rekan co-founder dalam sesi Syura mingguan agar seluruh keputusan dilandasi musyawarah dan ridha bersama (*taradhin*).`;
+    analysis += `Halo **${user.name}**! Sebagai **${user.roleLabel}**, saya telah mencatat arahan Anda terkait: *"${query}"*\n\n` +
+      `**Saran Taktis Studio:**\n` +
+      `1. Selaraskan inisiatif ini dengan sasaran Sprint ${currentSprint} dan tugas prioritas yang sedang aktif.\n` +
+      `2. Diskusikan rencana ini pada sesi Syura mingguan agar ada kesepahaman (*taradhin*) antar co-founder.\n` +
+      `3. Gunakan modul navigasi di panel kiri untuk mencatat dokumen atau pembaruan terkait inisiatif ini.`;
   }
 
-  const liveApiNotice = (!localStorage.getItem('karyakita_gemini_api_key') && (!store.state.geminiApiKey || store.state.geminiApiKey.length < 10))
-    ? `\n\n> 💡 **Mode Studio Asisten Siap Pakai:** Untuk mengaktifkan respon penalaran *frontier AI* tanpa batas dari server Google Gemini, masukkan Gemini API Key gratis Anda melalui tombol **🔑 Set API Key** di atas.`
-    : (errorMsg ? `\n\n> ⚠️ *Koneksi live API mengalami kendala (${errorMsg}). Sistem otomatis menggunakan penalaran internal studio.*` : '');
+  const hasKey = (localStorage.getItem('karyakita_gemini_api_key') || store.state.geminiApiKey || '').length > 10;
+  if (!hasKey) {
+    analysis += `\n\n---\n` +
+      `> 💡 **Mode Studio Offline (Data Internal Terhubung)**\n` +
+      `> Asisten saat ini menjawab menggunakan basis data lokal studio. Untuk mengaktifkan **Gemini 2.0 Flash (Penalaran AI Penuh & Bebas Topik)** tanpa batasan, masukkan API Key Google gratis Anda.\n\n` +
+      `<button type="button" onclick="openGeminiApiKeyModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition mt-1">` +
+      `<i data-lucide="key" class="w-3.5 h-3.5"></i> Masukkan Kunci API Gemini Gratis` +
+      `</button>`;
+  } else if (errorMsg) {
+    analysis += `\n\n> ⚠️ *Info: Panggilan API Gemini mengalami kendala (${errorMsg}). Sistem otomatis menjawab dengan data internal studio.*`;
+  }
 
-  return analysis + liveApiNotice;
+  return analysis;
 }
 
 function formatGeminiMarkdown(text) {
@@ -6844,11 +6932,11 @@ function openGeminiApiKeyModal() {
       <div class="flex items-center justify-between border-b pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-400 text-white flex items-center justify-center shadow-sm">
-            <i data-lucide="key" class="w-4 h-4"></i>
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
           </div>
           <div>
             <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Google Gemini API Key</h3>
-            <p class="text-[11px] text-gray-500">Aktivasi model Gemini 1.5 Flash & Pro Live</p>
+            <p class="text-[11px] text-gray-500">Aktivasi model Gemini 2.0 Flash & Gemini 2.5 Live</p>
           </div>
         </div>
         <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
@@ -6864,8 +6952,11 @@ function openGeminiApiKeyModal() {
             <i data-lucide="eye" class="w-4 h-4"></i>
           </button>
         </div>
-        <p class="text-[10px] text-gray-500">Kunci disimpan aman di peramban lokal perangkat Anda (localStorage).</p>
+        <p class="text-[10px] text-gray-500">Kunci disimpan aman hanya di peramban lokal perangkat Anda (localStorage).</p>
       </div>
+
+      <!-- Test Connection Status Box -->
+      <div id="gemini-test-status" class="hidden p-2.5 rounded-lg text-xs"></div>
 
       <div class="p-3 bg-sky-50 dark:bg-sky-950/60 rounded-xl border border-sky-200 dark:border-sky-800 text-xs space-y-1.5 text-sky-950 dark:text-sky-200">
         <div class="flex items-center gap-1.5 font-bold">
@@ -6873,15 +6964,20 @@ function openGeminiApiKeyModal() {
           <span>Cara Mendapatkan Kunci Gratis (1 Menit):</span>
         </div>
         <ol class="list-decimal list-inside space-y-0.5 text-[11px] text-sky-900 dark:text-sky-300">
-          <li>Kunjungi <a href="https://aistudio.google.com/" target="_blank" class="underline font-bold text-sky-700 dark:text-sky-400">Google AI Studio</a></li>
+          <li>Buka <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline font-bold text-sky-700 dark:text-sky-400">Google AI Studio (Klik di sini)</a></li>
           <li>Login dengan akun Google / Gmail Anda</li>
-          <li>Klik tombol <strong>Get API key</strong> lalu <strong>Create API key</strong></li>
-          <li>Salin dan tempelkan kuncinya ke kolom di atas</li>
+          <li>Klik tombol <strong>Create API key</strong></li>
+          <li>Salin kuncinya dan tempelkan ke formulir di atas</li>
         </ol>
       </div>
 
       <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
-        <button type="button" onclick="clearGeminiApiKey()" class="text-xs text-red-600 hover:underline">Hapus Kunci</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="clearGeminiApiKey()" class="text-xs text-red-600 hover:underline">Hapus</button>
+          <button type="button" onclick="testGeminiApiKey()" class="px-2.5 py-1.5 rounded-lg border border-sky-300 dark:border-sky-700 hover:bg-sky-50 dark:hover:bg-sky-900/50 text-xs font-semibold text-sky-700 dark:text-sky-300 transition">
+            ⚡ Uji Koneksi
+          </button>
+        </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border text-xs font-semibold">Tutup</button>
           <button type="button" onclick="saveGeminiApiKey()" class="px-4 py-1.5 rounded-lg bg-brand-emerald text-white text-xs font-semibold shadow-sm">Simpan Kunci</button>
@@ -6890,6 +6986,62 @@ function openGeminiApiKeyModal() {
     </div>
   `;
   openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function testGeminiApiKey() {
+  const input = document.getElementById('gemini-api-key-input');
+  const statusEl = document.getElementById('gemini-test-status');
+  if (!input || !statusEl) return;
+
+  const key = input.value.trim();
+  if (!key || key.length < 10) {
+    statusEl.className = 'p-2.5 rounded-lg text-xs bg-amber-50 text-amber-800 border border-amber-300 block';
+    statusEl.textContent = 'Silakan masukkan API Key yang valid terlebih dahulu.';
+    return;
+  }
+
+  statusEl.className = 'p-2.5 rounded-lg text-xs bg-sky-50 text-sky-800 border border-sky-300 block animate-pulse';
+  statusEl.textContent = 'Sedang menguji koneksi ke Google Gemini 2.0 Flash...';
+
+  const testEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`;
+  fetch(testEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: 'Ping test. Jawab singkat: OK' }] }]
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  })
+  .then(data => {
+    statusEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 block';
+    statusEl.textContent = '✅ Koneksi Sukses! Kunci API valid dan model Gemini 2.0 Flash siap digunakan.';
+  })
+  .catch(err => {
+    const backupEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+    fetch(backupEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: 'Ping test. Jawab singkat: OK' }] }]
+      })
+    })
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(() => {
+      statusEl.className = 'p-2.5 rounded-lg text-xs bg-emerald-50 text-emerald-800 border border-emerald-300 block';
+      statusEl.textContent = '✅ Koneksi Sukses! Kunci API terhubung ke Gemini 1.5 Flash.';
+    })
+    .catch(e => {
+      statusEl.className = 'p-2.5 rounded-lg text-xs bg-red-50 text-red-800 border border-red-300 block';
+      statusEl.textContent = `❌ Koneksi Gagal (${err.message}). Periksa kembali kunci API Anda.`;
+    });
+  });
 }
 
 function saveGeminiApiKey() {
@@ -6905,6 +7057,15 @@ function saveGeminiApiKey() {
     keyStatus.textContent = (key && key.length > 10) ? 'API Key Terhubung' : 'Set API Key Gratis';
   }
 
+  const apikeyBanner = document.getElementById('gemini-apikey-banner');
+  if (apikeyBanner) {
+    if (!key || key.length <= 10) {
+      apikeyBanner.classList.remove('hidden');
+    } else {
+      apikeyBanner.classList.add('hidden');
+    }
+  }
+
   closeModal();
   showToast(key ? 'Google Gemini API Key berhasil disimpan & terhubung!' : 'API Key dikosongkan.');
 }
@@ -6917,6 +7078,10 @@ function clearGeminiApiKey() {
   if (input) input.value = '';
   const keyStatus = document.getElementById('gemini-key-status-text');
   if (keyStatus) keyStatus.textContent = 'Set API Key Gratis';
+
+  const apikeyBanner = document.getElementById('gemini-apikey-banner');
+  if (apikeyBanner) apikeyBanner.classList.remove('hidden');
+
   closeModal();
   showToast('Google Gemini API Key dihapus.');
 }
@@ -6930,7 +7095,15 @@ function togglePasswordVisibility(inputId) {
 function changeGeminiModel(modelName) {
   store.state.geminiModel = modelName;
   store.saveState();
-  showToast(`Model dialihkan ke: ${modelName === 'gemini-1.5-pro' ? 'Gemini 1.5 Pro' : 'Gemini 1.5 Flash'}`);
+
+  const modelLabels = {
+    'gemini-2.0-flash': 'Gemini 2.0 Flash (Tercerdas & Cepat)',
+    'gemini-2.5-flash': 'Gemini 2.5 Flash (Generasi Terbaru)',
+    'gemini-1.5-pro': 'Gemini 1.5 Pro (Penalaran Dokumen)',
+    'gemini-1.5-flash': 'Gemini 1.5 Flash (Ringan)'
+  };
+
+  showToast(`Model dialihkan ke: ${modelLabels[modelName] || modelName}`);
 }
 
 // Initialize Application
