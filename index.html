@@ -113,15 +113,19 @@
         <i data-lucide="help-circle" class="w-4 h-4"></i>
       </button>
 
-      <!-- Logged-in User Profile Badge -->
-      <div class="flex items-center gap-2 bg-emerald-950/70 border border-emerald-700/60 rounded-full px-2.5 py-1 text-emerald-200">
-        <img id="topbar-user-avatar" src="" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-emerald-500/50">
-        <div class="flex items-center gap-1.5">
+      <!-- Logged-in User Profile Badge with Photo Edit Trigger -->
+      <button onclick="openProfileModal(store.getCurrentUser()?.id)" class="flex items-center gap-2 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/60 rounded-full px-2.5 py-1 text-emerald-200 transition group cursor-pointer" title="Klik untuk mengelola profil & ganti foto">
+        <div class="relative">
+          <img id="topbar-user-avatar" src="" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-emerald-500/50">
+          <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+        </div>
+        <div class="flex items-center gap-1.5 text-left">
           <span id="topbar-user-name" class="font-bold text-white text-[11px] truncate max-w-[140px] sm:max-w-[200px]"></span>
           <span class="text-emerald-400 text-[10px] hidden sm:inline">•</span>
           <span id="topbar-user-role" class="text-emerald-300 text-[10px] hidden sm:inline truncate max-w-[140px]"></span>
+          <i data-lucide="camera" class="w-2.5 h-2.5 text-emerald-300 opacity-60 group-hover:opacity-100 transition hidden sm:inline ml-0.5"></i>
         </div>
-      </div>
+      </button>
 
       <!-- Logout Button -->
       <button id="btn-topbar-logout" onclick="logout()" class="p-1.5 rounded-lg bg-emerald-950/80 hover:bg-red-800/80 text-emerald-200 hover:text-white transition flex items-center gap-1" title="Keluar / Logout">
@@ -306,15 +310,20 @@
 
       <!-- Current User Footer in Sidebar -->
       <div class="p-3 border-t border-brand-border bg-gray-50 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <img id="sidebar-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" class="w-8 h-8 rounded-full border border-gray-300 object-cover">
+        <button onclick="openProfileModal(store.getCurrentUser()?.id)" class="flex items-center gap-2.5 min-w-0 text-left hover:bg-gray-100 p-1.5 rounded-lg transition flex-1 group" title="Klik untuk mengelola profil & ganti foto">
+          <div class="relative shrink-0">
+            <img id="sidebar-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" class="w-8 h-8 rounded-full border border-gray-300 object-cover">
+            <span class="absolute -bottom-0.5 -right-0.5 bg-brand-emerald text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow">
+              <i data-lucide="camera" class="w-2.5 h-2.5"></i>
+            </span>
+          </div>
           <div class="flex-1 min-w-0">
             <p id="sidebar-user-name" class="text-xs font-bold text-gray-900 truncate">Syauqi Muhammad Al Fatih</p>
             <p id="sidebar-user-role" class="text-[10px] text-gray-500 truncate">CEO & CTO (Super Admin)</p>
           </div>
-          <span id="sidebar-capacity-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Kapasitas: Tersedia"></span>
-        </div>
-        <button id="btn-sidebar-logout" onclick="logout()" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition" title="Keluar / Logout">
+          <span id="sidebar-capacity-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Kapasitas: Tersedia"></span>
+        </button>
+        <button id="btn-sidebar-logout" onclick="logout()" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition shrink-0" title="Keluar / Logout">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>

@@ -4519,11 +4519,18 @@ function renderSystemView() {
               <tbody class="divide-y divide-gray-100">
                 ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
                   <tr class="hover:bg-gray-50 transition">
-                    <td class="p-3 flex items-center gap-2.5">
-                      <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover">
-                      <div>
-                        <strong class="text-gray-900 block">${u.name}</strong>
-                        <span class="text-[10px] text-gray-500">${u.roleLabel}</span>
+                    <td class="p-3">
+                      <div class="flex items-center gap-2.5">
+                        <button onclick="openProfileModal('${u.id}')" class="relative group shrink-0" title="Klik untuk ubah foto profil ${u.name}">
+                          <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover group-hover:ring-2 group-hover:ring-brand-emerald transition shadow-xs">
+                          <span class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white">
+                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                          </span>
+                        </button>
+                        <div>
+                          <strong class="text-gray-900 block">${u.name}</strong>
+                          <span class="text-[10px] text-gray-500">${u.roleLabel}</span>
+                        </div>
                       </div>
                     </td>
                     <td class="p-3 font-mono text-gray-700">${u.username || u.id}</td>
@@ -4549,6 +4556,10 @@ function renderSystemView() {
                     </td>
                     <td class="p-3 text-right">
                       <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openProfileModal('${u.id}')" class="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Ganti foto profil ${u.name}">
+                          <i data-lucide="camera" class="w-3 h-3"></i>
+                          <span>Foto</span>
+                        </button>
                         ${u.mustChangePassword ? `
                           <button onclick="copyTempPassword('${u.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-[11px] font-semibold flex items-center gap-1 transition" title="Salin kata sandi sementara untuk dikirim via WA">
                             <i data-lucide="copy" class="w-3 h-3"></i>
@@ -5467,6 +5478,215 @@ const nextOnboardingSlide = nextOnboardingStep;
 const prevOnboardingSlide = prevOnboardingStep;
 const goToOnboardingSlide = goToOnboardingStep;
 const renderOnboardingModal = renderHotspotStep;
+
+// ==============================================================================
+// USER PROFILE & AVATAR PHOTO MANAGEMENT
+// ==============================================================================
+
+let tempSelectedAvatar = null;
+
+function openProfileModal(userId) {
+  const currentUserId = userId || (store.getCurrentUser() && store.getCurrentUser().id);
+  const user = store.state.users[currentUserId];
+  if (!user) return;
+
+  tempSelectedAvatar = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0F513D&color=fff&size=256&bold=true`;
+
+  const presetAvatars = [
+    { label: 'Eksekutif Pria (CEO/CTO)', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300' },
+    { label: 'Profesional Formal (COO)', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300' },
+    { label: 'Finance Lead (CFO)', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300' },
+    { label: 'Tech Lead (CBDO/CDO)', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300' },
+    { label: 'Creative Lead (CMO)', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300' },
+    { label: 'Academy Lead (CRO)', url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300' },
+    { label: 'Art Director (Design)', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300' },
+    { label: 'Modern Studio Portrait', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300' }
+  ];
+
+  const initialAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0F513D&color=fff&size=256&bold=true`;
+
+  const modalHtml = `
+    <div class="p-5 sm:p-7 space-y-5 max-w-lg mx-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-brand-border dark:border-gray-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Kelola Foto Profil Pengguna</h3>
+            <p class="text-[11px] text-gray-500">${user.name} • <span class="font-semibold text-brand-emerald dark:text-emerald-400">${user.roleLabel}</span></p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Live Avatar Preview Area -->
+      <div class="flex flex-col items-center justify-center py-2 space-y-2">
+        <div class="relative group">
+          <img id="avatar-live-preview" src="${tempSelectedAvatar}" alt="${user.name}" class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-[#1E2E28] ring-4 ring-emerald-500/40 shadow-lg">
+          <button type="button" onclick="document.getElementById('profile-avatar-file').click()" class="absolute bottom-0 right-0 bg-brand-emerald hover:bg-brand-hover text-white p-1.5 rounded-full shadow-lg transition" title="Unggah foto baru">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <span class="text-[11px] text-gray-500 font-medium">Pratinjau Foto Profil Aktif</span>
+      </div>
+
+      <!-- Option 1: Local File Upload -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">1. Unggah Foto dari Perangkat (Komputer / HP)</label>
+        <div onclick="document.getElementById('profile-avatar-file').click()" class="border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-brand-emerald dark:hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition bg-gray-50/50 dark:bg-gray-800/30 hover:bg-emerald-50/30">
+          <i data-lucide="image-plus" class="w-6 h-6 mx-auto text-brand-emerald dark:text-emerald-400 mb-1"></i>
+          <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">Klik di sini untuk memilih file gambar</p>
+          <p class="text-[10px] text-gray-500">Mendukung format PNG, JPG, JPEG, WEBP (Otomatis dipotong persegi & dikompresi)</p>
+          <input type="file" id="profile-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarFileSelect(event)">
+        </div>
+      </div>
+
+      <!-- Option 2: Image URL -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">2. Atau Masukkan Tautan URL Foto Online</label>
+        <div class="flex items-center gap-2">
+          <input id="profile-avatar-url-input" type="url" placeholder="https://contoh.com/foto-anda.jpg" class="flex-1 text-xs px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-[#1A2C24] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+          <button type="button" onclick="applyAvatarFromUrlInput()" class="px-3.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-lg transition shrink-0">
+            Terapkan
+          </button>
+        </div>
+      </div>
+
+      <!-- Option 3: Preset Studio Gallery -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">3. Atau Pilih dari Galeri Avatar Studio</label>
+          <button type="button" onclick="resetUserProfileAvatarToDefault('${user.id}')" class="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3 h-3"></i>
+            <span>Gunakan Inisial Studio</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
+          ${presetAvatars.map((p) => `
+            <button type="button" onclick="selectPresetAvatar('${p.url}')" class="group relative rounded-full overflow-hidden border-2 border-transparent hover:border-brand-emerald focus:outline-none focus:border-brand-emerald transition" title="${p.label}">
+              <img src="${p.url}" alt="${p.label}" class="w-10 h-10 rounded-full object-cover group-hover:scale-105 transition-transform">
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-brand-border dark:border-gray-800">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition">
+          Batal
+        </button>
+        <button type="button" onclick="saveUserProfileAvatar('${user.id}')" class="px-5 py-2 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Simpan Foto Profil</span>
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  openModal(modalHtml);
+}
+
+function selectPresetAvatar(url) {
+  tempSelectedAvatar = url;
+  const preview = document.getElementById('avatar-live-preview');
+  if (preview) {
+    preview.src = url;
+  }
+}
+
+function applyAvatarFromUrlInput() {
+  const input = document.getElementById('profile-avatar-url-input');
+  if (!input || !input.value.trim()) {
+    showToast('Harap masukkan tautan URL gambar yang valid!', 'error');
+    return;
+  }
+  const url = input.value.trim();
+  selectPresetAvatar(url);
+  showToast('URL foto diterapkan ke pratinjau!');
+}
+
+function handleAvatarFileSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Harap pilih file gambar (JPG, PNG, WEBP, GIF)!', 'error');
+    return;
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('Ukuran file maksimal 8MB!', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const maxDim = 256;
+        canvas.width = maxDim;
+        canvas.height = maxDim;
+        const ctx = canvas.getContext('2d');
+
+        const width = img.width;
+        const height = img.height;
+        const size = Math.min(width, height);
+        const startX = (width - size) / 2;
+        const startY = (height - size) / 2;
+
+        ctx.drawImage(img, startX, startY, size, size, 0, 0, maxDim, maxDim);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        selectPresetAvatar(compressedDataUrl);
+        showToast('Foto berhasil dimuat dan disesuaikan!');
+      } catch (err) {
+        selectPresetAvatar(e.target.result);
+        showToast('Foto berhasil dimuat!');
+      }
+    };
+    img.onerror = function() {
+      showToast('Gagal memproses file gambar.', 'error');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUserProfileAvatarToDefault(userId) {
+  const user = store.state.users[userId];
+  if (!user) return;
+  const initialUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0F513D&color=fff&size=256&bold=true`;
+  selectPresetAvatar(initialUrl);
+  showToast('Pratinjau disetel ke inisial nama resmi studio.');
+}
+
+function saveUserProfileAvatar(userId) {
+  const user = store.state.users[userId];
+  if (!user) return;
+
+  if (!tempSelectedAvatar) {
+    showToast('Pilih atau unggah foto terlebih dahulu!', 'error');
+    return;
+  }
+
+  user.avatar = tempSelectedAvatar;
+  store.logAudit('USER_AVATAR_UPDATED', `Foto Profil: ${user.name}`, `Foto profil untuk pengguna ${user.name} (${user.roleLabel}) telah berhasil diperbarui.`);
+  store.saveState();
+
+  // Instant UI updates across topbar, sidebar, and open views
+  updateTopBanners();
+  renderActiveView();
+
+  closeModal();
+  showToast(`Foto profil ${user.name} berhasil disimpan!`);
+}
 
 // Authentication Helpers
 function checkPasswordStrength(pwd) {
