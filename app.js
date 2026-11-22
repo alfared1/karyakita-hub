@@ -4873,6 +4873,14 @@ function updateTopBanners() {
     role.textContent = user.roleLabel;
   }
 
+  // Update Topbar user profile badge
+  const topAvatar = document.getElementById('topbar-user-avatar');
+  const topName = document.getElementById('topbar-user-name');
+  const topRole = document.getElementById('topbar-user-role');
+  if (topAvatar) topAvatar.src = user.avatar;
+  if (topName) topName.textContent = user.name;
+  if (topRole) topRole.textContent = user.roleLabel;
+
   // Update Topbar & Sidebar Capacity Status Pill
   const capMeta = (typeof CAPACITY_META !== 'undefined' && CAPACITY_META[user.capacityStatus]) || { label: 'Tersedia (4–5j)', color: 'bg-emerald-400' };
   const topCapDot = document.getElementById('topbar-capacity-dot');
@@ -5603,9 +5611,6 @@ function checkAuthAndRender() {
     if (dynamicBanners) dynamicBanners.classList.remove('hidden');
     if (mobileNav) mobileNav.classList.remove('hidden');
 
-    const roleSelect = document.getElementById('role-simulator-select');
-    if (roleSelect) roleSelect.value = store.state.activeUserId;
-
     updateTopBanners();
     renderActiveView();
   }
@@ -5648,22 +5653,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetNav) navigateTo(targetNav);
     });
   });
-
-  // Simulator Role Select
-  const roleSelect = document.getElementById('role-simulator-select');
-  if (roleSelect) {
-    roleSelect.value = store.state.activeUserId;
-    roleSelect.addEventListener('change', (e) => {
-      store.state.activeUserId = e.target.value;
-      if (store.state.authSession) {
-        store.state.authSession.userId = e.target.value;
-      }
-      store.saveState();
-      updateTopBanners();
-      showToast('Beralih peran: ' + store.getCurrentUser().name);
-      renderActiveView();
-    });
-  }
 
   // Reset Data Button
   const btnReset = document.getElementById('btn-reset-data');
