@@ -9,6 +9,20 @@
 // Global State Key for LocalStorage Persistence
 const STORAGE_KEY = 'karyakita_hub_scaleup_v1';
 
+// Global Safe HTML Escape Utility
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
+
 // Capacity Status Metadata for Student Co-Founders
 const CAPACITY_META = {
   AVAILABLE: { label: 'Tersedia (4–5j)', dot: 'bg-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
@@ -6325,62 +6339,72 @@ function startNewGeminiChat(isInitialSilent) {
 }
 
 function renderGeminiMessages(sessionId) {
-  const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih' };
-  const canvas = document.getElementById('gemini-messages-canvas');
-  if (!canvas) return;
+  try {
+    const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih' };
+    const canvas = document.getElementById('gemini-messages-canvas');
+    if (!canvas) return;
 
-  const userSessions = store.state.geminiChatSessions[user.id] || [];
-  const session = userSessions.find(s => s.id === sessionId) || userSessions[0];
-  if (!session) {
-    canvas.innerHTML = '<div class="text-center py-10 text-gray-400">Belum ada pesan. Mulai obrolan dengan Gemini Copilot!</div>';
-    return;
-  }
+    if (!store.state.geminiChatSessions) store.state.geminiChatSessions = {};
+    if (!store.state.geminiChatSessions[user.id]) store.state.geminiChatSessions[user.id] = [];
 
-  activeGeminiSessionId = session.id;
+    const userSessions = store.state.geminiChatSessions[user.id];
+    let session = userSessions.find(s => s.id === sessionId) || userSessions[0];
+    if (!session) {
+      canvas.innerHTML = '<div class="text-center py-10 text-gray-400">Belum ada pesan. Mulai obrolan dengan Gemini Copilot!</div>';
+      return;
+    }
 
-  canvas.innerHTML = session.messages.map(msg => {
-    const isUser = msg.sender === 'user';
-    return `
-      <div class="flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} group">
-        ${!isUser ? `
-          <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-xs mt-0.5">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+    activeGeminiSessionId = session.id;
+
+    canvas.innerHTML = session.messages.map(msg => {
+      const isUser = msg.sender === 'user';
+      return `
+        <div class="flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} group">
+          ${!isUser ? `
+            <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-xs mt-0.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            </div>
+          ` : ''}
+
+          <div class="max-w-[85%] sm:max-w-[80%] space-y-1">
+            <div class="p-3 rounded-2xl ${isUser ? 'gemini-bubble-user rounded-tr-none' : 'gemini-bubble-ai rounded-tl-none'} shadow-sm text-xs leading-relaxed">
+              ${isUser ? `<div>${escapeHtml(msg.text)}</div>` : `<div>${formatGeminiMarkdown(msg.text)}</div>`}
+              ${msg.attachedDoc ? `
+                <div class="mt-2 p-1.5 rounded-lg bg-black/10 text-[10px] flex items-center gap-1 border border-white/20">
+                  <i data-lucide="file-text" class="w-3 h-3"></i>
+                  <span class="font-semibold truncate">Ref: ${escapeHtml(msg.attachedDoc.title)}</span>
+                </div>
+              ` : ''}
+            </div>
+            <div class="flex items-center gap-2 ${isUser ? 'justify-end' : 'justify-start'} text-[10px] text-gray-400 px-1">
+              <span>${msg.timestamp || ''}</span>
+              ${!isUser ? `
+                <button type="button" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(msg.text || '')}')); showToast('Pesan disalin!');" class="opacity-0 group-hover:opacity-100 hover:text-brand-emerald transition" title="Salin jawaban">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              ` : ''}
+            </div>
           </div>
-        ` : ''}
 
-        <div class="max-w-[85%] sm:max-w-[80%] space-y-1">
-          <div class="p-3 rounded-2xl ${isUser ? 'gemini-bubble-user rounded-tr-none' : 'gemini-bubble-ai rounded-tl-none'} shadow-sm text-xs leading-relaxed">
-            ${isUser ? `<div>${escapeHtml(msg.text)}</div>` : `<div>${formatGeminiMarkdown(msg.text)}</div>`}
-            ${msg.attachedDoc ? `
-              <div class="mt-2 p-1.5 rounded-lg bg-black/10 text-[10px] flex items-center gap-1 border border-white/20">
-                <i data-lucide="file-text" class="w-3 h-3"></i>
-                <span class="font-semibold truncate">Ref: ${escapeHtml(msg.attachedDoc.title)}</span>
-              </div>
-            ` : ''}
-          </div>
-          <div class="flex items-center gap-2 ${isUser ? 'justify-end' : 'justify-start'} text-[10px] text-gray-400 px-1">
-            <span>${msg.timestamp || ''}</span>
-            ${!isUser ? `
-              <button type="button" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(msg.text)}')); showToast('Pesan disalin!');" class="opacity-0 group-hover:opacity-100 hover:text-brand-emerald transition" title="Salin jawaban">
-                <i data-lucide="copy" class="w-3 h-3"></i>
-              </button>
-            ` : ''}
-          </div>
+          ${isUser ? `
+            <img src="${user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}" alt="${user.name}" class="w-6 h-6 rounded-full object-cover border border-emerald-500/40 shrink-0 mt-0.5">
+          ` : ''}
         </div>
+      `;
+    }).join('');
 
-        ${isUser ? `
-          <img src="${user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}" alt="${user.name}" class="w-6 h-6 rounded-full object-cover border border-emerald-500/40 shrink-0 mt-0.5">
-        ` : ''}
-      </div>
-    `;
-  }).join('');
-
-  canvas.scrollTop = canvas.scrollHeight;
-  if (window.lucide) lucide.createIcons();
+    canvas.scrollTop = canvas.scrollHeight;
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.error('Error rendering Gemini messages:', err);
+  }
 }
 
 function handleSendGeminiMessage(event) {
-  if (event) event.preventDefault();
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
   const input = document.getElementById('gemini-chat-input');
   if (!input) return;
 
@@ -6388,11 +6412,19 @@ function handleSendGeminiMessage(event) {
   if (!userText && !activeAttachedDriveDoc) return;
 
   const user = store.getCurrentUser() || { id: 'alfatih', name: 'Syauqi Muhammad Al Fatih' };
-  const userSessions = store.state.geminiChatSessions[user.id] || [];
+  if (!store.state.geminiChatSessions) store.state.geminiChatSessions = {};
+  if (!store.state.geminiChatSessions[user.id]) store.state.geminiChatSessions[user.id] = [];
+
+  const userSessions = store.state.geminiChatSessions[user.id];
   let session = userSessions.find(s => s.id === activeGeminiSessionId);
   if (!session) {
-    startNewGeminiChat(true);
-    session = store.state.geminiChatSessions[user.id][0];
+    if (userSessions.length > 0) {
+      session = userSessions[0];
+      activeGeminiSessionId = session.id;
+    } else {
+      startNewGeminiChat(true);
+      session = store.state.geminiChatSessions[user.id][0];
+    }
   }
 
   // Update session title on first message
@@ -6426,7 +6458,7 @@ function handleSendGeminiMessage(event) {
     const aiMsg = {
       id: 'msg_' + Date.now(),
       sender: 'gemini',
-      text: replyText,
+      text: replyText || 'Respon berhasil diterima.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     session.messages.push(aiMsg);
@@ -6539,20 +6571,22 @@ INSTRUKSI PENTING:
       const cleanKey = apiKey.trim();
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
+      const fullUserPrompt = `${systemInstructionText}\n\n[PERTANYAAN PENGGUNA]:\n${userQuery}${contextDocPrompt}`;
+      const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timeoutHandle = controller ? setTimeout(() => controller.abort(), 18000) : null;
+
       fetch(endpoint, {
         method: 'POST',
+        signal: controller ? controller.signal : undefined,
         headers: {
           'Content-Type': 'application/json',
           'X-goog-api-key': cleanKey
         },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemInstructionText }]
-          },
           contents: [
             {
               role: 'user',
-              parts: [{ text: userQuery + contextDocPrompt }]
+              parts: [{ text: fullUserPrompt }]
             }
           ],
           generationConfig: {
@@ -6562,6 +6596,7 @@ INSTRUKSI PENTING:
         })
       })
       .then(res => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
         if (!res.ok) {
           throw new Error(`HTTP ${res.status} pada model ${activeModel}`);
         }
@@ -6576,6 +6611,7 @@ INSTRUKSI PENTING:
         }
       })
       .catch(err => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
         console.warn(`Model ${activeModel} gagal: ${err.message}`);
         tryFetchModel(modelIndex + 1);
       });
@@ -6689,10 +6725,17 @@ function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
 
 function formatGeminiMarkdown(text) {
   if (!text) return '';
-  let escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  let str = String(text);
+
+  // Preserve internal UI tags if generated by studio fallback
+  const hasInternalHtml = str.includes('<button') || str.includes('data-lucide');
+  let escaped = str;
+  if (!hasInternalHtml) {
+    escaped = escaped
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
 
   // Code blocks: ```language\ncode\n```
   escaped = escaped.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
