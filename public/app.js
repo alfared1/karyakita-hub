@@ -875,9 +875,11 @@ function renderOverviewView() {
   return `
     <div class="space-y-6">
       
-      <!-- Studio Hero Header with Financial & Operational Pulse -->
-      <div class="card-surface p-5 sm:p-6 bg-gradient-to-r from-emerald-950/20 via-transparent to-transparent border border-brand-border dark:border-[#23362F] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div class="space-y-1">
+      <!-- Studio Hero Header with Financial & Operational Pulse (Compact & Sleek) -->
+      <div class="card-surface p-4 sm:p-5 bg-gradient-to-r from-emerald-950/10 via-transparent to-transparent border border-brand-border dark:border-[#23362F] flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        
+        <!-- Left: Greetings & Context -->
+        <div class="space-y-1 min-w-0">
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -886,62 +888,51 @@ function renderOverviewView() {
             <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">STMIK Tazkia</span>
           </div>
-          <h2 class="font-heading font-bold text-xl sm:text-2xl text-gray-900 dark:text-white leading-tight">
-            Assalamu'alaikum, ${user.name}! 👋
+          <h2 class="font-heading font-bold text-lg sm:text-xl text-gray-900 dark:text-white leading-tight">
+            Assalamu'alaikum, ${user.name.split(' ')[0]}! 👋
           </h2>
           <p class="text-xs text-gray-600 dark:text-gray-400">
             Pusat Komando Operasional, Keuangan Syariah & Eksekusi KaryaKita Hub.
           </p>
         </div>
 
-        <!-- Graduation Rule Spotlight Card (Aligned with Landing Page Hero Card) -->
-        <div class="card-spotlight p-5 sm:p-6 rounded-2xl bg-[#0F4C3A] text-white shadow-xl border border-emerald-700/60 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden mt-2">
-          <div class="absolute -right-12 -top-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-          <div class="space-y-1.5 relative z-10 max-w-xl">
-            <div class="flex items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-900/80 text-emerald-200 border border-emerald-600/50">
-                <span class="w-1.5 h-1.5 rounded-full bg-[#FCD34D] animate-pulse"></span>
-                Graduation Rule Rp3,5 Juta • Self-Sustaining Milestone
-              </span>
-              <span class="text-xs text-emerald-300/60">•</span>
-              <span class="text-xs text-emerald-200/80">Tata Kelola Syirkah 'Abdan</span>
+        <!-- Right Side: Compact Spotlight Card + Quick Action Buttons -->
+        <div class="flex flex-wrap items-center gap-3 shrink-0">
+          
+          <!-- Compact Spotlight Card: Kas Mandiri Rp3,5M -->
+          <div class="card-spotlight p-3 sm:py-2.5 sm:px-4 rounded-xl bg-[#0F4C3A] text-white shadow-xs border border-emerald-700/60 flex items-center gap-3.5 relative overflow-hidden">
+            <div class="w-8 h-8 rounded-lg bg-emerald-900/80 text-[#FCD34D] flex items-center justify-center shrink-0 border border-emerald-600/40">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
             </div>
-            <h3 class="font-heading font-extrabold text-lg sm:text-xl text-white tracking-tight">
-              Cadangan Kas Mandiri Studio
-            </h3>
-            <p class="text-xs text-emerald-100/90 leading-relaxed">
-              70% laba bersih ditahan otomatis hingga target operasional mandiri tercapai untuk menjamin keberlanjutan studio tanpa ketergantungan modal eksternal riba.
-            </p>
-          </div>
-
-          <div class="p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 min-w-[260px] space-y-2.5 relative z-10 shrink-0">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] uppercase font-bold text-emerald-200 tracking-wider">Saldo Terkumpul</span>
-              <span class="text-xs font-bold text-[#FCD34D] tabular-nums">${gradPct}%</span>
-            </div>
-            <div class="text-2xl font-black font-heading tracking-tight text-white tabular-nums">
-              ${formatRp(cashBalance)}
-            </div>
-            <div class="w-full bg-black/25 rounded-full h-2.5 overflow-hidden">
-              <div class="bg-[#FCD34D] h-2.5 rounded-full transition-all duration-700 shadow-sm" style="width: ${gradPct}%;"></div>
-            </div>
-            <div class="flex items-center justify-between text-[10px] text-emerald-200/90 pt-0.5">
-              <span>Target: Rp3.500.000</span>
-              <span>Sisa: ${formatRp(Math.max(0, gradTarget - cashBalance))}</span>
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-4 text-[10px]">
+                <span class="font-bold text-emerald-100 tracking-wider">Kas Mandiri Studio</span>
+                <span class="font-bold text-[#FCD34D] tabular-nums">${gradPct}%</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-sm font-extrabold text-white font-heading tabular-nums">${formatRp(cashBalance)}</span>
+                <span class="text-[10px] text-emerald-200/80">/ Rp3,5M</span>
+              </div>
+              <div class="w-36 sm:w-44 bg-black/30 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-[#FCD34D] h-1.5 rounded-full transition-all duration-500" style="width: ${gradPct}%;"></div>
+              </div>
             </div>
           </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button onclick="navigateTo('tasks')" class="px-3.5 py-2 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer" aria-label="Buat Tugas Baru di Papan Tugas">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Tugas Baru</span>
+            </button>
+            <button onclick="navigateTo('reports')" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer" aria-label="Lapor Check-In Rabu">
+              <i data-lucide="message-square-heart" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Lapor Rabu</span>
+            </button>
+          </div>
+
         </div>
 
-        <div class="flex items-center gap-2 pt-2">
-          <button onclick="navigateTo('tasks')" class="px-3.5 py-2 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>Tugas Baru</span>
-          </button>
-          <button onclick="navigateTo('reports')" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="message-square-heart" class="w-3.5 h-3.5 text-amber-500"></i>
-            <span>Lapor Rabu</span>
-          </button>
-        </div>
       </div>
 
       <!-- 4 Core KPI Cards with Strict Tabular Numerics -->
@@ -6472,33 +6463,10 @@ function renderAuthForm(formType, userId = null) {
       <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
         <div>
           <h3 class="font-heading font-bold text-lg sm:text-xl text-gray-900 dark:text-white leading-tight">Masuk ke Studio</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gunakan akun resmi co-founder atau pilih akses cepat di bawah.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Masukkan kredensial resmi Co-Founder untuk mengakses Studio OS.</p>
         </div>
 
-        <!-- Co-Founder Quick Selector (Zero-Typo Instant Helper) -->
-        <div class="space-y-1.5 pt-1">
-          <div class="flex items-center justify-between">
-            <label class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
-              <span>Pilih Akun Cepat 7 Co-Founder:</span>
-            </label>
-            <span class="text-[10px] text-brand-emerald dark:text-emerald-400 font-medium">1-Klik Langsung Isi</span>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-2 bg-gray-50/80 dark:bg-[#192722]/80 rounded-2xl border border-gray-200/80 dark:border-gray-800">
-            ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
-              <button type="button" id="quick-btn-${u.id}" onclick="quickFillLogin('${u.id}')" class="quick-founder-btn p-1.5 rounded-xl bg-white dark:bg-[#121C18] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-gray-200/80 dark:border-gray-700/60 flex items-center gap-2 text-left text-[11px] transition shadow-xs group cursor-pointer last:col-span-2 sm:last:col-span-1 min-h-[44px]" title="Klik untuk mengisi akun ${u.name}" aria-label="Isi otomatis akun ${u.name}">
-                <img src="${u.avatar}" class="w-6 h-6 rounded-full object-cover shrink-0 border border-emerald-500/30">
-                <div class="min-w-0 flex-1">
-                  <strong class="text-gray-900 dark:text-white block truncate leading-tight text-[11px] group-hover:text-brand-emerald dark:group-hover:text-emerald-400">${u.name.split(' ')[0]}</strong>
-                  <span class="text-[9px] text-emerald-700 dark:text-emerald-400 truncate block font-medium">${u.roleLabel.split('(')[0].trim()}</span>
-                </div>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-
-        <div class="space-y-3 text-xs pt-1">
+        <div class="space-y-3.5 text-xs pt-1">
           <div>
             <label for="login-username" class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Username / ID Co-Founder *</label>
             <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
@@ -6510,7 +6478,7 @@ function renderAuthForm(formType, userId = null) {
           <div>
             <div class="flex items-center justify-between mb-1">
               <label for="login-password" class="block font-semibold text-gray-700 dark:text-gray-300">Kata Sandi *</label>
-              <span class="text-[10px] text-gray-500 dark:text-gray-400">Default: Tazkia2026!</span>
+              <span class="text-[10px] text-gray-400 dark:text-gray-500">Tersinkronisasi Cloud</span>
             </div>
             <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
@@ -6533,8 +6501,8 @@ function renderAuthForm(formType, userId = null) {
         </button>
 
         <div class="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
-          <span>Password dapat diubah kapan saja di menu profil pojok kanan atas setelah login.</span>
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+          <span>Akses aman terlindungi otentikasi cloud Neon Postgres & sesi terenkripsi.</span>
         </div>
       </form>
     `;
