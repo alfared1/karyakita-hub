@@ -667,6 +667,32 @@ function openQuickActionSheet() {
 // ==============================================================================
 let currentView = 'overview';
 
+function toggleSidebarCollapse() {
+  const sidebar = document.getElementById('main-sidebar');
+  const icon = document.getElementById('sidebar-collapse-icon');
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  const isCollapsed = sidebar.classList.contains('collapsed');
+  localStorage.setItem('karyakita_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+  if (icon) {
+    icon.setAttribute('data-lucide', isCollapsed ? 'panel-left-open' : 'panel-left-close');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function initSidebarCollapse() {
+  const isCollapsed = localStorage.getItem('karyakita_sidebar_collapsed') === 'true';
+  const sidebar = document.getElementById('main-sidebar');
+  const icon = document.getElementById('sidebar-collapse-icon');
+  if (sidebar && isCollapsed) {
+    sidebar.classList.add('collapsed');
+    if (icon) {
+      icon.setAttribute('data-lucide', 'panel-left-open');
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
 function navigateTo(viewName) {
   const isAuthenticated = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
   if (!isAuthenticated) {
@@ -675,8 +701,24 @@ function navigateTo(viewName) {
   }
   currentView = viewName;
 
-  // Update Breadcrumb
+  // Update Breadcrumb & Cluster
   const breadcrumb = document.getElementById('breadcrumb-current-page');
+  const clusterEl = document.getElementById('breadcrumb-cluster');
+  const clusters = {
+    overview: 'Ringkasan & Kinerja',
+    analytics: 'Ringkasan & Kinerja',
+    tasks: 'Eksekusi & Kolaborasi',
+    reports: 'Eksekusi & Kolaborasi',
+    archives: 'Eksekusi & Kolaborasi',
+    projects: 'Komersial & Keuangan',
+    crm: 'Komersial & Keuangan',
+    finance: 'Komersial & Keuangan',
+    academy: 'Unit Pertumbuhan',
+    affiliate: 'Unit Pertumbuhan',
+    integrations: 'Tata Kelola & Otomasi',
+    system: 'Tata Kelola & Otomasi',
+    'client-portal': 'Tata Kelola & Otomasi'
+  };
   const titles = {
     overview: 'Beranda',
     tasks: 'Papan Tugas (Kanban & Table)',
@@ -695,15 +737,18 @@ function navigateTo(viewName) {
   if (breadcrumb) {
     breadcrumb.textContent = titles[viewName] || 'Dashboard';
   }
+  if (clusterEl) {
+    clusterEl.textContent = clusters[viewName] || 'Studio';
+  }
 
-  // Update Navigation Active States
+  // Update Navigation Active States with Dark Mode Harmony
   document.querySelectorAll('.nav-item').forEach(btn => {
     if (btn.getAttribute('data-nav') === viewName) {
-      btn.classList.add('bg-emerald-50', 'text-brand-emerald', 'font-bold');
-      btn.classList.remove('text-gray-700', 'text-gray-500');
+      btn.classList.add('bg-emerald-50', 'dark:bg-emerald-950/60', 'text-brand-emerald', 'dark:text-emerald-400', 'font-bold');
+      btn.classList.remove('text-gray-700', 'text-gray-500', 'dark:text-gray-300');
     } else {
-      btn.classList.remove('bg-emerald-50', 'text-brand-emerald', 'font-bold');
-      btn.classList.add('text-gray-700');
+      btn.classList.remove('bg-emerald-50', 'dark:bg-emerald-950/60', 'text-brand-emerald', 'dark:text-emerald-400', 'font-bold');
+      btn.classList.add('text-gray-700', 'dark:text-gray-300');
     }
   });
 
@@ -793,8 +838,14 @@ function renderOverviewView() {
   const activeFounders = store.getActiveCofounders();
   const totalFounders = activeFounders.length;
 
-  const activeProjectsCount = store.state.projects.length;
+  const activeProjects = store.state.projects || [];
+  const activeProjectsCount = activeProjects.length;
   const activeBatchesCount = store.state.academyBatches.length;
+
+  // Payment Gate Maker-Checker Counts
+  const waitingDpProjects = activeProjects.filter(p => !p.dpPaid || p.paymentStatus === 'WAITING_DP').length;
+  const inProgressProjects = activeProjects.filter(p => p.dpPaid && p.paymentStatus !== 'PAID_100').length;
+  const paid100Projects = activeProjects.filter(p => p.paymentStatus === 'PAID_100').length;
 
   const blockedTasks = tasks.filter(t => t.isBlocked);
   const myTasks = tasks.filter(t => t.assigneeId === user.id);
@@ -802,104 +853,139 @@ function renderOverviewView() {
   const cashBalance = store.calculateCashBalance();
   const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
 
+  const gradTarget = 3500000;
+  const gradPct = Math.min(100, Math.round((cashBalance / gradTarget) * 100));
+
   return `
     <div class="space-y-6">
       
-      <!-- Welcome Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-xl border border-brand-border">
-        <div>
-          <h2 class="font-heading font-bold text-lg sm:text-xl text-gray-900">
+      <!-- Studio Hero Header with Financial & Operational Pulse -->
+      <div class="card-surface p-5 sm:p-6 bg-gradient-to-r from-emerald-950/20 via-transparent to-transparent border border-brand-border dark:border-[#23362F] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Sprint ${store.state.currentSprint || 1} • Q1 Bootstrapping
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">STMIK Tazkia</span>
+          </div>
+          <h2 class="font-heading font-bold text-xl sm:text-2xl text-gray-900 dark:text-white leading-tight">
             Assalamu'alaikum, ${user.name}! 👋
           </h2>
-          <p class="text-xs text-gray-500 mt-0.5">
+          <p class="text-xs text-gray-600 dark:text-gray-400">
             Pusat Komando Operasional, Keuangan Syariah & Eksekusi KaryaKita Hub.
           </p>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 bg-emerald-50 text-brand-emerald rounded-full border border-emerald-200">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            ${user.roleLabel}
-          </span>
+
+        <!-- Graduation Rule Quick Metric Pill on Header -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="p-3 rounded-2xl bg-white dark:bg-[#192722] border border-gray-200 dark:border-gray-700/80 shadow-xs flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="wallet" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wider block">Saldo Kas Mandiri</span>
+              <div class="text-sm font-bold text-gray-900 dark:text-emerald-300 font-heading tabular-nums">${formatRp(cashBalance)}</div>
+              <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Target Graduation: Rp3,5M (${gradPct}%)</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="navigateTo('tasks')" class="px-3.5 py-2 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 cursor-pointer" aria-label="Buat Tugas Baru di Papan Tugas">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Tugas Baru</span>
+            </button>
+            <button onclick="navigateTo('reports')" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer" aria-label="Lapor Check-In Rabu">
+              <i data-lucide="message-square-heart" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Lapor Rabu</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 4 Core KPI Cards -->
+      <!-- 4 Core KPI Cards with Strict Tabular Numerics -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <!-- KPI 1: Micro-Sprint Pekan Ini -->
-        <div class="card-surface p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-gray-500">
-            <span class="text-xs font-medium">Sprint ${store.state.currentSprint || 1} Progress</span>
-            <div class="p-1.5 rounded-lg bg-emerald-50 text-brand-emerald">
+        <!-- KPI 1: Micro-Sprint Progress -->
+        <div class="card-surface p-4 sm:p-5 flex flex-col justify-between hover:border-brand-emerald/40 hover:shadow-md transition">
+          <div class="flex items-center justify-between text-gray-500 dark:text-gray-400">
+            <span class="text-xs font-semibold">Sprint ${store.state.currentSprint || 1} Eksekusi</span>
+            <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-brand-emerald dark:text-emerald-400 flex items-center justify-center">
               <i data-lucide="check-circle" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xl font-bold font-heading text-gray-900 tabular-nums">
-              ${doneTasks} / ${totalTasks} Selesai
+          <div class="mt-3">
+            <div class="text-2xl font-bold font-heading text-gray-900 dark:text-white tabular-nums">
+              ${doneTasks} <span class="text-sm font-medium text-gray-500 dark:text-gray-400">/ ${totalTasks} Selesai</span>
             </div>
-            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div class="bg-brand-emerald h-1.5 rounded-full" style="width: ${taskProgressPct}%;"></div>
+            <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mt-2.5 overflow-hidden">
+              <div class="bg-brand-emerald dark:bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: ${taskProgressPct}%;"></div>
             </div>
-            <span class="text-[11px] text-gray-500 mt-1 block">${taskProgressPct}% tingkat penyelesaian</span>
+            <span class="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 block font-medium tabular-nums">${taskProgressPct}% tingkat penyelesaian sprint</span>
           </div>
         </div>
 
         <!-- KPI 2: Async Check-In Rabu -->
-        <div class="card-surface p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-gray-500">
-            <span class="text-xs font-medium">Async Check-In Rabu</span>
-            <div class="p-1.5 rounded-lg bg-amber-50 text-amber-700">
+        <div class="card-surface p-4 sm:p-5 flex flex-col justify-between hover:border-brand-emerald/40 hover:shadow-md transition">
+          <div class="flex items-center justify-between text-gray-500 dark:text-gray-400">
+            <span class="text-xs font-semibold">Async Check-In Rabu</span>
+            <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center">
               <i data-lucide="clock" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xl font-bold font-heading text-gray-900 tabular-nums">
-              ${checkinsCount} / ${totalFounders} Co-Founder
+          <div class="mt-3">
+            <div class="text-2xl font-bold font-heading text-gray-900 dark:text-white tabular-nums">
+              ${checkinsCount} <span class="text-sm font-medium text-gray-500 dark:text-gray-400">/ ${totalFounders} Co-Founder</span>
             </div>
-            <div class="flex items-center gap-1 mt-2">
-              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold">${checkinsCount} Sudah Lapor</span>
-              <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">${Math.max(0, totalFounders - checkinsCount)} Belum</span>
+            <div class="flex items-center gap-1.5 mt-2">
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold tabular-nums">${checkinsCount} Lapor</span>
+              <span class="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold tabular-nums">${Math.max(0, totalFounders - checkinsCount)} Pending</span>
             </div>
-            <span class="text-[11px] text-gray-500 mt-1 block">< 90 detik via mobile</span>
+            <span class="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 block">&lt; 90 detik via ponsel</span>
           </div>
         </div>
 
-        <!-- KPI 3: Proyek & Batch Aktif -->
-        <div class="card-surface p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-gray-500">
-            <span class="text-xs font-medium">Proyek & Batch Aktif</span>
-            <div class="p-1.5 rounded-lg bg-sky-50 text-sky-700">
-              <i data-lucide="briefcase" class="w-4 h-4"></i>
+        <!-- KPI 3: Proyek & Payment Gate Status -->
+        <div class="card-surface p-4 sm:p-5 flex flex-col justify-between hover:border-brand-emerald/40 hover:shadow-md transition cursor-pointer" onclick="navigateTo('projects')">
+          <div class="flex items-center justify-between text-gray-500 dark:text-gray-400">
+            <span class="text-xs font-semibold">Payment Gate Radar</span>
+            <div class="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xl font-bold font-heading text-gray-900 tabular-nums">
-              ${activeProjectsCount} Proyek + ${activeBatchesCount} Batch
+          <div class="mt-3">
+            <div class="text-2xl font-bold font-heading text-gray-900 dark:text-white tabular-nums">
+              ${activeProjectsCount} <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Proyek Aktif</span>
             </div>
-            <p class="text-[11px] text-gray-500 mt-2">
-              ${activeProjectsCount > 0 ? `${activeProjectsCount} Proyek Aktif Berjalan` : 'Belum ada proyek berjalan'}
-            </p>
-            <span class="text-[11px] text-sky-700 font-medium">Payment Gate Active</span>
+            <div class="flex flex-wrap items-center gap-1.5 mt-2 text-[10px]">
+              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold tabular-nums" title="Menunggu DP 50%">
+                ${waitingDpProjects} Menunggu DP
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold tabular-nums" title="DP 50% Verified">
+                ${inProgressProjects} Produksi
+              </span>
+            </div>
+            <span class="text-[11px] text-sky-700 dark:text-sky-400 font-semibold mt-1.5 block">Guardrail DP 50% Aktif →</span>
           </div>
         </div>
 
-        <!-- KPI 4: Tugas Terhambat / Deadline Dekat -->
-        <div class="card-surface p-4 flex flex-col justify-between cursor-pointer hover:border-red-300 transition" onclick="navigateTo('tasks')">
-          <div class="flex items-center justify-between text-gray-500">
-            <span class="text-xs font-medium">Tugas Terhambat (Blocked)</span>
-            <div class="p-1.5 rounded-lg bg-red-50 text-red-700">
+        <!-- KPI 4: Tugas Terhambat & Bantuan Tim -->
+        <div class="card-surface p-4 sm:p-5 flex flex-col justify-between cursor-pointer hover:border-red-300 dark:hover:border-red-800 hover:shadow-md transition" onclick="navigateTo('tasks')">
+          <div class="flex items-center justify-between text-gray-500 dark:text-gray-400">
+            <span class="text-xs font-semibold">Kendala & Bantuan</span>
+            <div class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 flex items-center justify-center">
               <i data-lucide="alert-octagon" class="w-4 h-4"></i>
             </div>
           </div>
-          <div class="mt-2">
-            <div class="text-xl font-bold font-heading text-red-700 tabular-nums">
-              ${blockedTasks.length} Tugas
+          <div class="mt-3">
+            <div class="text-2xl font-bold font-heading text-red-700 dark:text-red-400 tabular-nums">
+              ${blockedTasks.length} <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tugas Terhambat</span>
             </div>
-            <p class="text-[11px] text-gray-500 mt-2">
-              Memerlukan tabayyun & bantuan tim
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-2">
+              ${blockedTasks.length > 0 ? 'Butuh bantuan & musyawarah tim' : 'Alhamdulillah seluruh tugas lancar'}
             </p>
-            <span class="text-[11px] text-red-600 font-semibold flex items-center gap-1">
+            <span class="text-[11px] text-red-600 dark:text-red-400 font-semibold mt-1.5 flex items-center gap-1">
               Lihat di Papan Tugas →
             </span>
           </div>
@@ -908,35 +994,39 @@ function renderOverviewView() {
       </div>
 
       <!-- Supportive Rhythm Pulse: Status Kapasitas & Kesiapan 7 Co-Founder -->
-      <div class="card-surface p-5">
-        <div class="flex items-center justify-between mb-3.5">
+      <div class="card-surface p-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-              <i data-lucide="heart-pulse" class="w-4 h-4 text-brand-emerald"></i>
-              Rhythm Pulse Kapasitas Co-Founder
+            <h3 class="font-heading font-bold text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
+              <i data-lucide="heart-pulse" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
+              Rhythm Pulse Kesiapan 7 Co-Founder
             </h3>
-            <p class="text-xs text-gray-500">Transparansi kesiapan kuliah & ketersediaan waktu tim pekan ini</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Transparansi beban kuliah STMIK Tazkia & ketersediaan waktu tim pekan ini</p>
           </div>
-          <button onclick="openCapacityModal()" class="text-xs font-semibold text-brand-emerald hover:underline">
-            Update Status Saya →
+          <button onclick="openCapacityModal()" class="text-xs font-semibold text-brand-emerald dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer">
+            <span>Ubah Status Saya</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </button>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           ${activeFounders.map(f => {
             const cap = CAPACITY_META[f.capacityStatus || 'AVAILABLE'] || CAPACITY_META.AVAILABLE;
             const userCheckin = store.state.checkins.find(c => c.userId === f.id && c.sprintNumber === (store.state.currentSprint || 1));
             return `
-              <div class="p-3 rounded-xl border border-gray-200 bg-gray-50/60 flex items-center gap-3">
-                <img src="${f.avatar}" class="w-9 h-9 rounded-full object-cover border border-gray-300">
+              <div class="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-[#192722]/50 hover:bg-white dark:hover:bg-[#192722] hover:border-brand-emerald/40 transition flex items-center gap-3">
+                <div class="relative shrink-0">
+                  <img src="${f.avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-700">
+                  <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${cap.dot} border-2 border-white dark:border-[#121C18]"></span>
+                </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold text-gray-900 truncate">${f.name}</p>
-                  <p class="text-[10px] text-gray-500 truncate">${f.roleLabel}</p>
+                  <p class="text-xs font-bold text-gray-900 dark:text-white truncate">${f.name}</p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">${f.roleLabel}</p>
                   <div class="flex items-center gap-1.5 mt-1">
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-semibold ${cap.badgeClass}">
-                      <span class="w-1.5 h-1.5 rounded-full ${cap.dot}"></span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9px] font-semibold ${cap.badgeClass}">
                       ${cap.label}
                     </span>
-                    ${userCheckin ? '<span class="text-[9px] text-emerald-700 font-bold">✓ Lapor</span>' : '<span class="text-[9px] text-gray-400">Belum</span>'}
+                    ${userCheckin ? '<span class="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold">✓ Lapor</span>' : '<span class="text-[9px] text-gray-500 dark:text-gray-400 font-medium">Belum</span>'}
                   </div>
                 </div>
               </div>
@@ -948,59 +1038,63 @@ function renderOverviewView() {
       <!-- 2 Main Columns Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Tugas Saya Pekan Ini + 5 Unit Bisnis (65%) -->
+        <!-- Left Column: Tugas Saya Pekan Ini + 5 Unit Bisnis (8 cols) -->
         <div class="lg:col-span-8 space-y-6">
           
           <!-- Tugas Saya Pekan Ini -->
-          <div class="card-surface p-5">
+          <div class="card-surface p-5 sm:p-6">
             <div class="flex items-center justify-between mb-4">
               <div>
-                <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-                  <i data-lucide="list-todo" class="w-4 h-4 text-brand-emerald"></i>
+                <h3 class="font-heading font-bold text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
+                  <i data-lucide="list-todo" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
                   Tugas Saya Pekan Ini (${user.name})
                 </h3>
-                <p class="text-xs text-gray-500">
-                  Estimasi beban: <strong class="tabular-nums ${store.calculateUserWeeklyHours(user.id) > 5 ? 'text-red-600' : 'text-brand-emerald'}">${store.calculateUserWeeklyHours(user.id)} jam / maks 5 jam</strong>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Estimasi beban: <strong class="tabular-nums ${store.calculateUserWeeklyHours(user.id) > 5 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-brand-emerald dark:text-emerald-400 font-bold'}">${store.calculateUserWeeklyHours(user.id)} jam / maks 5 jam</strong>
                 </p>
               </div>
-              <button onclick="navigateTo('tasks')" class="text-xs font-semibold text-brand-emerald hover:underline">
-                Buka Papan Tugas →
+              <button onclick="navigateTo('tasks')" class="text-xs font-semibold text-brand-emerald dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer">
+                <span>Papan Tugas</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
               </button>
             </div>
 
             ${myTasks.length === 0 ? `
-              <div class="text-center py-8 text-gray-400 text-xs">
+              <div class="text-center py-10 text-gray-400 dark:text-gray-500 text-xs">
                 <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-emerald-400 mb-2"></i>
-                <p>Tidak ada tugas aktif untuk ${user.name} di Sprint ini.</p>
+                <p class="font-medium">Tidak ada tugas aktif untuk ${user.name} di Sprint ini.</p>
+                <button onclick="navigateTo('tasks')" class="mt-3 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-brand-emerald dark:text-emerald-400 text-xs font-semibold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition cursor-pointer">
+                  + Buat Tugas Baru
+                </button>
               </div>
             ` : `
               <div class="space-y-2.5">
                 ${myTasks.map(t => `
-                  <div class="p-3 rounded-lg border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-brand-emerald/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#192722]/40 hover:bg-white dark:hover:bg-[#192722] hover:border-brand-emerald/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] px-2 py-0.5 rounded font-semibold ${store.state.units[t.unitId]?.badgeClass || 'badge-unit-ops'}">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${store.state.units[t.unitId]?.badgeClass || 'badge-unit-ops'}">
                           ${store.state.units[t.unitId]?.name || t.unitId}
                         </span>
-                        <span class="text-[10px] px-1.5 py-0.2 rounded font-medium badge-status-${t.status.toLowerCase()}">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium badge-status-${t.status.toLowerCase()}">
                           ${t.status}
                         </span>
-                        ${t.isBlocked ? '<span class="text-[10px] bg-red-100 text-red-800 px-1 rounded font-bold">BLOCKED</span>' : ''}
+                        ${t.isBlocked ? '<span class="text-[10px] bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 px-1.5 py-0.2 rounded-full font-bold">BLOCKED</span>' : ''}
                       </div>
-                      <h4 class="text-xs font-bold text-gray-800 truncate">${t.title}</h4>
-                      <p class="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2">
-                        <span><i data-lucide="clock" class="w-3 h-3 inline mr-0.5"></i>${t.hoursEstimate} jam</span>
+                      <h4 class="text-xs font-bold text-gray-800 dark:text-white truncate">${t.title}</h4>
+                      <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                        <span class="tabular-nums"><i data-lucide="clock" class="w-3 h-3 inline mr-1 text-gray-400"></i>${t.hoursEstimate} jam</span>
                         <span>•</span>
-                        <span>Tenggat: ${t.dueDate || '-'}</span>
+                        <span class="tabular-nums">Tenggat: ${t.dueDate || '-'}</span>
                       </p>
                     </div>
-                    <div class="flex items-center gap-1.5 self-end sm:self-center">
+                    <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
                       ${t.status !== 'DONE' ? `
-                        <button onclick="quickUpdateTaskStatus('${t.id}', 'DONE')" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-1 rounded transition flex items-center gap-1">
-                          <i data-lucide="check" class="w-3 h-3"></i> Selesai
+                        <button onclick="quickUpdateTaskStatus('${t.id}', 'DONE')" class="text-xs bg-brand-emerald hover:bg-brand-hover text-white font-medium px-3 py-1.5 rounded-xl shadow-xs transition flex items-center gap-1 cursor-pointer">
+                          <i data-lucide="check" class="w-3.5 h-3.5"></i> Selesai
                         </button>
                       ` : `
-                        <span class="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <span class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
                           <i data-lucide="check-check" class="w-3.5 h-3.5"></i> Itqan
                         </span>
                       `}
@@ -1011,25 +1105,28 @@ function renderOverviewView() {
             `}
           </div>
 
-          <!-- Ringkasan 5 Unit Bisnis KaryaKita -->
-          <div class="card-surface p-5">
-            <h3 class="font-heading font-bold text-sm text-gray-900 mb-3 flex items-center gap-2">
-              <i data-lucide="grid" class="w-4 h-4 text-brand-emerald"></i>
-              Portofolio 5 Unit Bisnis KaryaKita
-            </h3>
+          <!-- Portofolio 5 Unit Bisnis KaryaKita -->
+          <div class="card-surface p-5 sm:p-6">
+            <div class="flex items-center justify-between mb-3.5">
+              <h3 class="font-heading font-bold text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="grid" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
+                Portofolio 5 Unit Bisnis KaryaKita
+              </h3>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Model Inkubasi Studio</span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               ${Object.values(store.state.units).filter(u => u.code !== 'INTERNAL_OPS').map(u => {
                 const unitProjects = store.state.projects.filter(p => p.unitId === u.code).length;
                 const unitTasks = store.state.tasks.filter(t => t.unitId === u.code).length;
                 return `
-                  <div class="p-3 rounded-lg border border-brand-border bg-white hover:border-brand-hover transition">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${u.badgeClass}">
+                  <div class="p-3.5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-white dark:bg-[#121C18] hover:border-brand-emerald/40 dark:hover:border-emerald-600/40 hover:shadow-xs transition">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${u.badgeClass}">
                       ${u.name.split(' (')[0]}
                     </span>
-                    <p class="text-[11px] text-gray-500 mt-2 line-clamp-2">${u.desc}</p>
-                    <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-600">
-                      <span>${unitProjects} Proyek</span>
-                      <span>${unitTasks} Tugas</span>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">${u.desc}</p>
+                    <div class="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+                      <span class="tabular-nums font-semibold">${unitProjects} Proyek</span>
+                      <span class="tabular-nums font-semibold">${unitTasks} Tugas</span>
                     </div>
                   </div>
                 `;
@@ -1039,46 +1136,60 @@ function renderOverviewView() {
 
         </div>
 
-        <!-- Right Column: Activity Feed & Audit Stream (35%) -->
+        <!-- Right Column: Activity Feed & Shariah Governance Guardrails (4 cols) -->
         <div class="lg:col-span-4 space-y-6">
           
-          <!-- Activity Feed -->
-          <div class="card-surface p-5">
+          <!-- Linimasa Aktivitas Realtime -->
+          <div class="card-surface p-5 sm:p-6">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-                <i data-lucide="activity" class="w-4 h-4 text-brand-emerald"></i>
+              <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
                 Linimasa Aktivitas Studio
               </h3>
-              <span class="text-[10px] bg-emerald-50 text-brand-emerald px-1.5 py-0.5 rounded font-mono">Realtime</span>
+              <span class="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-brand-emerald dark:text-emerald-400 px-2 py-0.5 rounded-full font-mono border border-emerald-200 dark:border-emerald-800">Live</span>
             </div>
 
             <div class="space-y-4">
               ${store.state.auditLogs.slice(0, 6).map(log => `
-                <div class="relative pl-5 border-l-2 border-emerald-200">
-                  <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-brand-emerald"></div>
-                  <p class="text-xs font-semibold text-gray-800">${log.actorName}</p>
-                  <p class="text-[11px] text-gray-600 mt-0.5">${log.details}</p>
-                  <span class="text-[10px] text-gray-400 mt-1 block font-mono">${log.timestamp}</span>
+                <div class="relative pl-5 border-l-2 border-emerald-200 dark:border-emerald-800">
+                  <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-brand-emerald dark:bg-emerald-400"></div>
+                  <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">${log.actorName}</p>
+                  <p class="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5 leading-snug">${log.details}</p>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 block font-mono tabular-nums">${log.timestamp}</span>
                 </div>
               `).join('')}
             </div>
 
-            <button onclick="navigateTo('system')" class="w-full mt-4 text-center text-xs text-brand-emerald font-semibold hover:underline">
+            <button onclick="navigateTo('system')" class="w-full mt-4 text-center text-xs text-brand-emerald dark:text-emerald-400 font-semibold hover:underline cursor-pointer block" aria-label="Buka Semua Audit Log Studio">
               Buka Semua Audit Log →
             </button>
           </div>
 
-          <!-- Quick Shariah Governance Card -->
-          <div class="card-surface p-4 bg-emerald-950 text-white border-emerald-900">
-            <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
-              <h4 class="font-heading font-bold text-xs text-emerald-200">Guardrails by Design</h4>
+          <!-- Guardrails by Design Shariah Compliance Card -->
+          <div class="card-surface p-5 bg-gradient-to-br from-[#0F513D] to-[#0A3629] text-white border-emerald-800/60 shadow-lg">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+              </div>
+              <h4 class="font-heading font-bold text-xs text-white">Tata Kelola Syariah & Guardrails</h4>
             </div>
-            <ul class="text-[11px] space-y-1.5 text-emerald-300">
-              <li>• <strong>Wajib DP 50%:</strong> Produksi terkunci sebelum verifikasi CFO.</li>
-              <li>• <strong>Graduation Rule:</strong> Kas ditahan 70% hingga Rp3,5 juta.</li>
-              <li>• <strong>Batas 3-5 Jam:</strong> Radar burnout mahasiswa STMIK Tazkia.</li>
-              <li>• <strong>Zakat 2,5%:</strong> Dipotong otomatis sebelum bagi hasil Syirkah.</li>
+            <ul class="text-[11px] space-y-2 text-emerald-100/90 leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-300 font-bold">•</span>
+                <span><strong>Wajib DP 50%:</strong> Produksi proyek terkunci otomatis sebelum verifikasi CFO.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-300 font-bold">•</span>
+                <span><strong>Graduation Rule:</strong> Kas ditahan 70% hingga cadangan Rp3,5 juta tercapai.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-300 font-bold">•</span>
+                <span><strong>Radar 3–5 Jam:</strong> Membatasi beban kerja agar tidak mengganggu kuliah.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-300 font-bold">•</span>
+                <span><strong>Zakat 2,5%:</strong> Dipotong otomatis dari laba sebelum bagi hasil Syirkah 'Abdan.</span>
+              </li>
             </ul>
           </div>
 
@@ -5413,11 +5524,326 @@ function clearTourHighlights() {
   if (container) container.remove();
 }
 
+let currentOnboardingModalSlide = 0;
+let currentOnboardingModalUser = null;
+
 function openOnboardingTour(user) {
+  openRoleOnboardingModal(user);
+}
+
+function openOnboardingTourDirect(user) {
   currentHotspotUser = user || store.getCurrentUser();
   currentHotspotIndex = 0;
   closeModal();
   renderHotspotStep();
+}
+
+let onboardingModalKeyHandler = null;
+
+function openRoleOnboardingModal(user) {
+  currentOnboardingModalUser = user || store.getCurrentUser();
+  currentOnboardingModalSlide = 0;
+  
+  if (!onboardingModalKeyHandler) {
+    onboardingModalKeyHandler = (e) => {
+      const backdrop = document.getElementById('global-modal-backdrop');
+      if (!backdrop || backdrop.classList.contains('hidden')) return;
+      if (e.key === 'ArrowRight') {
+        nextRoleOnboardingSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevRoleOnboardingSlide();
+      }
+    };
+    window.addEventListener('keydown', onboardingModalKeyHandler);
+  }
+  
+  renderRoleOnboardingSlide();
+}
+
+function renderRoleOnboardingSlide() {
+  const user = currentOnboardingModalUser || store.getCurrentUser();
+  if (!user) return;
+  const slideIdx = currentOnboardingModalSlide;
+
+  // Role custom briefing
+  const roleTitle = user.roleLabel || 'Co-Founder';
+  let roleResponsibilities = [];
+  if (user.role === 'SUPER_ADMIN') {
+    roleResponsibilities = [
+      { icon: 'cpu', label: 'Arsitektur Sistem & AI Officer', desc: 'Memvalidasi roadmap AI, mengelola asisten Gemini Studio, dan menjaga kedaulatan tech stack zero-cost.' },
+      { icon: 'file-check-2', label: 'Pengesahan Notulen Syura', desc: 'Mengesahkan keputusan musyawarah Weekly Syura dan mengeksekusi integrasi bot sistem.' },
+      { icon: 'shield-check', label: 'Akses Penuh Seluruh Modul', desc: 'Wewenang konfigurasi 13 modul sistem dan pemantauan audit log operasional studio.' }
+    ];
+  } else if (user.role === 'OPS_ADMIN') {
+    roleResponsibilities = [
+      { icon: 'kanban', label: 'Pengawal Alokasi Tugas Tim', desc: 'Memantau dan memvalidasi tugas mingguan seluruh 7 co-founder agar beban kerja seimbang.' },
+      { icon: 'clock-4', label: 'SLA 48-Jam & Antrean Revisi', desc: 'Mengawal SLA 48-hour client sign-off dan memilah revisi minor vs major berbayar.' },
+      { icon: 'calendar-off', label: 'Aktivasi Academic Freeze', desc: 'Mengaktifkan mode proteksi H-7 UTS/UAS STMIK Tazkia agar ritme kuliah terjaga.' }
+    ];
+  } else if (user.role === 'FINANCE_ADMIN') {
+    roleResponsibilities = [
+      { icon: 'lock', label: 'Wewenang Tunggal Payment Gate', desc: 'Verifikasi DP 50% wajib sebelum proyek dikerjakan dan validasi pelunasan 100%.' },
+      { icon: 'target', label: 'Graduation Rule Rp3.500.000', desc: 'Memantau cadangan kas mandiri bootstrapping sebelum surplus kas dapat dibagikan.' },
+      { icon: 'scale', label: 'Zakat 2.5% & Syirkah \'Abdan', desc: 'Menghitung potongan zakat otomatis dan membagi surplus operasional secara berbobot.' }
+    ];
+  } else if (user.id === 'ilham') {
+    roleResponsibilities = [
+      { icon: 'code-2', label: 'Lead WebTech & Software Systems', desc: 'Memimpin implementasi frontend Next.js, API backend, dan integrasi pipeline CRM.' },
+      { icon: 'git-pull-request', label: 'Sprint & Quality Assurance', desc: 'Memastikan seluruh deliverable website klien berkinerja tinggi, responsif, dan zero-bug.' },
+      { icon: 'database', label: 'Manajemen Data & Cloud Sync', desc: 'Memastikan data Neon Postgres tersinkronisasi cepat dan aman.' }
+    ];
+  } else if (user.id === 'syarah' || user.id === 'syaraf') {
+    roleResponsibilities = [
+      { icon: 'sparkles', label: 'Lead Creative & Affiliate Media', desc: 'Mengelola kampanye konten, produksi visual promosi, dan monitoring komisi Lini 4.' },
+      { icon: 'users', label: 'Akuisisi Mitra & Client Engagement', desc: 'Mengawal interaksi prospek di CRM dari tahap Lead hingga Closing Deal.' },
+      { icon: 'clapperboard', label: 'Media Production Engine', desc: 'Memastikan standar output visual studio konsisten dan memikat audiens.' }
+    ];
+  } else if (user.id === 'nazwa') {
+    roleResponsibilities = [
+      { icon: 'graduation-cap', label: 'Lead AI Academy & Enterprise R&D', desc: 'Mengelola peserta pelatihan, silabus kurikulum AI, dan webinar Lini 5.' },
+      { icon: 'award', label: 'Sertifikasi Peserta', desc: 'Menerbitkan sertifikat resmi pelatihan dan memantau kepuasan peserta bootcamp.' },
+      { icon: 'book-open', label: 'Dokumentasi & Riset Materi', desc: 'Mengarsipkan materi riset kecerdasan buatan ke dalam Vault resmi studio.' }
+    ];
+  } else if (user.id === 'ahmad') {
+    roleResponsibilities = [
+      { icon: 'palette', label: 'Design Director & Brand Standards', desc: 'Memastikan seluruh aset visual memenuhi prinsip Itqan (kesempurnaan mutu syariah).' },
+      { icon: 'folder-archive', label: 'Vault Dokumen & Deliverables', desc: 'Mengarsipkan file mentah (Figma/AI/PSD) berlabel CLIENT_SAFE atau NDA_RESTRICTED.' },
+      { icon: 'check-circle-2', label: 'Review Desain Sebelum Rilis', desc: 'Meninjau mockup UI dan aset visual sebelum diserahkan ke klien B2B.' }
+    ];
+  } else {
+    roleResponsibilities = [
+      { icon: 'check-square', label: 'Eksekusi Tugas & Async Check-In', desc: 'Melaporkan progres mingguan setiap Rabu malam dalam 3 kolom (< 90 detik).' },
+      { icon: 'message-square', label: 'Partisipasi Weekly Syura', desc: 'Menghadiri rapat evaluasi mingguan dan mengambil peran aktif dalam sprint studio.' },
+      { icon: 'shield-check', label: 'Kepatuhan Syirkah \'Abdan', desc: 'Menjaga transparansi komitmen waktu 3-5 jam/pekan dan amanah tim.' }
+    ];
+  }
+
+  const slides = [
+    // Slide 1: Welcome & Studio Overview
+    `
+      <div class="onboarding-slide-enter space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-brand-emerald text-white flex items-center justify-center font-heading font-extrabold text-xl shadow-md border border-emerald-400/30">
+            KK
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Slide 1 dari 3: Visi Studio
+            </span>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-gray-900 dark:text-white leading-tight mt-1">
+              Ahlan wa Sahlan di KaryaKita Hub!
+            </h3>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+          Sistem operasi terpadu untuk <strong>7 Mahasiswa Sistem Informasi STMIK Tazkia</strong> yang mengelola 5 unit bisnis sekaligus dengan komitmen waktu <strong>3–5 jam/minggu per orang</strong> dan modal ultra-hemat (Rp0–Rp300k).
+        </p>
+
+        <!-- 5 Business Lines Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+          <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40">
+            <strong class="text-purple-700 dark:text-purple-300 block font-bold">Lini 1: Desain Kreatif</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">UI/UX, Branding & Visual</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/40">
+            <strong class="text-sky-700 dark:text-sky-300 block font-bold">Lini 2: WebTech</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">Fullstack Web & Apps</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/40">
+            <strong class="text-teal-700 dark:text-teal-300 block font-bold">Lini 3: Data & Ops</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">Virtual Assistant & Scraping</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/40">
+            <strong class="text-orange-700 dark:text-orange-300 block font-bold">Lini 4: Media Afiliasi</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">Video Content & Marketing</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40">
+            <strong class="text-emerald-700 dark:text-emerald-300 block font-bold">Lini 5: AI Academy</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">Webinar & Training B2B</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+            <strong class="text-gray-700 dark:text-gray-300 block font-bold">Tata Kelola Syariah</strong>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">Zero-Riba & Syirkah 'Abdan</span>
+          </div>
+        </div>
+      </div>
+    `,
+
+    // Slide 2: Role-Specific Guardrails
+    `
+      <div class="onboarding-slide-enter space-y-4">
+        <div class="flex items-center gap-3">
+          <img src="${user.avatar}" class="w-12 h-12 rounded-2xl object-cover border-2 border-brand-emerald shadow-md">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Slide 2 dari 3: Peran & Tanggung Jawab
+            </span>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-gray-900 dark:text-white leading-tight mt-1">
+              ${user.name}
+            </h3>
+            <p class="text-xs text-brand-emerald dark:text-emerald-400 font-semibold">${roleTitle}</p>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+          Sistem telah mengkonfigurasi hak akses dan modul secara otomatis sesuai mandat Anda dalam struktur studio:
+        </p>
+
+        <!-- Role-Specific Action Checklist -->
+        <div class="space-y-2 pt-1 text-xs">
+          ${roleResponsibilities.map(r => `
+            <div class="p-2.5 rounded-xl bg-gray-50 dark:bg-[#192722] border border-gray-200/80 dark:border-gray-800 flex items-start gap-3">
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="${r.icon}" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <strong class="text-gray-900 dark:text-white block font-bold leading-snug">${r.label}</strong>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-normal">${r.desc}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `,
+
+    // Slide 3: Async Rhythm & Academic Freeze
+    `
+      <div class="onboarding-slide-enter space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500 text-amber-950 flex items-center justify-center font-heading font-extrabold text-xl shadow-md">
+            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Slide 3 dari 3: Ritme & Proteksi Akademik
+            </span>
+            <h3 class="font-heading font-bold text-base sm:text-lg text-gray-900 dark:text-white leading-tight mt-1">
+              Ritme Kerja Async & Academic Freeze
+            </h3>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+          KaryaKita Hub memastikan aktivitas studio tidak pernah mengorbankan prestasi akademik kuliah di STMIK Tazkia.
+        </p>
+
+        <!-- 3 Pillars -->
+        <div class="space-y-2 pt-1 text-xs">
+          <div class="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 flex items-start gap-2.5">
+            <i data-lucide="clock" class="w-4 h-4 text-brand-emerald dark:text-emerald-400 shrink-0 mt-0.5"></i>
+            <div>
+              <strong class="text-gray-900 dark:text-white block font-bold">Async Check-In Rabu Malam (< 90 Detik)</strong>
+              <span class="text-[11px] text-gray-600 dark:text-gray-400 block mt-0.5">Lapor 3 kolom: apa yang selesai, apa yang dikerjakan pekan depan, dan apa kendala.</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 flex items-start gap-2.5">
+            <i data-lucide="calendar-off" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <strong class="text-gray-900 dark:text-white block font-bold">Academic Freeze Mode H-7 UTS/UAS</strong>
+              <span class="text-[11px] text-gray-600 dark:text-gray-400 block mt-0.5">Sistem otomatis membekukan penambahan tugas kustom baru agar tim fokus belajar ujian.</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-sky-50/60 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-900/40 flex items-start gap-2.5">
+            <i data-lucide="sparkles" class="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5"></i>
+            <div>
+              <strong class="text-gray-900 dark:text-white block font-bold">Gemini Studio Copilot (Ctrl+Shift+G)</strong>
+              <span class="text-[11px] text-gray-600 dark:text-gray-400 block mt-0.5">Asisten AI bawaan siap membantu perumusan tugas, notulen Syura, dan analisis KPI kapan saja.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  ];
+
+  const modalHtml = `
+    <div class="p-5 sm:p-7 space-y-5 max-w-lg mx-auto">
+      <!-- Slide Content -->
+      <div id="onboarding-slide-content">
+        ${slides[slideIdx]}
+      </div>
+
+      <!-- Footer Controls: Dots & Navigation -->
+      <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-[#23362F]">
+        <!-- Slide Indicator Dots -->
+        <div class="flex items-center gap-1.5">
+          ${[0, 1, 2].map(i => `
+            <button onclick="goToRoleOnboardingSlide(${i})" class="h-1.5 rounded-full transition-all duration-300 ${i === slideIdx ? 'bg-brand-emerald dark:bg-emerald-400 w-6' : 'bg-gray-300 dark:bg-gray-700 w-1.5 hover:bg-gray-400'}" aria-label="Slide ${i + 1}"></button>
+          `).join('')}
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2">
+          ${slideIdx > 0 ? `
+            <button onclick="prevRoleOnboardingSlide()" class="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              Sebelumnya
+            </button>
+          ` : ''}
+
+          ${slideIdx < 2 ? `
+            <button onclick="nextRoleOnboardingSlide()" class="px-4 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1 shadow-sm cursor-pointer">
+              <span>Lanjut</span>
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          ` : `
+            <button onclick="startHotspotTourFromModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              <i data-lucide="compass" class="w-4 h-4 text-amber-300"></i>
+              <span>Mulai Tur Hotspot</span>
+            </button>
+            <button onclick="finishRoleOnboardingFromModal()" class="px-3 py-1.5 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1 cursor-pointer">
+              <span>Masuk Dashboard</span>
+              <i data-lucide="check" class="w-4 h-4"></i>
+            </button>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+
+  openModal(modalHtml);
+  if (window.lucide) lucide.createIcons();
+}
+
+function nextRoleOnboardingSlide() {
+  if (currentOnboardingModalSlide < 2) {
+    currentOnboardingModalSlide++;
+    renderRoleOnboardingSlide();
+  }
+}
+
+function prevRoleOnboardingSlide() {
+  if (currentOnboardingModalSlide > 0) {
+    currentOnboardingModalSlide--;
+    renderRoleOnboardingSlide();
+  }
+}
+
+function goToRoleOnboardingSlide(idx) {
+  currentOnboardingModalSlide = idx;
+  renderRoleOnboardingSlide();
+}
+
+function startHotspotTourFromModal() {
+  closeModal();
+  setTimeout(() => {
+    openOnboardingTourDirect(currentOnboardingModalUser);
+  }, 200);
+}
+
+function finishRoleOnboardingFromModal() {
+  closeModal();
+  if (currentOnboardingModalUser) {
+    currentOnboardingModalUser.hasCompletedOnboarding = true;
+    store.logAudit('ONBOARDING_CAROUSEL_COMPLETED', `Onboarding Carousel: ${currentOnboardingModalUser.name}`, `Tur onboarding 3 slide untuk ${currentOnboardingModalUser.roleLabel} telah diselesaikan.`);
+    store.saveState();
+  }
+  showToast('Selamat berkolaborasi di KaryaKita Hub!');
+  renderActiveView();
 }
 
 function renderHotspotStep() {
@@ -5932,16 +6358,16 @@ function validatePasswordStrengthLive(pwd) {
       el.className = 'flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold';
       el.innerHTML = '<i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-500"></i> ' + label;
     } else {
-      el.className = 'flex items-center gap-1 text-gray-400';
+      el.className = 'flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium';
       el.innerHTML = '<i data-lucide="circle" class="w-3 h-3"></i> ' + label;
     }
+    if (window.lucide) lucide.createIcons({ root: el });
   };
 
   updateRule(elLen, s.hasLength, 'Min. 8 Karakter');
   updateRule(elUp, s.hasUpper, 'Huruf Besar (A-Z)');
   updateRule(elLow, s.hasLower, 'Huruf Kecil (a-z)');
   updateRule(elNum, s.hasNumberOrSymbol, 'Angka / Simbol');
-  if (window.lucide) lucide.createIcons();
 }
 
 function togglePasswordVisibility(inputId, iconId) {
@@ -5955,7 +6381,7 @@ function togglePasswordVisibility(inputId, iconId) {
     input.type = 'password';
     icon.setAttribute('data-lucide', 'eye');
   }
-  if (window.lucide) lucide.createIcons();
+  if (window.lucide) lucide.createIcons({ root: icon.parentElement });
 }
 
 function toggleQuickLoginHelper() {
@@ -5980,7 +6406,18 @@ function quickFillLogin(userId) {
   if (usernameField && passwordField) {
     usernameField.value = user.username || user.id;
     passwordField.value = user.password.trim();
-    showToast(`Kredensial untuk ${user.name} berhasil diisi! Silakan klik Masuk.`);
+    usernameField.removeAttribute('aria-invalid');
+    passwordField.removeAttribute('aria-invalid');
+    
+    // Highlight the selected quick button visually
+    document.querySelectorAll('.quick-founder-btn').forEach(btn => {
+      btn.classList.remove('ring-2', 'ring-brand-emerald', 'bg-emerald-50', 'dark:bg-emerald-950/60');
+    });
+    const selectedBtn = document.getElementById(`quick-btn-${userId}`);
+    if (selectedBtn) {
+      selectedBtn.classList.add('ring-2', 'ring-brand-emerald', 'bg-emerald-50', 'dark:bg-emerald-950/60');
+    }
+    showToast(`Kredensial untuk ${user.name} terpasang! Klik "Masuk ke Dashboard".`);
   }
 }
 
@@ -5996,74 +6433,70 @@ function renderAuthForm(formType, userId = null) {
     container.innerHTML = `
       <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
         <div>
-          <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white">Masuk ke Studio</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Gunakan ID / Email resmi co-founder dan kata sandi dari DevOps.</p>
+          <h3 class="font-heading font-bold text-lg sm:text-xl text-gray-900 dark:text-white leading-tight">Masuk ke Studio</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Gunakan akun resmi co-founder atau pilih akses cepat di bawah.</p>
         </div>
 
-        <div class="space-y-3 text-xs">
+        <!-- Co-Founder Quick Selector (Zero-Typo Instant Helper) -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between">
+            <label class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Pilih Akun Cepat 7 Co-Founder:</span>
+            </label>
+            <span class="text-[10px] text-brand-emerald dark:text-emerald-400 font-medium">1-Klik Langsung Isi</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-2 bg-gray-50/80 dark:bg-[#192722]/80 rounded-2xl border border-gray-200/80 dark:border-gray-800">
+            ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
+              <button type="button" id="quick-btn-${u.id}" onclick="quickFillLogin('${u.id}')" class="quick-founder-btn p-1.5 rounded-xl bg-white dark:bg-[#121C18] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-gray-200/80 dark:border-gray-700/60 flex items-center gap-2 text-left text-[11px] transition shadow-xs group cursor-pointer last:col-span-2 sm:last:col-span-1 min-h-[44px]" title="Klik untuk mengisi akun ${u.name}" aria-label="Isi otomatis akun ${u.name}">
+                <img src="${u.avatar}" class="w-6 h-6 rounded-full object-cover shrink-0 border border-emerald-500/30">
+                <div class="min-w-0 flex-1">
+                  <strong class="text-gray-900 dark:text-white block truncate leading-tight text-[11px] group-hover:text-brand-emerald dark:group-hover:text-emerald-400">${u.name.split(' ')[0]}</strong>
+                  <span class="text-[9px] text-emerald-700 dark:text-emerald-400 truncate block font-medium">${u.roleLabel.split('(')[0].trim()}</span>
+                </div>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="space-y-3 text-xs pt-1">
           <div>
-            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Username / Email Co-Founder *</label>
-            <div class="relative">
+            <label for="login-username" class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Username / ID Co-Founder *</label>
+            <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
               <i data-lucide="user" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="text" id="login-username" required placeholder="Misal: alfatih, ilham, atau novita" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald">
+              <input type="text" id="login-username" required placeholder="Misal: alfatih, hilwa, novita, atau ilham" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" aria-label="Username atau ID Co-Founder" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-transparent dark:text-white focus:outline-none">
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi *</label>
-            <div class="relative">
+            <div class="flex items-center justify-between mb-1">
+              <label for="login-password" class="block font-semibold text-gray-700 dark:text-gray-300">Kata Sandi *</label>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">Default: Tazkia2026!</span>
+            </div>
+            <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="login-password" required placeholder="••••••••••••" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
-              <button type="button" onclick="togglePasswordVisibility('login-password', 'login-pwd-icon')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <input type="password" id="login-password" required placeholder="••••••••••••" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" aria-label="Kata Sandi Co-Founder" class="w-full pl-9 pr-10 py-2.5 rounded-xl bg-transparent dark:text-white focus:outline-none font-mono">
+              <button type="button" onclick="togglePasswordVisibility('login-password', 'login-pwd-icon')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Lihat atau sembunyikan kata sandi">
                 <i id="login-pwd-icon" data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
         </div>
 
-        <div id="login-error-msg" class="hidden p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
+        <div id="login-error-msg" class="hidden p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2" role="alert" aria-live="polite">
           <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
           <span id="login-error-text">Kredensial tidak valid.</span>
         </div>
 
-        <button type="submit" id="btn-submit-login" class="w-full py-2.5 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
-          <span>Masuk ke Dashboard</span>
+        <button type="submit" id="btn-submit-login" class="w-full py-3 bg-brand-emerald hover:bg-brand-hover active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer" aria-label="Masuk ke Dashboard Studio">
+          <span>Masuk ke Dashboard Studio</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
 
-        <!-- Mobile & Co-Founder Quick Assistant (Zero-Typo Helper) -->
-        <div class="pt-2 border-t border-gray-200 dark:border-[#23362F]">
-          <button type="button" onclick="toggleQuickLoginHelper()" class="w-full flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-[#192722] hover:bg-emerald-50/50 text-[11px] text-gray-700 dark:text-gray-300 transition">
-            <span class="flex items-center gap-1.5 font-semibold">
-              <i data-lucide="key" class="w-3.5 h-3.5 text-brand-emerald"></i>
-              <span>Bantuan Kredensial 7 Co-Founder (Login Cepat HP)</span>
-            </span>
-            <i id="quick-helper-chevron" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400 transition-transform"></i>
-          </button>
-          
-          <div id="quick-login-helper-list" class="hidden mt-2 p-2 bg-gray-50/70 dark:bg-[#192722]/60 rounded-xl border border-gray-200 dark:border-gray-800 space-y-1.5 max-h-56 overflow-y-auto">
-            <p class="text-[10px] text-gray-500 dark:text-gray-400">Klik nama Anda untuk mengisi username & kata sandi secara otomatis tanpa risiko salah ketik:</p>
-            <div class="grid grid-cols-1 gap-1">
-              ${Object.values(store.state.users).filter(u => u.id !== 'client_guest').map(u => `
-                <button type="button" onclick="quickFillLogin('${u.id}')" class="w-full text-left p-1.5 rounded-lg bg-white dark:bg-[#121C18] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-gray-200 dark:border-gray-700/60 flex items-center justify-between text-[11px] transition">
-                  <div class="flex items-center gap-2 truncate">
-                    <img src="${u.avatar}" class="w-5 h-5 rounded-full object-cover shrink-0">
-                    <div class="truncate">
-                      <strong class="text-gray-900 dark:text-white block truncate leading-tight">${u.name}</strong>
-                      <span class="text-[9px] text-gray-500 font-mono">@${u.username || u.id}</span>
-                    </div>
-                  </div>
-                  <span class="text-[10px] text-brand-emerald dark:text-emerald-400 font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                    Pilih & Isi
-                  </span>
-                </button>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[10px] text-emerald-800 dark:text-emerald-300">
-          <p>💡 <em>Tips Keamanan:</em> Setelah berhasil masuk, Anda dapat memperbarui kata sandi pribadi sewaktu-waktu melalui menu Profil atau modul Sistem.</p>
+        <div class="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-900/40 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+          <span>Password dapat diubah kapan saja di menu profil pojok kanan atas setelah login.</span>
         </div>
       </form>
     `;
@@ -6074,61 +6507,61 @@ function renderAuthForm(formType, userId = null) {
     container.innerHTML = `
       <form id="form-reset-first-time" onsubmit="handleFirstTimeResetSubmit(event, '${user.id}')" class="space-y-4">
         <div class="text-center pb-2 border-b border-brand-border dark:border-[#23362F]">
-          <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center mb-2 shadow-inner">
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center mb-2 shadow-inner border border-emerald-300/40">
             <i data-lucide="key-round" class="w-6 h-6"></i>
           </div>
-          <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white">Aktivasi Akun & Buat Kata Sandi Baru</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <h3 class="font-heading font-bold text-base text-gray-900 dark:text-white">Aktivasi Akun & Kata Sandi Baru</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
             Ahlan wa Sahlan, <strong>${user.name}</strong> (${user.roleLabel})!<br>
-            Ini adalah login pertama Anda. Silakan tentukan kata sandi baru pribadi Anda.
+            Tentukan kata sandi baru pribadi Anda untuk keamanan akun studio.
           </p>
         </div>
 
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru Pribadi *</label>
-            <div class="relative">
+            <label for="reset-new-password" class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Kata Sandi Baru Pribadi *</label>
+            <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
               <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="reset-new-password" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
-              <button type="button" onclick="togglePasswordVisibility('reset-new-password', 'reset-pwd-icon1')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <input type="password" id="reset-new-password" required oninput="validatePasswordStrengthLive(this.value)" placeholder="Minimal 8 karakter campuran" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Kata Sandi Baru Pribadi" class="w-full pl-9 pr-10 py-2.5 rounded-xl bg-transparent dark:text-white focus:outline-none font-mono">
+              <button type="button" onclick="togglePasswordVisibility('reset-new-password', 'reset-pwd-icon1')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Lihat atau sembunyikan kata sandi">
                 <i id="reset-pwd-icon1" data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
 
           <!-- Real-Time Password Strength Checklist -->
-          <div class="p-3 bg-gray-50 dark:bg-[#192722] rounded-lg border border-gray-200 dark:border-gray-700 space-y-1.5 text-[11px]">
+          <div class="p-3 bg-gray-50 dark:bg-[#192722] rounded-xl border border-gray-200 dark:border-gray-700 space-y-1.5 text-[11px]">
             <span class="font-semibold block text-gray-700 dark:text-gray-300">Kriteria Keamanan Sandi:</span>
-            <div class="grid grid-cols-2 gap-1 text-[10px]">
-              <div id="rule-length" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Min. 8 Karakter</div>
-              <div id="rule-upper" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Besar (A-Z)</div>
-              <div id="rule-lower" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Kecil (a-z)</div>
-              <div id="rule-number" class="flex items-center gap-1 text-gray-400"><i data-lucide="circle" class="w-3 h-3"></i> Angka / Simbol</div>
+            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+              <div id="rule-length" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 font-medium"><i data-lucide="circle" class="w-3 h-3"></i> Min. 8 Karakter</div>
+              <div id="rule-upper" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 font-medium"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Besar (A-Z)</div>
+              <div id="rule-lower" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 font-medium"><i data-lucide="circle" class="w-3 h-3"></i> Huruf Kecil (a-z)</div>
+              <div id="rule-number" class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 font-medium"><i data-lucide="circle" class="w-3 h-3"></i> Angka / Simbol</div>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Kata Sandi Baru *</label>
-            <div class="relative">
+            <label for="reset-confirm-password" class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Kata Sandi Baru *</label>
+            <div class="relative auth-input-group rounded-xl border border-gray-300 dark:border-gray-700 transition">
               <i data-lucide="check-check" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-              <input type="password" id="reset-confirm-password" required placeholder="Ulangi kata sandi baru" autocapitalize="none" autocorrect="off" spellcheck="false" class="w-full pl-9 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-[#192722] dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-emerald font-mono">
-              <button type="button" onclick="togglePasswordVisibility('reset-confirm-password', 'reset-pwd-icon2')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+              <input type="password" id="reset-confirm-password" required placeholder="Ulangi kata sandi baru" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Konfirmasi Kata Sandi Baru" class="w-full pl-9 pr-10 py-2.5 rounded-xl bg-transparent dark:text-white focus:outline-none font-mono">
+              <button type="button" onclick="togglePasswordVisibility('reset-confirm-password', 'reset-pwd-icon2')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Lihat atau sembunyikan kata sandi">
                 <i id="reset-pwd-icon2" data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
         </div>
 
-        <div id="reset-error-msg" class="hidden p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2">
+        <div id="reset-error-msg" class="hidden p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center gap-2" role="alert" aria-live="polite">
           <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
           <span id="reset-error-text">Kata sandi belum memenuhi kriteria.</span>
         </div>
 
         <div class="pt-2 flex items-center gap-2">
-          <button type="button" onclick="renderAuthForm('login')" class="w-1/3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <button type="button" onclick="renderAuthForm('login')" class="w-1/3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
             Batal
           </button>
-          <button type="submit" id="btn-submit-reset" class="flex-1 py-2.5 bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5">
+          <button type="submit" id="btn-submit-reset" class="flex-1 py-2.5 bg-brand-emerald hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-1.5" aria-label="Simpan dan Masuk Studio">
             <i data-lucide="shield-check" class="w-4 h-4"></i>
             <span>Simpan & Masuk Studio</span>
           </button>
@@ -6145,8 +6578,15 @@ function handleLoginSubmit(event) {
   const passwordInput = document.getElementById('login-password')?.value?.trim();
   const errorBox = document.getElementById('login-error-msg');
   const errorText = document.getElementById('login-error-text');
+  const btnSubmit = document.getElementById('btn-submit-login');
 
   if (!usernameInput || !passwordInput) return;
+
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memverifikasi...</span>';
+    if (window.lucide) lucide.createIcons({ root: btnSubmit });
+  }
 
   const user = Object.values(store.state.users).find(u => 
     (u.username && u.username.toLowerCase() === usernameInput) ||
@@ -6155,10 +6595,19 @@ function handleLoginSubmit(event) {
   );
 
   if (!user || user.password.trim() !== passwordInput) {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<span>Masuk ke Dashboard Studio</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
+      if (window.lucide) lucide.createIcons({ root: btnSubmit });
+    }
     if (errorBox && errorText) {
-      errorText.textContent = 'Username atau kata sandi tidak cocok. Gunakan bantuan kredensial di bawah atau hubungi DevOps (Alfatih).';
+      errorText.textContent = 'Username atau kata sandi tidak cocok. Gunakan bantuan kredensial di atas atau hubungi DevOps (Alfatih).';
       errorBox.classList.remove('hidden');
     }
+    const userField = document.getElementById('login-username');
+    const pwdField = document.getElementById('login-password');
+    if (userField) userField.setAttribute('aria-invalid', 'true');
+    if (pwdField) pwdField.setAttribute('aria-invalid', 'true');
     showToast('Kredensial tidak valid!', 'error');
     return;
   }
@@ -6193,6 +6642,7 @@ function handleFirstTimeResetSubmit(event, userId) {
   const confirmPassword = document.getElementById('reset-confirm-password')?.value?.trim();
   const errorBox = document.getElementById('reset-error-msg');
   const errorText = document.getElementById('reset-error-text');
+  const btnSubmit = document.getElementById('btn-submit-reset');
 
   const strength = checkPasswordStrength(newPassword);
   if (!strength.isValid) {
@@ -6200,6 +6650,8 @@ function handleFirstTimeResetSubmit(event, userId) {
       errorText.textContent = 'Kata sandi baru wajib minimal 8 karakter dengan kombinasi huruf besar, huruf kecil, dan angka/simbol.';
       errorBox.classList.remove('hidden');
     }
+    const newPwdField = document.getElementById('reset-new-password');
+    if (newPwdField) newPwdField.setAttribute('aria-invalid', 'true');
     showToast('Kriteria kata sandi belum terpenuhi!', 'error');
     return;
   }
@@ -6209,6 +6661,8 @@ function handleFirstTimeResetSubmit(event, userId) {
       errorText.textContent = 'Konfirmasi kata sandi tidak cocok dengan kata sandi baru!';
       errorBox.classList.remove('hidden');
     }
+    const confirmPwdField = document.getElementById('reset-confirm-password');
+    if (confirmPwdField) confirmPwdField.setAttribute('aria-invalid', 'true');
     showToast('Konfirmasi kata sandi tidak cocok!', 'error');
     return;
   }
@@ -6216,25 +6670,29 @@ function handleFirstTimeResetSubmit(event, userId) {
   const user = store.state.users[userId];
   if (!user) return;
 
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menyimpan...</span>';
+    if (window.lucide) lucide.createIcons({ root: btnSubmit });
+  }
+
   user.password = newPassword;
   user.mustChangePassword = false;
   user.passwordChangedAt = new Date().toISOString();
-
-  store.state.authSession = {
-    isAuthenticated: true,
-    userId: user.id
-  };
-  store.state.activeUserId = user.id;
-
   store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil membuat kata sandi baru. Akun resmi aktif.`);
   store.saveState();
 
-  showToast('Alhamdulillah! Kata sandi baru Anda berhasil disimpan. Akun Anda resmi aktif!');
-  checkAuthAndRender();
-
+  showToast('Alhamdulillah! Kata sandi berhasil diperbarui! Menyiapkan ruang kerja...');
   setTimeout(() => {
-    openOnboardingTour(user);
-  }, 400);
+    store.state.authSession = {
+      isAuthenticated: true,
+      userId: user.id
+    };
+    store.state.activeUserId = user.id;
+    store.saveState();
+    checkAuthAndRender();
+    openRoleOnboardingModal(user);
+  }, 500);
 }
 
 function openAdminChangePasswordModal(userId) {
@@ -7729,6 +8187,9 @@ function changeGeminiModel(modelName) {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Adaptive Theme
   if (typeof initTheme === 'function') initTheme();
+
+  // Initialize Sidebar Collapsible State
+  if (typeof initSidebarCollapse === 'function') initSidebarCollapse();
 
   // Theme Toggle Button
   const btnToggleTheme = document.getElementById('btn-toggle-theme');

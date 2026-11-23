@@ -114,7 +114,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .badge-status-backlog    { background-color: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
 .badge-status-todo       { background-color: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
 .badge-status-inprogress { background-color: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
-.badge-status-review     { background-color: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+.badge-status-review     { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 .badge-status-done       { background-color: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
 .badge-status-blocked    { background-color: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA; }
 
@@ -126,7 +126,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .dark .badge-status-blocked    { background-color: rgba(220, 38, 38, 0.2); color: #F87171; border-color: rgba(220, 38, 38, 0.3); }
 
 /* Payment Gate Badges */
-.badge-gate-waiting  { background-color: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
+.badge-gate-waiting  { background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
 .badge-gate-dp50     { background-color: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
 .badge-gate-paid100  { background-color: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
 
@@ -373,4 +373,137 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ==========================================================================
+   ENTERPRISE AUTH & ONBOARDING CAROUSEL STYLES
+   ========================================================================== */
+.auth-input-group:focus-within {
+  border-color: var(--color-primary-emerald) !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* ==========================================================================
+   SIDEBAR COLLAPSIBLE DYNAMICS (256px -> 72px)
+   ========================================================================== */
+#main-sidebar.collapsed {
+  width: 72px !important;
+}
+#main-sidebar.collapsed .sidebar-label,
+#main-sidebar.collapsed .sidebar-category-title,
+#main-sidebar.collapsed .sidebar-user-info,
+#main-sidebar.collapsed .sidebar-studio-title {
+  display: none !important;
+}
+#main-sidebar.collapsed .nav-item {
+  justify-content: center !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+#main-sidebar.collapsed .sidebar-header-box {
+  justify-content: center !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+#main-sidebar.collapsed .sidebar-footer-box {
+  justify-content: center !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+}
+
+.onboarding-card-modal {
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.onboarding-slide-enter {
+  animation: slideInSoft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInSoft {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.quick-founder-pill {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.quick-founder-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px -1px rgba(15, 81, 61, 0.12);
+}
+.dark .quick-founder-pill:hover {
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   WCAG 2.1 AA ACCESSIBILITY & RESPONSIVE POLISH (Tahap 3 - ui-ux-pro-max)
+   ========================================================================== */
+
+/* 1. Global Keyboard Focus Indicator (WCAG 2.4.7 & 2.4.11) */
+:focus-visible {
+  outline: 2px solid var(--color-primary-emerald) !important;
+  outline-offset: 2px !important;
+}
+.dark :focus-visible {
+  outline-color: #10B981 !important;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 2. Interactive Button Disabled & Loading States */
+button:disabled,
+button[disabled],
+.btn-disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 3. Mobile Table & Responsive Container Safety */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  max-width: 100%;
+}
+
+/* 4. Touch Target Minimum Size (WCAG 2.5.5 / 2.5.8) */
+.touch-target-min {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* 5. Safe Area Insets for Modern Mobile Devices (iOS Notch / Gesture Bar) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-bottom-nav {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    height: calc(4rem + env(safe-area-inset-bottom));
+  }
 }
