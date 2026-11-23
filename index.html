@@ -19,18 +19,20 @@
         extend: {
           colors: {
             brand: {
-              emerald: '#0F513D',
-              hover: '#166B51',
+              emerald: '#0F4C3A',
+              hover: '#1A6B52',
               amber: '#B45309',
-              bg: '#F6F8F7',
-              border: '#D5E2DC',
+              bg: '#F8FAF9',
+              border: '#CFE0D8',
+              surface: '#FFFFFF',
+              spotlight: '#EEF5F2',
             },
             unit: {
               lini1: '#7C3AED',
               lini2: '#0284C7',
               lini3: '#0D9488',
               lini4: '#EA580C',
-              lini5: '#0F513D',
+              lini5: '#0F4C3A',
               ops: '#4B5563',
             }
           },
@@ -49,90 +51,94 @@
   <!-- Chart.js for Interactive Visual Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body class="bg-brand-bg text-gray-800 min-h-screen flex flex-col font-sans">
 
   <!-- ========================================================================
-       ENTERPRISE AUTHENTICATION & LOGIN SCREEN (Mandatory First-Time Reset)
+       ENTERPRISE AUTHENTICATION & LOGIN MODAL (Split-Screen Desktop)
        ======================================================================== -->
-  <div id="auth-screen" class="fixed inset-0 z-[100] bg-[#F6F8F7] dark:bg-[#070D0B] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-    <div class="max-w-4xl w-full bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] rounded-3xl shadow-2xl overflow-hidden my-auto grid grid-cols-1 lg:grid-cols-12 transition-all duration-300">
+  <div id="auth-screen" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto" onclick="handleAuthBackdropClick(event)">
+    <div class="max-w-4xl w-full bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] rounded-3xl shadow-2xl overflow-hidden my-auto grid grid-cols-1 lg:grid-cols-12 transition-all duration-300" onclick="event.stopPropagation()">
       
       <!-- Left Panel: Studio Showcase & Operational Guardrails (5 cols) -->
-      <div class="lg:col-span-5 bg-gradient-to-br from-[#0F513D] via-[#0D4433] to-[#08291F] text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-emerald-800/40">
+      <div class="lg:col-span-5 bg-[#0F4C3A] text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-emerald-800/40">
         
         <!-- Architectural Grid Subtle Lines -->
         <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#34D399_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
         <div class="relative z-10 space-y-4">
-          <!-- Studio Header Badge -->
-          <div class="flex items-center gap-2">
-            <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center font-heading font-extrabold text-lg text-emerald-300 shadow-inner">
-              KK
-            </div>
+          <!-- Official Reversed Horizontal Lockup Logo -->
+          <div class="flex items-center gap-3">
+            <svg width="40" height="40" viewBox="0 0 100 100" fill="none" class="shrink-0 rounded-2xl shadow-sm">
+              <rect width="100" height="100" rx="22" fill="#FFFFFF"/>
+              <rect x="22" y="24" width="13" height="52" rx="4" fill="#0F4C3A"/>
+              <path d="M37 53L56 27C57.5 25 60.5 25 62 27L63 28C64.5 30 64.5 33 63 35L48 56L37 53Z" fill="#0F4C3A"/>
+              <path d="M44 49L67 71C68.5 72.5 68.5 75.5 67 77L66 78C64.5 79.5 61.5 79.5 60 78L37 55L44 49Z" fill="#1A6B52"/>
+              <path d="M74 18 C74 24 70 28 64 28 C70 28 74 32 74 38 C74 32 78 28 84 28 C78 28 74 24 74 18 Z" fill="#F59E0B"/>
+            </svg>
             <div>
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] font-semibold text-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#FCD34D] animate-pulse"></span>
                 KaryaKita Hub OS v1.0
               </span>
-              <h2 class="font-heading font-bold text-sm text-white leading-tight">Venture Studio Platform</h2>
+              <h2 class="font-heading font-extrabold text-sm text-white tracking-tight">KaryaKita Studio</h2>
             </div>
           </div>
 
           <div>
-            <h1 class="font-heading font-bold text-lg sm:text-xl text-white leading-snug">
-              Satu Sistem Operasi untuk 7 Co-Founder & 5 Unit Bisnis
+            <h1 class="font-heading font-extrabold text-lg sm:text-xl text-white leading-snug">
+              Ruang Kerja Terpadu <span class="text-[#FCD34D]">7 Co-Founder KaryaKita.</span>
             </h1>
-            <p class="text-xs text-emerald-200/90 mt-1.5 leading-relaxed">
-              Platform operasional async-first berbasis syariah, dirancang khusus untuk mahasiswa STMIK Tazkia.
+            <p class="text-xs text-emerald-100/90 mt-1.5 leading-relaxed">
+              Platform operasional async-first berbasis syariah, dirancang khusus untuk koordinasi 5 unit bisnis mahasiswa STMIK Tazkia.
             </p>
           </div>
 
           <!-- 3 Operational Guardrail Cards -->
-          <div class="space-y-2.5 pt-2">
+          <div class="space-y-2.5 pt-1">
             <!-- Guardrail 1 -->
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+            <div class="p-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
                 <i data-lucide="shield-check" class="w-4 h-4"></i>
               </div>
               <div class="text-left min-w-0">
                 <h4 class="text-xs font-bold text-white leading-tight">Payment Gate 50%</h4>
-                <p class="text-[11px] text-emerald-200/80 leading-normal">Wajib verifikasi DP 50% oleh CFO sebelum pengerjaan proyek B2B dimulai.</p>
+                <p class="text-[11px] text-emerald-100/80 leading-normal">Wajib verifikasi DP 50% oleh CFO sebelum pengerjaan proyek B2B dimulai.</p>
               </div>
             </div>
 
             <!-- Guardrail 2 -->
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+            <div class="p-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-400/20 text-[#FCD34D] flex items-center justify-center shrink-0 mt-0.5">
                 <i data-lucide="target" class="w-4 h-4"></i>
               </div>
               <div class="text-left min-w-0">
                 <h4 class="text-xs font-bold text-white leading-tight">Graduation Kas Rp3,5 Juta</h4>
-                <p class="text-[11px] text-emerald-200/80 leading-normal">70% surplus kas ditahan pada fase Q1 bootstrapping hingga ambang tercapai.</p>
+                <p class="text-[11px] text-emerald-100/80 leading-normal">70% surplus kas ditahan pada fase Q1 bootstrapping hingga ambang tercapai.</p>
               </div>
             </div>
 
             <!-- Guardrail 3 -->
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-start gap-2.5">
-              <div class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0 mt-0.5">
+            <div class="p-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-teal-400/20 text-teal-200 flex items-center justify-center shrink-0 mt-0.5">
                 <i data-lucide="calendar-off" class="w-4 h-4"></i>
               </div>
               <div class="text-left min-w-0">
                 <h4 class="text-xs font-bold text-white leading-tight">Academic Freeze Mode</h4>
-                <p class="text-[11px] text-emerald-200/80 leading-normal">Proteksi otomatis H-7 UTS/UAS agar beban kuliah & pengerjaan studio seimbang.</p>
+                <p class="text-[11px] text-emerald-100/80 leading-normal">Proteksi otomatis H-7 UTS/UAS agar beban kuliah & pengerjaan studio seimbang.</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Studio Quote Footer in Left Panel -->
-        <div class="relative z-10 pt-4 mt-4 border-t border-emerald-800/50 flex items-center justify-between text-[11px] text-emerald-300/80">
+        <div class="relative z-10 pt-3 mt-3 border-t border-emerald-700/60 flex items-center justify-between text-[11px] text-emerald-200">
           <span class="flex items-center gap-1.5 font-medium">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
-            <span>Zero-Riba • Syirkah 'Abdan</span>
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#FCD34D]"></i>
+            <span>Zero-Riba • Syirkah 'Abdan (60/40)</span>
           </span>
-          <span class="font-mono text-[10px] text-emerald-400/90">7 Mahasiswa SI</span>
+          <span class="font-mono text-[10px] text-emerald-300">STMIK Tazkia</span>
         </div>
 
       </div>
@@ -143,16 +149,20 @@
         <!-- Header Utility Bar inside Login Panel -->
         <div class="flex items-center justify-between pb-3 mb-2 border-b border-gray-100 dark:border-[#23362F]">
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-              <i data-lucide="lock" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
-              <span>Autentikasi Internal</span>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
+              <span>Autentikasi Co-Founder Studio</span>
             </span>
           </div>
-          <!-- Theme Toggle Button on Login Screen -->
-          <button type="button" onclick="toggleTheme()" class="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1 text-xs" title="Ganti Mode Gelap / Terang" aria-label="Ganti Mode Gelap atau Terang">
-            <i data-lucide="moon" class="w-3.5 h-3.5"></i>
-            <span class="text-[10px] hidden sm:inline font-medium">Tema</span>
-          </button>
+          <!-- Close & Theme Buttons -->
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="toggleTheme()" class="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center gap-1 text-xs" title="Ganti Mode Gelap / Terang">
+              <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" onclick="closeLoginModal()" class="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition" title="Tutup / Kembali ke Beranda" aria-label="Tutup / Kembali ke Beranda">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Dynamic Form Container -->
@@ -163,10 +173,12 @@
         <!-- Footer Info -->
         <div class="pt-4 mt-2 border-t border-gray-100 dark:border-[#23362F] flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400">
           <span class="flex items-center gap-1">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
-            <span>Enkripsi Sesi Lokal & Cloud Sync</span>
+            <i data-lucide="cloud-check" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
+            <span>Cloud Neon Postgres Verified</span>
           </span>
-          <span>STMIK Tazkia © 2026</span>
+          <button type="button" onclick="closeLoginModal()" class="text-brand-emerald dark:text-emerald-400 hover:underline font-semibold">
+            ← Kembali ke Beranda Publik
+          </button>
         </div>
 
       </div>
@@ -175,58 +187,928 @@
   </div>
 
   <!-- ========================================================================
-       TOP ROLE SIMULATOR & GLOBAL STATUS BAR (Full Scale-Up Header)
+       PUBLIC HOMEPAGE (Halaman Beranda Utama KaryaKita)
        ======================================================================== -->
-  <header id="topbar-simulator" class="bg-brand-emerald text-white text-xs px-4 py-2 border-b border-brand-hover flex flex-wrap items-center justify-between gap-2 z-50 shadow-sm">
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-1.5 font-bold tracking-wide">
-        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-300"></i>
-        <span>KARYAKITA HUB OS</span>
+  <div id="public-homepage" class="flex flex-col min-h-screen bg-brand-bg text-gray-900 dark:text-gray-100 transition-colors">
+    
+    <!-- 1. Sticky Glass Navbar (64px) -->
+    <header class="sticky top-0 z-50 sticky-glass h-16 px-4 sm:px-8 flex items-center justify-between gap-4 transition-all">
+      <!-- Brand Logo -->
+      <a href="#hero" class="flex items-center gap-3 select-none group">
+        <svg width="38" height="38" viewBox="0 0 100 100" fill="none" class="shrink-0 rounded-2xl shadow-xs transition-transform duration-200 group-hover:scale-105">
+          <rect width="100" height="100" rx="22" fill="#0F4C3A"/>
+          <rect x="22" y="24" width="13" height="52" rx="4" fill="#FFFFFF"/>
+          <path d="M37 53L56 27C57.5 25 60.5 25 62 27L63 28C64.5 30 64.5 33 63 35L48 56L37 53Z" fill="#FFFFFF"/>
+          <path d="M44 49L67 71C68.5 72.5 68.5 75.5 67 77L66 78C64.5 79.5 61.5 79.5 60 78L37 55L44 49Z" fill="#A7F3D0"/>
+          <path d="M74 18 C74 24 70 28 64 28 C70 28 74 32 74 38 C74 32 78 28 84 28 C78 28 74 24 74 18 Z" fill="#F59E0B"/>
+        </svg>
+        <div class="flex flex-col leading-none">
+          <span class="font-heading font-extrabold text-[19px] tracking-tight text-gray-900 dark:text-white">KaryaKita</span>
+          <span class="text-[9px] font-bold tracking-[0.18em] uppercase text-brand-amber dark:text-amber-400 mt-0.5">AI &amp; VENTURE STUDIO</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Menu -->
+      <nav class="hidden lg:flex items-center gap-6 text-xs font-semibold text-gray-600 dark:text-gray-300">
+        <a href="#about" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Tentang</a>
+        <a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">5 Unit Bisnis</a>
+        <a href="#process" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Alur Syariah</a>
+        <a href="#portfolio" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Portofolio</a>
+        <a href="#team" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Tim 7 Pendiri</a>
+        <a href="#faq" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">FAQ</a>
+      </nav>
+
+      <!-- Right Action Group -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Theme Toggle -->
+        <button type="button" onclick="toggleTheme()" class="p-2 rounded-xl border border-brand-border dark:border-[#23362F] hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition" title="Ganti Mode Gelap / Terang">
+          <i data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Client Portal Link -->
+        <button type="button" onclick="previewClientPortalFromHome()" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-brand-border dark:border-[#23362F] hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40 text-xs font-semibold text-gray-700 dark:text-gray-200 transition">
+          <i data-lucide="briefcase" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
+          <span>Portal Klien</span>
+        </button>
+
+        <!-- Login / Dashboard Trigger -->
+        <button type="button" id="btn-home-auth-action" onclick="handleHomeAuthClick()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-emerald hover:bg-brand-hover text-white text-xs font-bold shadow-md transition transform active:scale-95 cursor-pointer">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          <span id="btn-home-auth-text">Masuk Studio</span>
+        </button>
       </div>
-      <span class="bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-600/50 hidden sm:inline">STMIK Tazkia • 7 Mahasiswa SI</span>
+    </header>
+
+    <!-- 2. Hero Section -->
+    <section id="hero" class="relative pt-12 pb-16 sm:pt-20 sm:pb-24 px-4 sm:px-8 max-w-7xl mx-auto w-full overflow-hidden">
+      <!-- Subtle Decorative Background Glow -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/10 dark:bg-emerald-500/5 blur-3xl rounded-full pointer-events-none"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
+        
+        <!-- Left Hero Content (7 cols) -->
+        <div class="lg:col-span-7 space-y-6 text-left">
+          
+          <!-- Tazkia Badge -->
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-brand-emerald dark:text-emerald-300 shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-brand-emerald dark:bg-emerald-400 animate-pulse"></span>
+            <span>Modern Syariah Tech Studio · STMIK Tazkia</span>
+          </div>
+
+          <!-- Headline -->
+          <h1 class="font-heading font-extrabold text-3xl sm:text-5xl lg:text-5xl text-gray-900 dark:text-white leading-[1.15] tracking-tight">
+            Ruang Kerja Digital &amp; Solusi Terpadu <span class="text-brand-emerald dark:text-emerald-400">5 Unit Bisnis</span> <span class="text-brand-amber dark:text-amber-400">KaryaKita.</span>
+          </h1>
+
+          <!-- Tagline -->
+          <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
+            Pintu masuk utama sekaligus pusat navigasi resmi <strong>KaryaKita Hub</strong>. Mengintegrasikan layanan desain UI/UX, rekayasa platform web, asistensi data, konten performa tinggi, dan edukasi AI terapan karya 7 mahasiswa Sistem Informasi STMIK Tazkia dengan prinsip <strong>Zero-Riba, Zero-Gharar, dan Syirkah 'Abdan 60/40</strong>.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button type="button" onclick="openLoginModal()" class="px-5 py-3 rounded-2xl bg-brand-emerald hover:bg-brand-hover text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-950/20 transition flex items-center gap-2 cursor-pointer">
+              <span>Masuk ke Dashboard Studio</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20Studio%2C%20saya%20ingin%20berkonsultasi%20mengenai%20layanan%20proyek%20digital." target="_blank" rel="noopener noreferrer" class="px-4 py-3 rounded-2xl border border-brand-border dark:border-[#23362F] hover:bg-white dark:hover:bg-[#121C18] text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 transition flex items-center gap-2">
+              <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+              <span>Konsultasi WhatsApp B2B</span>
+            </a>
+            <a href="#services" class="px-4 py-3 text-xs sm:text-sm font-semibold text-brand-emerald dark:text-emerald-400 hover:underline flex items-center gap-1">
+              <span>Eksplorasi 5 Lini</span>
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </a>
+          </div>
+
+          <!-- Trust Badges Strip -->
+          <div class="pt-4 border-t border-brand-border/80 dark:border-[#23362F] flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-500 dark:text-gray-400 font-medium">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="users" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
+              <span>7 Mahasiswa SI Tazkia</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-4 h-4 text-brand-emerald dark:text-emerald-400"></i>
+              <span>5 Lini Bisnis Terpadu</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-amber dark:text-amber-400"></i>
+              <span>Payment Gate DP 50%</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Hero Spotlight Card (5 cols) -->
+        <div class="lg:col-span-5">
+          <div class="card-spotlight p-6 sm:p-7 space-y-5 text-white relative overflow-hidden group">
+            <!-- Background Subtle Geometric Decors -->
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/5 pointer-events-none"></div>
+            
+            <div class="flex items-center justify-between border-b border-white/15 pb-4">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-white text-[#0F4C3A] flex items-center justify-center font-bold text-sm shadow-sm">
+                  KK
+                </div>
+                <div>
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-200 block">KaryaKita Hub OS</span>
+                  <h3 class="font-heading font-extrabold text-sm text-white">Target Kas Mandiri Q1</h3>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-white/10 text-[10px] font-semibold text-[#FCD34D] border border-white/20">
+                Bootstrapping
+              </span>
+            </div>
+
+            <!-- Big Metric Display -->
+            <div class="space-y-2">
+              <div class="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider">Target Graduation Rule:</div>
+              <div class="text-3xl sm:text-4xl font-extrabold font-heading text-white tracking-tight tabular-nums">
+                Rp3.500.000
+              </div>
+              <!-- Amber Gold Progress Bar -->
+              <div class="space-y-1.5 pt-1">
+                <div class="w-full bg-emerald-950/80 rounded-full h-2.5 overflow-hidden p-0.5 border border-white/10">
+                  <div class="bg-[#FCD34D] h-1.5 rounded-full shadow-sm transition-all duration-1000" style="width: 70%;"></div>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-emerald-200">
+                  <span>70% Surplus Kas Ditahan</span>
+                  <span class="font-bold text-[#FCD34D]">Zero-Riba</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Guardrails Radar List -->
+            <div class="space-y-2 pt-2 border-t border-white/15 text-xs">
+              <div class="p-2.5 rounded-xl bg-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-300"></i>
+                  <span class="text-[11px] font-medium">Payment Gate DP 50%</span>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-full">Diverifikasi</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="calendar" class="w-4 h-4 text-amber-300"></i>
+                  <span class="text-[11px] font-medium">Academic Freeze Mode</span>
+                </div>
+                <span class="text-[10px] font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded-full">Siap H-7 Ujian</span>
+              </div>
+            </div>
+
+            <!-- 7 Co-Founder Preview Strip -->
+            <div class="pt-3 border-t border-white/15 flex items-center justify-between">
+              <div class="flex -space-x-2 overflow-hidden">
+                <img src="/images/team/alfatih.webp" alt="Alfatih" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/ilham.webp" alt="Ilham" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/hilwa.webp" alt="Hilwa" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/syarah.webp" alt="Syarah" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/novita.webp" alt="Novita" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/aywa.webp" alt="Aywa" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+                <img src="/images/team/ahmad.webp" alt="Ahmad" class="inline-block h-7 w-7 rounded-full ring-2 ring-[#0F4C3A] object-cover">
+              </div>
+              <span class="text-[11px] text-emerald-200 font-semibold">7 Co-Founder Aktif</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. Pita Nilai & Diferensiasi (4 Pilar) -->
+    <section id="about" class="py-12 bg-white dark:bg-[#121C18] border-y border-brand-border dark:border-[#23362F] px-4 sm:px-8">
+      <div class="max-w-7xl mx-auto space-y-6">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Pondasi Tata Kelola</span>
+          <h2 class="font-heading font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">
+            4 Pilar Pembeda KaryaKita Studio
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+            Menggabungkan etika muamalah syariah dengan disiplin teknologi modern untuk melindungi klien dan tim mahasiswa.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Pillar 1 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="coins" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Zero-Riba &amp; Qardh Hasan</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Modal operasional awal didanai secara internal dengan skema pinjaman kebajikan (Qardh Hasan) 0% bunga dan tanpa denda keterlambatan.
+            </p>
+          </div>
+
+          <!-- Pillar 2 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-brand-amber dark:text-amber-400 flex items-center justify-center font-bold">
+              <i data-lucide="scale" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Syirkah 'Abdan (60/40)</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Kemitraan kerja berbasis kontribusi nyata: 60% bagi hasil langsung untuk tim pelaksana tugas dan 40% dialokasikan bagi dividen kas studio.
+            </p>
+          </div>
+
+          <!-- Pillar 3 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400 flex items-center justify-center font-bold">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Payment Gate DP 50%</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Pencegahan gharar: pengerjaan proyek klien B2B baru dimulai secara resmi setelah pembayaran uang muka 50% diverifikasi oleh CFO studio.
+            </p>
+          </div>
+
+          <!-- Pillar 4 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400 flex items-center justify-center font-bold">
+              <i data-lucide="book-open" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Academic Freeze Protection</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Sistem otomatis mengunci penerimaan proyek baru pada H-7 pekan ujian UTS/UAS STMIK Tazkia agar fokus akademik co-founder tetap terjaga prima.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Katalog 5 Unit Bisnis (Bento Grid 3 + 2) -->
+    <section id="services" class="py-16 sm:py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-10">
+      <div class="text-center max-w-3xl mx-auto space-y-2.5">
+        <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Katalog Layanan Digital</span>
+        <h2 class="font-heading font-extrabold text-2xl sm:text-4xl text-gray-900 dark:text-white tracking-tight">
+          5 Lini Bisnis Terpadu di Bawah Satu Naungan
+        </h2>
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+          Setiap lini bisnis dipimpin oleh co-founder berdedikasi dan dapat dipesan secara mandiri maupun terintegrasi penuh.
+        </p>
+      </div>
+
+      <!-- Bento Grid (3 Top + 2 Bottom) -->
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+        
+        <!-- Lini 1: Design (Col 2) -->
+        <div class="md:col-span-2 rounded-2xl bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] bento-accent-lini1 p-6 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full badge-unit-lini1">Lini 1 · Design Studio</span>
+              <span class="text-xs font-bold text-[#7C3AED]">01</span>
+            </div>
+            <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">KaryaKita Design</h3>
+            <p class="text-[11px] font-semibold text-purple-700 dark:text-purple-300">Brand Identity &amp; UI/UX Design Studio</p>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Membangun wajah merek yang berkarakter dan antarmuka produk yang mudah digunakan untuk bisnis baru maupun rebranding UMKM.
+            </p>
+            <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-600"></i><span>Desain Logo &amp; Brand Guidelines</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-600"></i><span>Desain UI/UX Web &amp; App (Figma)</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-600"></i><span>Aset Visual Kampanye &amp; Pitch Deck</span></li>
+            </ul>
+          </div>
+          <div class="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20Design%2C%20saya%20tertarik%20dengan%20paket%20desain." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#7C3AED] hover:underline flex items-center gap-1">
+              <span>Tanya Paket Desain</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Lini 2: WebTech (Col 2) -->
+        <div class="md:col-span-2 rounded-2xl bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] bento-accent-lini2 p-6 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full badge-unit-lini2">Lini 2 · Web Engineering</span>
+              <span class="text-xs font-bold text-[#0284C7]">02</span>
+            </div>
+            <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">KaryaKita WebTech</h3>
+            <p class="text-[11px] font-semibold text-sky-700 dark:text-sky-300">Custom Web Engineering &amp; Platform Systems</p>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Merancang landing page berkonversi tinggi hingga aplikasi web kustom (dashboard internal, portal &amp; database). Cepat, aman, dan responsif.
+            </p>
+            <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-600"></i><span>Landing Page &amp; Company Profile Modern</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-600"></i><span>Web App &amp; Dashboard Operasional Kustom</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-600"></i><span>Integrasi Cloud Neon Postgres &amp; Vercel</span></li>
+            </ul>
+          </div>
+          <div class="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20WebTech%2C%20saya%20ingin%20diskusi%20proyek%20web." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#0284C7] hover:underline flex items-center gap-1">
+              <span>Diskusi Proyek Web</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Lini 3: Assist & Data (Col 2) -->
+        <div class="md:col-span-2 rounded-2xl bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] bento-accent-lini3 p-6 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full badge-unit-lini3">Lini 3 · Assist &amp; Data</span>
+              <span class="text-xs font-bold text-[#0D9488]">03</span>
+            </div>
+            <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">KaryaKita Assist &amp; Data</h3>
+            <p class="text-[11px] font-semibold text-teal-700 dark:text-teal-300">Technical Assistance &amp; Data Digitalization</p>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Mendukung keputusan bisnis lewat pengolahan data terstruktur, analisis proses alur UMKM, dan dokumentasi teknis sistem informasi.
+            </p>
+            <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i><span>Analisis Proses &amp; Digitalisasi Alur UMKM</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i><span>Pembersihan &amp; Visualisasi Data Terpadu</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-teal-600"></i><span>Asistensi &amp; Dokumentasi Sistem Resmi</span></li>
+            </ul>
+          </div>
+          <div class="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20Data%2C%20saya%20ingin%20konsultasi%20pengolahan%20data." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#0D9488] hover:underline flex items-center gap-1">
+              <span>Konsultasi Data</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Lini 4: Media & Affiliate (Col 3) -->
+        <div class="md:col-span-3 rounded-2xl bg-white dark:bg-[#121C18] border border-brand-border dark:border-[#23362F] bento-accent-lini4 p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full badge-unit-lini4">Lini 4 · Media &amp; Growth</span>
+              <span class="text-xs font-bold text-[#EA580C]">04</span>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-gray-900 dark:text-white">KaryaKita Media &amp; Affiliate</h3>
+            <p class="text-[11px] font-semibold text-orange-700 dark:text-orange-300">Performance Short-Video &amp; Growth Network</p>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Menghidupkan pesan merek melalui video pendek berkinerja tinggi (Reels/TikTok) dan jaringan pemasaran afiliasi terkurasi untuk memperluas jangkauan pasar.
+            </p>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-orange-600"></i><span>Editing Video Pendek Reels &amp; TikTok</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-orange-600"></i><span>Strategi Distribusi Konten Organik</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-orange-600"></i><span>Kemitraan Promosi Produk Afiliasi</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-orange-600"></i><span>Optimasi Konversi Traffic Komersial</span></li>
+            </ul>
+          </div>
+          <div class="pt-5 mt-4 border-t border-gray-100 dark:border-gray-800">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20Media%2C%20saya%20ingin%20mulai%20kampanye%20video." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#EA580C] hover:underline flex items-center gap-1">
+              <span>Mulai Kampanye Video</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Lini 5: AI Academy (Col 3 - Spotlight Soft Background #EEF5F2 / #162620) -->
+        <div class="md:col-span-3 rounded-2xl bg-[#EEF5F2] dark:bg-[#162620] border border-emerald-300/60 dark:border-[#23362F] bento-accent-lini5 p-6 sm:p-7 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">Lini 5 · AI Applied Education</span>
+              <span class="text-xs font-bold text-brand-emerald dark:text-emerald-400">05</span>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-emerald dark:text-white">KaryaKita AI Academy</h3>
+            <p class="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">Corporate &amp; Public AI Applied Workshop</p>
+            <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+              Membekali profesional, tim UMKM, dan akademisi agar mahir memanfaatkan AI generatif secara praktis dan beretika. Fokus studi kasus kerja nyata, bukan teori belaka.
+            </p>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-700 dark:text-gray-300 pt-2 border-t border-emerald-200 dark:border-emerald-800/60">
+              <li class="flex items-center gap-2"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-amber"></i><span>Workshop Publik AI (Rp75.000/tiket)</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-amber"></i><span>In-House Corporate Training B2B</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-amber"></i><span>Modul Prompt Engineering Praktis</span></li>
+              <li class="flex items-center gap-2"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-amber"></i><span>Otomasi Tugas Harian Beretika</span></li>
+            </ul>
+          </div>
+          <div class="pt-5 mt-4 border-t border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20AI%20Academy%2C%20saya%20ingin%20info%20jadwal%20workshop." target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-brand-emerald dark:text-emerald-300 hover:underline flex items-center gap-1">
+              <span>Lihat Jadwal Workshop</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+            <span class="text-[10px] font-bold text-brand-amber bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+              Batch Terbuka
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 5. Alur Kolaborasi & Akad Syariah (4 Langkah Berurutan) -->
+    <section id="process" class="py-16 bg-white dark:bg-[#121C18] border-y border-brand-border dark:border-[#23362F] px-4 sm:px-8">
+      <div class="max-w-7xl mx-auto space-y-10">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Transparansi Muamalah</span>
+          <h2 class="font-heading font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">
+            Alur Kolaborasi &amp; Akad Syariah (Zero-Gharar)
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+            Setiap proyek dikawal 4 tahap jelas dari brief awal hingga serah terima aset digital.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+          <!-- Step 1 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 relative">
+            <span class="text-xs font-extrabold text-gray-400 dark:text-gray-500 font-mono">01</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Konsultasi &amp; Scope of Work</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Diskusi kebutuhan klien, perumusan deliverables terukur, dan kesepakatan harga tertulis tanpa biaya tersembunyi.
+            </p>
+          </div>
+
+          <!-- Step 2 (Amber Accent for DP 50%) -->
+          <div class="p-5 rounded-2xl border-2 border-brand-amber bg-amber-50/50 dark:bg-amber-950/20 space-y-3 relative shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-brand-amber dark:text-amber-400 font-mono">02</span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300">AKAD UTAMA</span>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-brand-amber dark:text-amber-400 flex items-center justify-center font-bold">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">DP 50% &amp; Payment Gate</h3>
+            <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+              Pembayaran uang muka 50% masuk ke rekening studio dan diverifikasi oleh CFO sebelum pengerjaan dimulai demi mencegah gharar.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 relative">
+            <span class="text-xs font-extrabold text-gray-400 dark:text-gray-500 font-mono">03</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="code" class="w-4 h-4"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Produksi Standar Itqan</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Eksekusi tugas oleh co-founder dengan laporan berkala di Portal Klien serta alur triage revisi yang terstruktur.
+            </p>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="p-5 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 relative">
+            <span class="text-xs font-extrabold text-gray-400 dark:text-gray-500 font-mono">04</span>
+            <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-brand-emerald dark:text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white">Pelunasan 50% &amp; Serah Terima</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              Review final, pelunasan sisa 50%, serah terima source code/file master, dan masa garansi penyesuaian 48 jam sign-off.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Portofolio Karya Nyata (2 Live Apps Preview) -->
+    <section id="portfolio" class="py-16 sm:py-20 px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-10">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Bukti Kapabilitas</span>
+        <h2 class="font-heading font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">
+          Portofolio Karya Nyata
+        </h2>
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+          Sistem digital berkinerja tinggi yang telah dirancang, dikembangkan, dan beroperasi di dunia nyata.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- App 1: KaryaKita Hub -->
+        <div class="card-surface p-6 rounded-2xl border border-brand-border dark:border-[#23362F] space-y-4 hover:shadow-lg transition">
+          <div class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 aspect-[16/9] bg-emerald-950/20 flex items-center justify-center">
+            <img src="/images/portfolio/karyakita-hub.webp" alt="KaryaKita Hub" class="w-full h-full object-cover" onerror="this.src='/images/og-karyakita.png'">
+            <div class="absolute top-3 left-3">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-900/90 text-white border border-emerald-500/40">
+                Live Studio OS
+              </span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">KaryaKita Hub (Venture Studio Platform)</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Pusat komando operasional, pemantauan proyek, dan tata kelola keuangan syariah untuk mengoordinasikan 7 anggota di 5 unit bisnis secara async-first.
+            </p>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Next.js / Vanilla</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Tailwind CSS</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Neon Postgres</span>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <button onclick="openLoginModal()" class="text-xs font-bold text-brand-emerald dark:text-emerald-400 hover:underline flex items-center gap-1">
+              <span>Masuk ke Dashboard</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="text-[11px] text-gray-400">v1.0 Produksi</span>
+          </div>
+        </div>
+
+        <!-- App 2: SI.26 Hub -->
+        <div class="card-surface p-6 rounded-2xl border border-brand-border dark:border-[#23362F] space-y-4 hover:shadow-lg transition">
+          <div class="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 aspect-[16/9] bg-emerald-950/20 flex items-center justify-center">
+            <img src="/images/portfolio/si26-hub.webp" alt="SI.26 Hub" class="w-full h-full object-cover" onerror="this.src='/images/og-karyakita.png'">
+            <div class="absolute top-3 left-3">
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sky-900/90 text-white border border-sky-500/40">
+                Live Community App
+              </span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-heading font-bold text-lg text-gray-900 dark:text-white">SI.26 Class Information Hub</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              Portal resmi kelas Sistem Informasi 2026 STMIK Tazkia untuk pengelolaan uang kas transparan 41 mahasiswa, presensi digital, dan pelacak tugas kuliah waktu nyata.
+            </p>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Next.js App Router</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Prisma ORM</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono">Neon DB</span>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <a href="https://hub-si26.vercel.app/" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1">
+              <span>Buka Demo SI.26</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+            <span class="text-[11px] text-gray-400">41 Mahasiswa Aktif</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Tim 7 Pendiri KaryaKita (Grid 4 + 3 Terpusat) -->
+    <section id="team" class="py-16 sm:py-20 bg-white dark:bg-[#121C18] border-y border-brand-border dark:border-[#23362F] px-4 sm:px-8">
+      <div class="max-w-7xl mx-auto space-y-10">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Kepemimpinan Multidisiplin</span>
+          <h2 class="font-heading font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">
+            7 Co-Founder KaryaKita Studio
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+            Mahasiswa Sistem Informasi STMIK Tazkia yang berkolaborasi membawa keahlian teknologi, bisnis, operasional, dan desain.
+          </p>
+        </div>
+
+        <!-- 4 + 3 Centered Layout Pattern (Row 1: 4 founders, Row 2: 3 founders) -->
+        <div class="flex flex-wrap justify-center gap-4 sm:gap-5">
+          
+          <!-- Founder 1: Alfatih -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/alfatih.webp" alt="Syauqi Muhammad Al Fatih" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Syauqi Muhammad Al Fatih</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">CEO &amp; CTO / AI Officer</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Lini 2 (WebTech) &amp; Lini 5 (AI Academy)</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('alfatih')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 2: Ilham -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/ilham.webp" alt="Ilham Akbar" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Ilham Akbar</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">CBDO &amp; Chief Data Officer</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Lini 3 (Assist &amp; Data) &amp; Kemitraan B2B</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('ilham')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 3: Hilwa -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/hilwa.webp" alt="Hilwa Mufida" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Hilwa Mufida</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">COO &amp; Head of PM</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Operasional Lintas 5 Unit &amp; SLA Proyek</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('hilwa')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 4: Syarah -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/syarah.webp" alt="Syarah Fauziah" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Syarah Fauziah</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">Chief Marketing Officer (CMO)</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Lini 4 (Media &amp; Affiliate) &amp; Strategi Merek</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('syarah')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 5: Novita -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/novita.webp" alt="Novita Rani" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Novita Rani</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">CFO &amp; VP Growth Systems</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Tata Kelola Kas Syirkah &amp; Payment Gate</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('novita')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 6: Nazwa / Aywa -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/aywa.webp" alt="Nazwa Azahra" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Nazwa Azahra</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">Chief Revenue Officer (CRO)</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Lini 5 (AI Academy) &amp; Jaringan Afiliasi</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('aywa')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+          <!-- Founder 7: Ahmad -->
+          <div class="w-full sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] p-4 rounded-2xl border border-brand-border dark:border-[#23362F] bg-brand-bg dark:bg-[#162620] space-y-3 flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md transition">
+            <div class="space-y-3">
+              <div class="aspect-square rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-950 border border-emerald-500/30">
+                <img src="/images/team/ahmad.webp" alt="Ahmad Maulana" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">Ahmad Maulana</h3>
+                <p class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 mt-0.5">Creative Director</p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">Lini 1 (Design) &amp; Multimedia Producer</p>
+              </div>
+            </div>
+            <button onclick="openFounderBioModal('ahmad')" class="w-full py-1.5 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-[11px] font-semibold text-gray-700 dark:text-gray-200 transition">
+              Lihat Profil &amp; Bio →
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. FAQ Accordion (6 Item) -->
+    <section id="faq" class="py-16 sm:py-20 px-4 sm:px-8 max-w-4xl mx-auto w-full space-y-8">
+      <div class="text-center space-y-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-brand-emerald dark:text-emerald-400">Pusat Bantuan</span>
+        <h2 class="font-heading font-extrabold text-2xl sm:text-3xl text-gray-900 dark:text-white">
+          Pertanyaan Umum (FAQ)
+        </h2>
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+          Hal yang sering ditanyakan seputar alur kerja, akad syariah, dan komitmen studio.
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <!-- FAQ 1 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-1')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Apakah saya bisa memesan satu layanan saja (misalnya hanya desain logo atau hanya website)?</span>
+            <i id="faq-icon-faq-1" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-1" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Tentu bisa. Meskipun KaryaKita memiliki 5 unit layanan yang saling terintegrasi dari hulu ke hilir, setiap unit bisnis dapat dipesan secara independen sesuai skala kebutuhan, prioritas, dan anggaran bisnis Anda saat ini.
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-2')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Bagaimana sistem pembayaran untuk proyek B2B di KaryaKita?</span>
+            <i id="faq-icon-faq-2" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-2" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Kami menerapkan skema akad syariah yang adil dan transparan (Zero Gharar): pembayaran DP 50% di muka setelah ruang lingkup kerja (scope of work) disepakati bersama secara tertulis, dan pelunasan 50% sisanya dilakukan setelah hasil final disetujui sebelum serah terima file master/source code. Khusus untuk tiket Workshop Publik AI Academy, pembayaran dilakukan lunas 100% di muka.
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-3')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Berapa lama estimasi pengerjaan proyek desain atau pembuatan website?</span>
+            <i id="faq-icon-faq-3" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-3" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Durasi bergantung pada kompleksitas ruang lingkup. Untuk paket identitas visual (logo &amp; brand guideline) atau pembuatan landing page modern umumnya selesai dalam 1–3 pekan. Sedangkan untuk aplikasi web kustom (seperti dashboard internal, portal data, atau sistem informasi) berkisar 3–6 pekan dengan pembaruan progres terstruktur setiap pekan.
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-4')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Siapa saja yang bisa mengikuti Workshop Publik KaryaKita AI Academy?</span>
+            <i id="faq-icon-faq-4" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-4" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Program ini terbuka untuk siapa saja: mahasiswa, staf kantor, pemilik UMKM, pendidik/dosen, maupun masyarakat umum yang ingin menguasai teknik pemanfaatan AI (prompt engineering, otomasi dokumen, dan riset) untuk mempercepat pekerjaan harian. Tidak diperlukan latar belakang coding atau teknologi khusus.
+          </div>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-5')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Apakah KaryaKita melayani klien di luar wilayah Bogor dan Jabodetabek?</span>
+            <i id="faq-icon-faq-5" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-5" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Ya, kami melayani klien dari seluruh Indonesia. Seluruh alur kerja—mulai dari konsultasi awal via WhatsApp/Google Meet, penyusunan proposal, pemantauan milestone proyek secara berkala, hingga sesi workshop online—telah dioptimalkan secara digital untuk kolaborasi jarak jauh yang efektif.
+          </div>
+        </div>
+
+        <!-- FAQ 6 -->
+        <div class="border border-brand-border dark:border-[#23362F] rounded-2xl bg-white dark:bg-[#121C18] overflow-hidden">
+          <button type="button" onclick="toggleFaqItem('faq-6')" class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white">
+            <span>Bagaimana jaminan keamanan data dan kerahasiaan proyek klien?</span>
+            <i id="faq-icon-faq-6" data-lucide="chevron-down" class="w-4 h-4 shrink-0 transition-transform"></i>
+          </button>
+          <div id="faq-content-faq-6" class="hidden px-5 pb-5 text-xs text-gray-600 dark:text-gray-300 leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-3">
+            Setiap proyek klien dilindungi perjanjian kerahasiaan resmi (NDA Klien). Akses terhadap data dan aset bisnis Anda dibatasi secara ketat hanya untuk tim inti yang bertugas. Kami juga 100% menggunakan perangkat lunak resmi dan modern tech stack legal tanpa perangkat bajakan demi menjaga keberkahan dan integritas hasil karya.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Final CTA Banner -->
+    <section class="py-16 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+      <div class="rounded-3xl bg-[#0F4C3A] text-white p-8 sm:p-12 relative overflow-hidden text-center space-y-6 shadow-2xl">
+        <div class="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none"></div>
+        <div class="relative z-10 max-w-2xl mx-auto space-y-4">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[11px] font-bold text-[#FCD34D] border border-white/20">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            Mulai Transformasi Digital Anda
+          </span>
+          <h2 class="font-heading font-extrabold text-2xl sm:text-4xl text-white leading-tight">
+            Siap Berkolaborasi Bersama <span class="text-[#FCD34D]">KaryaKita Studio?</span>
+          </h2>
+          <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+            Diskusikan kebutuhan visual, sistem web, digitalisasi data, konten promosi, atau pelatihan AI tim Anda bersama co-founder kami hari ini.
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <a href="https://wa.me/6281282121332?text=Halo%20KaryaKita%20Studio%2C%20saya%20ingin%20berdiskusi%20tentang%20proyek%20baru." target="_blank" rel="noopener noreferrer" class="px-6 py-3 rounded-2xl bg-[#FCD34D] hover:bg-[#F59E0B] text-gray-900 text-xs sm:text-sm font-bold shadow-lg transition flex items-center gap-2">
+              <i data-lucide="message-circle" class="w-4 h-4 text-emerald-950"></i>
+              <span>Hubungi Kami via WhatsApp</span>
+            </a>
+            <button onclick="openLoginModal()" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-bold transition flex items-center gap-2">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+              <span>Masuk Studio (Co-Founder)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Footer Resmi -->
+    <footer class="mt-auto py-12 bg-white dark:bg-[#0B1210] border-t border-brand-border dark:border-[#23362F] px-4 sm:px-8 text-xs text-gray-500 dark:text-gray-400">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-gray-100 dark:border-gray-800">
+        <div class="md:col-span-5 space-y-3">
+          <div class="flex items-center gap-3">
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" class="shrink-0 rounded-xl shadow-xs">
+              <rect width="100" height="100" rx="22" fill="#0F4C3A"/>
+              <rect x="22" y="24" width="13" height="52" rx="4" fill="#FFFFFF"/>
+              <path d="M37 53L56 27C57.5 25 60.5 25 62 27L63 28C64.5 30 64.5 33 63 35L48 56L37 53Z" fill="#FFFFFF"/>
+              <path d="M44 49L67 71C68.5 72.5 68.5 75.5 67 77L66 78C64.5 79.5 61.5 79.5 60 78L37 55L44 49Z" fill="#A7F3D0"/>
+              <path d="M74 18 C74 24 70 28 64 28 C70 28 74 32 74 38 C74 32 78 28 84 28 C78 28 74 24 74 18 Z" fill="#F59E0B"/>
+            </svg>
+            <div class="flex flex-col leading-none">
+              <span class="font-heading font-extrabold text-[17px] text-gray-900 dark:text-white">KaryaKita</span>
+              <span class="text-[8.5px] font-bold tracking-[0.16em] uppercase text-brand-amber dark:text-amber-400 mt-0.5">AI &amp; VENTURE STUDIO</span>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-sm">
+            Modern Syariah Tech Studio di bawah naungan 7 mahasiswa Program Studi Sistem Informasi STMIK Tazkia. Menghadirkan solusi digital berstandar Itqan, bebas riba, dan berbasis kemitraan adil.
+          </p>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500">
+            Jl. Ir. H. Djuanda No. 78, Sentul City, Bogor, Jawa Barat 16810
+          </p>
+        </div>
+
+        <div class="md:col-span-3 space-y-2.5">
+          <h4 class="font-heading font-bold text-gray-900 dark:text-white text-xs">5 Unit Bisnis</h4>
+          <ul class="space-y-1.5 text-[11px]">
+            <li><a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">KaryaKita Design (Lini 1)</a></li>
+            <li><a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">KaryaKita WebTech (Lini 2)</a></li>
+            <li><a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">KaryaKita Assist &amp; Data (Lini 3)</a></li>
+            <li><a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">KaryaKita Media &amp; Affiliate (Lini 4)</a></li>
+            <li><a href="#services" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">KaryaKita AI Academy (Lini 5)</a></li>
+          </ul>
+        </div>
+
+        <div class="md:col-span-4 space-y-2.5">
+          <h4 class="font-heading font-bold text-gray-900 dark:text-white text-xs">Navigasi Studio &amp; Akses</h4>
+          <ul class="space-y-1.5 text-[11px]">
+            <li><button onclick="openLoginModal()" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition text-left">Login Co-Founder (KaryaKita Hub OS)</button></li>
+            <li><button onclick="previewClientPortalFromHome()" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition text-left">Portal Pemantauan Klien B2B</button></li>
+            <li><a href="#process" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Alur Kolaborasi &amp; Payment Gate 50%</a></li>
+            <li><a href="#team" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Profil 7 Co-Founder &amp; Rekam Jejak</a></li>
+            <li><a href="https://wa.me/6281282121332" target="_blank" rel="noopener noreferrer" class="hover:text-brand-emerald dark:hover:text-emerald-400 transition">Kontak WhatsApp Resmi: +62 812-8212-1332</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-gray-400">
+        <span>© 2026 KaryaKita AI &amp; Venture Studio. STMIK Tazkia. All rights reserved.</span>
+        <div class="flex items-center gap-4">
+          <span class="text-brand-emerald dark:text-emerald-400 font-semibold">Zero-Riba</span>
+          <span>•</span>
+          <span class="text-brand-amber dark:text-amber-400 font-semibold">Syirkah 'Abdan</span>
+          <span>•</span>
+          <span>Itqan Standard</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ========================================================================
+       TOP ROLE SIMULATOR & GLOBAL STATUS BAR (64px Sticky Glass Topbar)
+       ======================================================================== -->
+  <header id="topbar-simulator" class="h-16 px-4 sm:px-6 sticky top-0 z-40 bg-white/85 dark:bg-[#121C18]/85 backdrop-blur-md border-b border-[#CFE0D8] dark:border-[#23362F] flex items-center justify-between gap-3 shadow-xs transition-all text-xs">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 font-bold tracking-tight text-gray-900 dark:text-white">
+        <!-- SVG Monogram Icon -->
+        <svg width="28" height="28" viewBox="0 0 100 100" fill="none" class="shrink-0">
+          <rect width="100" height="100" rx="22" fill="#0F4C3A"/>
+          <rect x="22" y="24" width="13" height="52" rx="4" fill="#FFFFFF"/>
+          <path d="M37 53L56 27C57.5 25 60.5 25 62 27L63 28C64.5 30 64.5 33 63 35L48 56L37 53Z" fill="#FFFFFF"/>
+          <path d="M44 49L67 71C68.5 72.5 68.5 75.5 67 77L66 78C64.5 79.5 61.5 79.5 60 78L37 55L44 49Z" fill="#A7F3D0"/>
+          <path d="M74 18 C74 24 70 28 64 28 C70 28 74 32 74 38 C74 32 78 28 84 28 C78 28 74 24 74 18 Z" fill="#F59E0B"/>
+        </svg>
+        <span class="font-heading font-extrabold text-sm sm:text-base text-gray-900 dark:text-white">KaryaKita<span class="text-brand-emerald dark:text-emerald-400">Hub</span></span>
+      </div>
+      <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 hidden sm:inline">STMIK Tazkia • 7 Co-Founder</span>
+      
+      <!-- Button to toggle public homepage view -->
+      <button onclick="viewPublicHomepage()" class="px-2.5 py-1 rounded-lg border border-brand-border dark:border-[#23362F] hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition flex items-center gap-1.5 text-[11px] font-semibold" title="Buka Halaman Beranda Publik KaryaKita">
+        <i data-lucide="globe" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
+        <span class="hidden md:inline">Beranda Publik</span>
+      </button>
     </div>
 
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-2 sm:gap-2.5">
       <!-- Capacity Status Pill -->
-      <button id="btn-topbar-capacity" onclick="openCapacityModal()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-900 transition" title="Klik untuk mengubah status kapasitas kuliah/tugas pekan ini">
-        <span id="topbar-capacity-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <button id="btn-topbar-capacity" onclick="openCapacityModal()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 transition" title="Klik untuk mengubah status kapasitas kuliah/tugas pekan ini">
+        <span id="topbar-capacity-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
         <span id="topbar-capacity-label">Tersedia (4–5j)</span>
       </button>
 
       <!-- Theme Toggle Button -->
-      <button id="btn-toggle-theme" class="p-1 rounded-lg hover:bg-emerald-800/80 text-emerald-200 transition" title="Ganti Mode Gelap / Terang" aria-label="Ganti Mode Gelap atau Terang">
+      <button id="btn-toggle-theme" class="p-2 rounded-xl border border-brand-border dark:border-[#23362F] hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition" title="Ganti Mode Gelap / Terang" aria-label="Ganti Mode Gelap atau Terang">
         <i id="theme-toggle-icon" data-lucide="moon" class="w-4 h-4"></i>
       </button>
 
       <!-- Gemini Studio Copilot Button -->
-      <button id="btn-topbar-gemini" onclick="toggleGeminiCopilot()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-teal-700 to-sky-700 hover:from-teal-600 hover:to-sky-600 border border-sky-400/40 text-white shadow-sm transition group" title="Buka Asisten AI Gemini Copilot (Ctrl+Shift+G)" aria-label="Buka Asisten AI Gemini Copilot">
+      <button id="btn-topbar-gemini" onclick="toggleGeminiCopilot()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#0F4C3A] to-teal-700 hover:from-[#1A6B52] hover:to-teal-600 text-white shadow-xs transition group" title="Buka Asisten AI Gemini Copilot (Ctrl+Shift+G)" aria-label="Buka Asisten AI Gemini Copilot">
         <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 animate-pulse"></i>
         <span class="hidden sm:inline font-bold">Gemini AI</span>
       </button>
 
       <!-- Product Tour / Walkthrough Button -->
-      <button id="btn-topbar-tour" onclick="openOnboardingTour(store.getCurrentUser())" class="p-1 rounded-lg hover:bg-emerald-800/80 text-emerald-200 transition" title="Buka Tur Panduan Aplikasi Sesuai Role" aria-label="Buka Tur Panduan Aplikasi Sesuai Role">
+      <button id="btn-topbar-tour" onclick="openOnboardingTour(store.getCurrentUser())" class="p-2 rounded-xl border border-brand-border dark:border-[#23362F] hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition" title="Buka Tur Panduan Aplikasi Sesuai Role" aria-label="Buka Tur Panduan Aplikasi Sesuai Role">
         <i data-lucide="help-circle" class="w-4 h-4"></i>
       </button>
 
       <!-- Logged-in User Profile Badge with Photo Edit Trigger -->
-      <button onclick="openProfileModal(store.getCurrentUser()?.id)" class="flex items-center gap-2 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/60 rounded-full px-2.5 py-1 text-emerald-200 transition group cursor-pointer" title="Klik untuk mengelola profil & ganti foto" aria-label="Kelola Profil dan Ganti Foto">
+      <button onclick="openProfileModal(store.getCurrentUser()?.id)" class="flex items-center gap-2 bg-gray-50 dark:bg-[#192722] hover:bg-gray-100 dark:hover:bg-[#1f302b] border border-brand-border dark:border-[#23362F] rounded-full px-2.5 py-1 text-gray-800 dark:text-gray-200 transition group cursor-pointer" title="Klik untuk mengelola profil & ganti foto" aria-label="Kelola Profil dan Ganti Foto">
         <div class="relative">
-          <img id="topbar-user-avatar" src="" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-emerald-500/50">
-          <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+          <img id="topbar-user-avatar" src="/images/team/alfatih.webp" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-emerald-500/50">
+          <span class="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
         </div>
         <div class="flex items-center gap-1.5 text-left">
-          <span id="topbar-user-name" class="font-bold text-white text-[11px] truncate max-w-[140px] sm:max-w-[200px]"></span>
-          <span class="text-emerald-400 text-[10px] hidden sm:inline">•</span>
-          <span id="topbar-user-role" class="text-emerald-300 text-[10px] hidden sm:inline truncate max-w-[140px]"></span>
-          <i data-lucide="camera" class="w-2.5 h-2.5 text-emerald-300 opacity-60 group-hover:opacity-100 transition hidden sm:inline ml-0.5"></i>
+          <span id="topbar-user-name" class="font-bold text-gray-900 dark:text-white text-[11px] truncate max-w-[120px] sm:max-w-[180px]"></span>
+          <span class="text-gray-400 text-[10px] hidden sm:inline">•</span>
+          <span id="topbar-user-role" class="text-emerald-700 dark:text-emerald-400 text-[10px] hidden sm:inline truncate max-w-[120px]"></span>
         </div>
       </button>
 
       <!-- Logout Button -->
-      <button id="btn-topbar-logout" onclick="logout()" class="p-1.5 rounded-lg bg-emerald-950/80 hover:bg-red-800/80 text-emerald-200 hover:text-white transition flex items-center gap-1" title="Keluar / Logout" aria-label="Keluar atau Logout">
-        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-        <span class="hidden lg:inline text-[11px]">Keluar</span>
+      <button id="btn-topbar-logout" onclick="logout()" class="p-2 rounded-xl border border-brand-border dark:border-[#23362F] hover:bg-red-50 dark:hover:bg-red-950/60 hover:text-red-600 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 transition flex items-center gap-1" title="Keluar / Logout" aria-label="Keluar atau Logout">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span class="hidden lg:inline text-[11px] font-semibold">Keluar</span>
       </button>
     </div>
   </header>
@@ -243,22 +1125,22 @@
     </div>
 
     <!-- Graduation Rule Meter (Kas Mandiri Rp3.500.000) -->
-    <div id="banner-graduation-rule" class="bg-white border-b border-brand-border px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
+    <div id="banner-graduation-rule" class="bg-white dark:bg-[#121C18] border-b border-brand-border dark:border-[#23362F] px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <span class="font-semibold text-gray-700 flex items-center gap-1">
-          <i data-lucide="target" class="w-3.5 h-3.5 text-brand-emerald"></i>
+        <span class="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+          <i data-lucide="target" class="w-3.5 h-3.5 text-brand-emerald dark:text-emerald-400"></i>
           Graduation Rule (Kas Mandiri Target Rp3.500.000):
         </span>
-        <span id="grad-rule-text" class="font-bold text-brand-emerald tabular-nums">Rp0 / Rp3.500.000 (0%)</span>
-        <span id="grad-rule-badge" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+        <span id="grad-rule-text" class="font-bold text-brand-emerald dark:text-emerald-400 tabular-nums">Rp0 / Rp3.500.000 (0%)</span>
+        <span id="grad-rule-badge" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
           Mode Bootstrapping (Kas Ditahan 70%)
         </span>
       </div>
       <div class="flex items-center gap-3 w-full sm:w-auto">
-        <div class="w-full sm:w-48 bg-gray-200 rounded-full h-2 overflow-hidden">
-          <div id="grad-rule-bar" class="bg-brand-emerald h-2 rounded-full transition-all duration-500" style="width: 0%;"></div>
+        <div class="w-full sm:w-48 bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+          <div id="grad-rule-bar" class="bg-brand-emerald dark:bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%;"></div>
         </div>
-        <span class="text-gray-500 text-[11px] whitespace-nowrap">Q1 Bootstrapping</span>
+        <span class="text-gray-500 dark:text-gray-400 text-[11px] whitespace-nowrap">Q1 Bootstrapping</span>
       </div>
     </div>
   </div>
@@ -271,16 +1153,20 @@
     <!-- DESKTOP FIXED SIDEBAR (256px / Collapsible to 72px) -->
     <aside id="main-sidebar" class="w-64 bg-white dark:bg-[#121C18] border-r border-brand-border dark:border-[#23362F] flex-shrink-0 flex flex-col justify-between hidden md:flex transition-all duration-300">
       
-      <!-- Studio Header in Sidebar -->
+      <!-- Studio Header in Sidebar with Official SVG Logo -->
       <div>
         <div class="p-3.5 border-b border-brand-border dark:border-[#23362F] flex items-center justify-between gap-2 sidebar-header-box">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-brand-emerald text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
-              KK
-            </div>
+          <div class="flex items-center gap-2.5 min-w-0">
+            <svg width="34" height="34" viewBox="0 0 100 100" fill="none" class="shrink-0 rounded-xl shadow-xs">
+              <rect width="100" height="100" rx="22" fill="#0F4C3A"/>
+              <rect x="22" y="24" width="13" height="52" rx="4" fill="#FFFFFF"/>
+              <path d="M37 53L56 27C57.5 25 60.5 25 62 27L63 28C64.5 30 64.5 33 63 35L48 56L37 53Z" fill="#FFFFFF"/>
+              <path d="M44 49L67 71C68.5 72.5 68.5 75.5 67 77L66 78C64.5 79.5 61.5 79.5 60 78L37 55L44 49Z" fill="#A7F3D0"/>
+              <path d="M74 18 C74 24 70 28 64 28 C70 28 74 32 74 38 C74 32 78 28 84 28 C78 28 74 24 74 18 Z" fill="#F59E0B"/>
+            </svg>
             <div class="sidebar-studio-title min-w-0">
-              <h1 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">KaryaKita Studio</h1>
-              <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">Venture Studio OS</p>
+              <h1 class="font-heading font-extrabold text-sm text-gray-900 dark:text-white leading-tight truncate">KaryaKita</h1>
+              <p class="text-[9.5px] font-bold text-brand-amber dark:text-amber-400 tracking-wider uppercase truncate">INTERNAL HUB</p>
             </div>
           </div>
           <button id="btn-toggle-sidebar-collapse" onclick="toggleSidebarCollapse()" class="sidebar-studio-title p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition shrink-0 cursor-pointer" title="Ciutkan / Lebarkan Sidebar" aria-label="Ciutkan atau Lebarkan Sidebar">
@@ -289,7 +1175,7 @@
         </div>
 
         <!-- Navigation Links: 5 Clusters for 13 Modules -->
-        <nav class="p-3 space-y-4 text-xs overflow-y-auto max-h-[calc(100vh-210px)]">
+        <nav class="p-3 space-y-4 text-xs overflow-y-auto max-h-[calc(100vh-250px)]">
           
           <!-- [1. RINGKASAN & KINERJA] -->
           <div>
@@ -653,6 +1539,15 @@
   </div>
 
   <!-- ========================================================================
+       FOUNDER BIO MODAL (Interactive Team Detail from Homepage & Reports)
+       ======================================================================== -->
+  <div id="founder-bio-modal" class="fixed inset-0 z-[998] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto" onclick="closeFounderBioModal()">
+    <div id="founder-bio-card" class="bg-white dark:bg-[#121C18] rounded-3xl border border-brand-border dark:border-[#23362F] shadow-2xl max-w-xl w-full p-6 sm:p-7 space-y-5 text-left my-auto transition-all" onclick="event.stopPropagation()">
+      <!-- Injected founder bio details -->
+    </div>
+  </div>
+
+  <!-- ========================================================================
        GLOBAL MODALS & DRAWERS
        ======================================================================== -->
   
@@ -670,6 +1565,6 @@
   <div id="printable-content" class="hidden"></div>
 
   <!-- Application Logic -->
-  <script src="app.js"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>

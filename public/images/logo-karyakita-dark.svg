@@ -1,0 +1,16 @@
+<svg width="220" height="50" viewBox="0 0 220 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded Square Icon -->
+  <rect width="50" height="50" rx="11" fill="#FFFFFF"/>
+  <!-- Monogram K: Left Vertical Bar -->
+  <rect x="11" y="12" width="6.5" height="26" rx="2" fill="#0F4C3A"/>
+  <!-- Monogram K: Upper Diagonal Arm -->
+  <path d="M18.5 26.5L28 13.5C28.75 12.5 30.25 12.5 31 13.5L31.5 14C32.25 15 32.25 16.5 31.5 17.5L24 28L18.5 26.5Z" fill="#0F4C3A"/>
+  <!-- Monogram K: Lower Diagonal Arm (Syirkah 'Abdan) -->
+  <path d="M22 24.5L33.5 35.5C34.25 36.25 34.25 37.75 33.5 38.5L33 39C32.25 39.75 30.75 39.75 30 39L18.5 27.5L22 24.5Z" fill="#1A6B52"/>
+  <!-- 4-pointed AI Spark Star -->
+  <path d="M37 9 C37 12 35 14 32 14 C35 14 37 16 37 19 C37 16 39 14 42 14 C39 14 37 12 37 9 Z" fill="#F59E0B"/>
+  
+  <!-- Wordmark -->
+  <text x="62" y="27" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="20" fill="#FFFFFF" letter-spacing="-0.03em">KaryaKita</text>
+  <text x="63" y="41" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="8.5" fill="#FCD34D" letter-spacing="0.18em">AI &amp; VENTURE STUDIO</text>
+</svg>
