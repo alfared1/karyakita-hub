@@ -56,10 +56,10 @@ const INITIAL_STATE = {
     alfatih: {
       id: 'alfatih',
       username: 'alfatih',
-      password: 'Kk#Fatih2026!x9',
-      mustChangePassword: true,
-      hasCompletedOnboarding: false,
-      passwordChangedAt: null,
+      password: 'Kk#Syauqixxfz!9',
+      mustChangePassword: false,
+      hasCompletedOnboarding: true,
+      passwordChangedAt: '2026-11-21T10:00:00.000Z',
       name: 'Syauqi Muhammad Al Fatih',
       role: 'SUPER_ADMIN',
       roleLabel: 'CEO & CTO',
@@ -73,10 +73,10 @@ const INITIAL_STATE = {
     hilwa: {
       id: 'hilwa',
       username: 'hilwa',
-      password: 'Kk#Hilwa98!mQ4',
-      mustChangePassword: true,
+      password: '@Hilwa077',
+      mustChangePassword: false,
       hasCompletedOnboarding: false,
-      passwordChangedAt: null,
+      passwordChangedAt: '2026-11-22T14:40:27.381Z',
       name: 'Hilwa Mufida',
       role: 'OPS_ADMIN',
       roleLabel: 'COO & Head of PM',
@@ -242,6 +242,16 @@ class AppStore {
             parsed.users[uid] = { ...INITIAL_STATE.users[uid] };
           } else {
             parsed.users[uid].username = parsed.users[uid].username || INITIAL_STATE.users[uid].username;
+            // Upgrade stale default credentials if user has an updated personal password
+            if (uid === 'hilwa' && parsed.users[uid].password === 'Kk#Hilwa98!mQ4') {
+              parsed.users[uid].password = '@Hilwa077';
+              parsed.users[uid].mustChangePassword = false;
+              parsed.users[uid].passwordChangedAt = '2026-11-22T14:40:27.381Z';
+            }
+            if (uid === 'alfatih' && parsed.users[uid].password === 'Kk#Fatih2026!x9') {
+              parsed.users[uid].password = 'Kk#Syauqixxfz!9';
+              parsed.users[uid].mustChangePassword = false;
+            }
             parsed.users[uid].password = parsed.users[uid].password || INITIAL_STATE.users[uid].password;
             if (parsed.users[uid].mustChangePassword === undefined) {
               parsed.users[uid].mustChangePassword = INITIAL_STATE.users[uid].mustChangePassword;
@@ -297,7 +307,10 @@ class AppStore {
     if (this.isCloudSyncing) return;
     this.isCloudSyncing = true;
     try {
-      const res = await fetch('/api/sync');
+      const res = await fetch('/api/sync?t=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
       if (!res.ok) {
         this.isCloudSyncing = false;
         return;
@@ -6572,7 +6585,7 @@ function renderAuthForm(formType, userId = null) {
   if (window.lucide) lucide.createIcons();
 }
 
-function handleLoginSubmit(event) {
+async function handleLoginSubmit(event) {
   event.preventDefault();
   const usernameInput = document.getElementById('login-username')?.value?.trim().toLowerCase();
   const passwordInput = document.getElementById('login-password')?.value?.trim();
@@ -6582,56 +6595,125 @@ function handleLoginSubmit(event) {
 
   if (!usernameInput || !passwordInput) return;
 
+  if (errorBox) errorBox.classList.add('hidden');
+
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memverifikasi...</span>';
+    btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memverifikasi kredensial cloud...</span>';
     if (window.lucide) lucide.createIcons({ root: btnSubmit });
   }
 
-  const user = Object.values(store.state.users).find(u => 
-    (u.username && u.username.toLowerCase() === usernameInput) ||
-    (u.id && u.id.toLowerCase() === usernameInput) ||
-    (u.email && u.email.toLowerCase() === usernameInput)
-  );
+  let authenticatedUser = null;
+  let serverAuthSuccess = false;
 
-  if (!user || user.password.trim() !== passwordInput) {
-    if (btnSubmit) {
-      btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<span>Masuk ke Dashboard Studio</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
-      if (window.lucide) lucide.createIcons({ root: btnSubmit });
+  // 1. Direct Serverless Cloud Auth via /api/auth (Always checks live Neon Postgres)
+  try {
+    const authRes = await fetch('/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({
+        username: usernameInput,
+        password: passwordInput
+      })
+    });
+
+    const authData = await authRes.json();
+
+    if (authRes.ok && authData.success && authData.user) {
+      serverAuthSuccess = true;
+      authenticatedUser = authData.user;
+
+      // Hydrate state from cloud
+      if (authData.fullState) {
+        const fullCloud = authData.fullState;
+        if (fullCloud.users) {
+          Object.keys(fullCloud.users).forEach(uid => {
+            store.state.users[uid] = { ...store.state.users[uid], ...fullCloud.users[uid] };
+          });
+        }
+        if (fullCloud.tasks) store.state.tasks = fullCloud.tasks;
+        if (fullCloud.cashflow) store.state.cashflow = fullCloud.cashflow;
+        if (fullCloud.auditLogs) store.state.auditLogs = fullCloud.auditLogs;
+        if (fullCloud.projects) store.state.projects = fullCloud.projects;
+        if (fullCloud.crmLeads) store.state.crmLeads = fullCloud.crmLeads;
+      }
+      store.state.users[authenticatedUser.id] = { ...store.state.users[authenticatedUser.id], ...authenticatedUser };
+    } else if (authRes.status === 401) {
+      // Direct credential mismatch from cloud database
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Masuk ke Dashboard Studio</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
+        if (window.lucide) lucide.createIcons({ root: btnSubmit });
+      }
+      if (errorBox && errorText) {
+        errorText.textContent = authData.error || 'Kata sandi atau ID Co-Founder tidak cocok. Pastikan menggunakan kata sandi terbaru.';
+        errorBox.classList.remove('hidden');
+      }
+      const userField = document.getElementById('login-username');
+      const pwdField = document.getElementById('login-password');
+      if (userField) userField.setAttribute('aria-invalid', 'true');
+      if (pwdField) pwdField.setAttribute('aria-invalid', 'true');
+      showToast(authData.error || 'Kredensial tidak valid!', 'error');
+      return;
     }
-    if (errorBox && errorText) {
-      errorText.textContent = 'Username atau kata sandi tidak cocok. Gunakan bantuan kredensial di atas atau hubungi DevOps (Alfatih).';
-      errorBox.classList.remove('hidden');
+  } catch (netErr) {
+    console.warn('Cloud Auth offline, beralih ke verifikasi lokal:', netErr);
+  }
+
+  // 2. Offline / Local fallback if cloud auth had network error
+  if (!serverAuthSuccess) {
+    const localUser = Object.values(store.state.users).find(u => 
+      (u.username && u.username.toLowerCase() === usernameInput) ||
+      (u.id && u.id.toLowerCase() === usernameInput) ||
+      (u.email && u.email.toLowerCase() === usernameInput)
+    );
+
+    if (localUser && localUser.password.trim() === passwordInput) {
+      authenticatedUser = localUser;
+    } else {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Masuk ke Dashboard Studio</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
+        if (window.lucide) lucide.createIcons({ root: btnSubmit });
+      }
+      if (errorBox && errorText) {
+        errorText.textContent = 'Username atau kata sandi tidak cocok. Gunakan bantuan kredensial di atas atau hubungi DevOps (Alfatih).';
+        errorBox.classList.remove('hidden');
+      }
+      const userField = document.getElementById('login-username');
+      const pwdField = document.getElementById('login-password');
+      if (userField) userField.setAttribute('aria-invalid', 'true');
+      if (pwdField) pwdField.setAttribute('aria-invalid', 'true');
+      showToast('Kredensial tidak valid!', 'error');
+      return;
     }
-    const userField = document.getElementById('login-username');
-    const pwdField = document.getElementById('login-password');
-    if (userField) userField.setAttribute('aria-invalid', 'true');
-    if (pwdField) pwdField.setAttribute('aria-invalid', 'true');
-    showToast('Kredensial tidak valid!', 'error');
-    return;
   }
 
   // Direct successful authentication straight to main dashboard
   store.state.authSession = {
     isAuthenticated: true,
-    userId: user.id
+    userId: authenticatedUser.id
   };
-  store.state.activeUserId = user.id;
-  store.logAudit('AUTH_LOGIN_SUCCESS', `Login: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil masuk.`);
+  store.state.activeUserId = authenticatedUser.id;
+  if (!serverAuthSuccess) {
+    store.logAudit('AUTH_LOGIN_SUCCESS', `Login: ${authenticatedUser.name}`, `Co-Founder ${authenticatedUser.name} (${authenticatedUser.roleLabel}) berhasil masuk (Offline).`);
+  }
   store.saveState();
 
-  showToast(`Alhamdulillah! Selamat datang, ${user.name}.`);
+  showToast(`Alhamdulillah! Selamat datang, ${authenticatedUser.name}.`);
   checkAuthAndRender();
 
   // If first-time login or password temporary, allow changing password smoothly from dashboard
-  if (user.mustChangePassword) {
+  if (authenticatedUser.mustChangePassword) {
     setTimeout(() => {
-      openChangeMyPasswordModal(user.id);
+      openChangeMyPasswordModal(authenticatedUser.id);
     }, 700);
-  } else if (!user.hasCompletedOnboarding) {
+  } else if (!authenticatedUser.hasCompletedOnboarding) {
     setTimeout(() => {
-      openOnboardingTour(user);
+      openOnboardingTour(authenticatedUser);
     }, 400);
   }
 }
@@ -6681,6 +6763,7 @@ function handleFirstTimeResetSubmit(event, userId) {
   user.passwordChangedAt = new Date().toISOString();
   store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil membuat kata sandi baru. Akun resmi aktif.`);
   store.saveState();
+  store.syncToCloud();
 
   showToast('Alhamdulillah! Kata sandi berhasil diperbarui! Menyiapkan ruang kerja...');
   setTimeout(() => {
@@ -6790,6 +6873,7 @@ function saveAdminChangePassword(event, userId) {
     `DevOps/Admin (${actor.name}) memperbarui kata sandi untuk ${targetUser.name} (${targetUser.roleLabel}). Status: ${isPermanent ? 'Aktif (Password Pribadi)' : 'Password Sementara'}.`
   );
   store.saveState();
+  store.syncToCloud();
 
   closeModal();
   showToast(`Kata sandi untuk ${targetUser.name} berhasil disimpan (${isPermanent ? 'Aktif Pribadi' : 'Sementara'})!`);
@@ -6912,6 +6996,7 @@ function saveChangeMyPassword(event, userId) {
     `Co-Founder ${user.name} (${user.roleLabel}) berhasil memperbarui kata sandi pribadi secara mandiri.`
   );
   store.saveState();
+  store.syncToCloud();
 
   closeModal();
   showToast('Alhamdulillah! Kata sandi pribadi Anda berhasil diperbarui dan akun berstatus Aktif Resmi.');
