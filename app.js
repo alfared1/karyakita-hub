@@ -149,7 +149,7 @@ const INITIAL_STATE = {
       role: 'UNIT_LEAD',
       roleLabel: 'CRO',
       email: 'nazwa.azahra@karyakita.id',
-      avatar: '/images/team/aywa.webp',
+      avatar: '/images/team/nazwa.webp',
       ownedUnits: ['AI_ACADEMY_L5', 'MEDIA_AFFILIATE_L4'],
       capacityStatus: 'AVAILABLE',
       backupApproverId: 'syarah',
