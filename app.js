@@ -346,6 +346,33 @@ class AppStore {
         if (cloudState.archives) this.state.archives = cloudState.archives;
         if (cloudState.currentSprint) this.state.currentSprint = cloudState.currentSprint;
 
+        // Smart merge checkins (Rhythm Rabu Malam) - Preserves all co-founder checkins across devices
+        if (Array.isArray(cloudState.checkins)) {
+          const checkinMap = new Map();
+          (this.state.checkins || []).forEach(c => {
+            if (c && c.userId) checkinMap.set(`${c.userId}_sprint_${c.sprintNumber || 1}`, c);
+          });
+          cloudState.checkins.forEach(c => {
+            if (c && c.userId) checkinMap.set(`${c.userId}_sprint_${c.sprintNumber || 1}`, c);
+          });
+          this.state.checkins = Array.from(checkinMap.values());
+        }
+
+        // Smart merge syuraMinutes (Notulen Weekly Syura)
+        if (Array.isArray(cloudState.syuraMinutes)) {
+          const syuraMap = new Map();
+          (this.state.syuraMinutes || []).forEach(m => { if (m && m.id) syuraMap.set(m.id, m); });
+          cloudState.syuraMinutes.forEach(m => { if (m && m.id) syuraMap.set(m.id, m); });
+          this.state.syuraMinutes = Array.from(syuraMap.values());
+        }
+
+        // Merge remaining modules
+        if (Array.isArray(cloudState.academyBatches)) this.state.academyBatches = cloudState.academyBatches;
+        if (Array.isArray(cloudState.affiliateContents)) this.state.affiliateContents = cloudState.affiliateContents;
+        if (Array.isArray(cloudState.affiliateCommissions)) this.state.affiliateCommissions = cloudState.affiliateCommissions;
+        if (Array.isArray(cloudState.revisionTriage)) this.state.revisionTriage = cloudState.revisionTriage;
+        if (cloudState.syirkahPeriod) this.state.syirkahPeriod = { ...this.state.syirkahPeriod, ...cloudState.syirkahPeriod };
+
         // Preserve local session if already logged in on this device
         if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
           this.state.authSession = currentSession;
@@ -2204,8 +2231,9 @@ function submitAsyncCheckin() {
 
   store.logAudit('CHECKIN_SUBMITTED', 'Check-In: ' + user.name, `Laporan Async Check-In berhasil dikirim (Kapasitas: ${CAPACITY_META[capacity].label}).`);
   store.saveState();
+  store.syncToCloud(); // Immediate cloud sync to Neon
   updateTopBanners();
-  showToast('Alhamdulillah! Laporan Async Check-In berhasil disimpan.');
+  showToast('Alhamdulillah! Laporan Async Check-In berhasil disimpan & tersinkronisasi ke Cloud.');
   renderActiveView();
 }
 
@@ -2268,6 +2296,7 @@ function promoteSyuraItemToTask(itemId) {
   store.state.tasks.unshift(newTask);
   store.logAudit('SYURA_PROMOTED_TASK', 'Action Item: ' + item.title, 'Didorong ke papan tugas Kanban.');
   store.saveState();
+  store.syncToCloud(); // Immediate cloud sync to Neon
   showToast('Action item berhasil diubah menjadi kartu Kanban!');
   renderActiveView();
 }
@@ -2356,8 +2385,9 @@ function submitNewSyura() {
   store.state.syuraMinutes.unshift(newMinute);
   store.logAudit('SYURA_RECORDED', 'Notulen: ' + title, 'Notulen Weekly Syura berhasil dicatat.');
   store.saveState();
+  store.syncToCloud(); // Immediate cloud sync to Neon
   closeModal();
-  showToast('Notulen Weekly Syura berhasil disimpan!');
+  showToast('Alhamdulillah! Notulen Weekly Syura berhasil disimpan & tersinkronisasi ke Cloud.');
   renderActiveView();
 }
 
@@ -6650,6 +6680,14 @@ async function handleLoginSubmit(event) {
         if (fullCloud.auditLogs) store.state.auditLogs = fullCloud.auditLogs;
         if (fullCloud.projects) store.state.projects = fullCloud.projects;
         if (fullCloud.crmLeads) store.state.crmLeads = fullCloud.crmLeads;
+        if (fullCloud.checkins) store.state.checkins = fullCloud.checkins;
+        if (fullCloud.syuraMinutes) store.state.syuraMinutes = fullCloud.syuraMinutes;
+        if (fullCloud.archives) store.state.archives = fullCloud.archives;
+        if (fullCloud.academyBatches) store.state.academyBatches = fullCloud.academyBatches;
+        if (fullCloud.affiliateContents) store.state.affiliateContents = fullCloud.affiliateContents;
+        if (fullCloud.affiliateCommissions) store.state.affiliateCommissions = fullCloud.affiliateCommissions;
+        if (fullCloud.revisionTriage) store.state.revisionTriage = fullCloud.revisionTriage;
+        if (fullCloud.settings) store.state.settings = { ...store.state.settings, ...fullCloud.settings };
       }
       store.state.users[authenticatedUser.id] = { ...store.state.users[authenticatedUser.id], ...authenticatedUser };
     } else if (authRes.status === 401) {
