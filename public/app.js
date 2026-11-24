@@ -359,13 +359,19 @@ class AppStore {
         this.lastCloudSyncTime = new Date();
         this.notify();
 
-        // Only re-render full views if already authenticated, avoiding disruption on login screen
+        // Only re-render full views if already authenticated AND currently inside dashboard
         if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
-          if (typeof renderActiveView === 'function') {
-            renderActiveView();
-          }
-          if (typeof checkAuthAndRender === 'function') {
-            checkAuthAndRender();
+          const appLayout = document.getElementById('app-layout-wrapper');
+          const isAppVisible = appLayout && !appLayout.classList.contains('hidden');
+          if (isAppVisible) {
+            if (typeof renderActiveView === 'function') {
+              renderActiveView();
+            }
+          } else {
+            // If on homepage, just update the CTA buttons
+            if (typeof updateHomepageCtaState === 'function') {
+              updateHomepageCtaState();
+            }
           }
         }
         console.log('✅ Cloud Neon Sync: State studio otomatis tersinkronisasi antar-perangkat!');
@@ -715,6 +721,18 @@ function navigateTo(viewName) {
     if (typeof checkAuthAndRender === 'function') checkAuthAndRender();
     return;
   }
+  
+  // Ensure public homepage is hidden and dashboard layout is active
+  const home = document.getElementById('public-homepage');
+  const app = document.getElementById('app-layout-wrapper');
+  const topbar = document.getElementById('topbar-simulator');
+  const banners = document.getElementById('dynamic-banners-container');
+  if (home) home.classList.add('hidden');
+  if (app) app.classList.remove('hidden');
+  if (topbar) topbar.classList.remove('hidden');
+  if (banners) banners.classList.remove('hidden');
+
+  window.location.hash = '#/' + (viewName === 'overview' ? 'dashboard' : viewName);
   currentView = viewName;
 
   // Update Breadcrumb & Cluster
@@ -6730,7 +6748,8 @@ async function handleLoginSubmit(event) {
   store.saveState();
 
   showToast(`Alhamdulillah! Selamat datang, ${authenticatedUser.name}.`);
-  checkAuthAndRender();
+  window.location.hash = '#/dashboard';
+  returnToDashboard('overview');
 
   // If first-time login or password temporary, allow changing password smoothly from dashboard
   if (authenticatedUser.mustChangePassword) {
@@ -7160,9 +7179,45 @@ function logout() {
     store.state.authSession = { isAuthenticated: false, userId: null };
     store.logAudit('AUTH_LOGOUT', 'User Logout', `Pengguna keluar dari sesi.`);
     store.saveState();
+    window.location.hash = '#/';
     showToast('Anda telah keluar dari sistem.');
     checkAuthAndRender();
   }
+}
+
+function isDashboardRoute() {
+  const hash = (window.location.hash || '').toLowerCase();
+  const dashboardRoutes = [
+    '#/dashboard', '#dashboard',
+    '#/overview', '#overview',
+    '#/tasks', '#tasks',
+    '#/projects', '#projects',
+    '#/reports', '#reports',
+    '#/finance', '#finance',
+    '#/crm', '#crm',
+    '#/academy', '#academy',
+    '#/affiliate', '#affiliate',
+    '#/archives', '#archives',
+    '#/analytics', '#analytics',
+    '#/system', '#system',
+    '#/integrations', '#integrations',
+    '#/client_portal', '#client_portal',
+    '#/client-portal', '#client-portal'
+  ];
+  return dashboardRoutes.some(r => hash === r || hash.startsWith(r + '/') || hash.startsWith(r + '?'));
+}
+
+function getViewFromHash() {
+  const hash = (window.location.hash || '').toLowerCase().replace(/^#\/?/, '').split('/')[0].split('?')[0];
+  const validViews = [
+    'overview', 'dashboard', 'tasks', 'reports', 'archives',
+    'projects', 'crm', 'finance', 'academy', 'affiliate',
+    'integrations', 'analytics', 'system', 'client_portal', 'client-portal'
+  ];
+  if (hash === 'dashboard') return 'overview';
+  if (hash === 'client_portal' || hash === 'client-portal') return 'client-portal';
+  if (validViews.includes(hash)) return hash;
+  return 'overview';
 }
 
 function checkAuthAndRender() {
@@ -7173,33 +7228,57 @@ function checkAuthAndRender() {
   const mobileNav = document.querySelector('.mobile-bottom-nav');
   const publicHome = document.getElementById('public-homepage');
 
-  const isAuthenticated = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
+  const isAuthenticated = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
+  const isDash = isDashboardRoute();
 
-  if (!isAuthenticated) {
+  // Pre-render auth form so modal is ready
+  const container = document.getElementById('auth-form-container');
+  if (!container || !container.querySelector('form')) {
+    renderAuthForm('login');
+  }
+
+  if (isDash) {
+    if (isAuthenticated) {
+      store.state.activeUserId = store.state.authSession.userId;
+      if (publicHome) publicHome.classList.add('hidden');
+      if (authScreen) authScreen.classList.add('hidden');
+      if (appLayout) appLayout.classList.remove('hidden');
+      if (topbarSimulator) topbarSimulator.classList.remove('hidden');
+      if (dynamicBanners) dynamicBanners.classList.remove('hidden');
+      if (mobileNav) mobileNav.classList.remove('hidden');
+
+      const targetView = getViewFromHash();
+      if (targetView && targetView !== currentView) {
+        currentView = targetView;
+      }
+
+      updateTopBanners();
+      renderActiveView();
+    } else {
+      // Trying to access dashboard without auth -> stay on homepage and open login modal
+      window.location.hash = '#/';
+      if (publicHome) publicHome.classList.remove('hidden');
+      if (appLayout) appLayout.classList.add('hidden');
+      if (topbarSimulator) topbarSimulator.classList.add('hidden');
+      if (dynamicBanners) dynamicBanners.classList.add('hidden');
+      if (mobileNav) mobileNav.classList.add('hidden');
+
+      updateHomepageCtaState();
+      openLoginModal();
+      showToast('Silakan login terlebih dahulu untuk mengakses Dashboard Studio.', 'info');
+    }
+  } else {
+    // Public Homepage (route / or section anchors like #tentang, #modul, #tim, #faq)
     if (publicHome) publicHome.classList.remove('hidden');
     if (authScreen) authScreen.classList.add('hidden');
     if (appLayout) appLayout.classList.add('hidden');
     if (topbarSimulator) topbarSimulator.classList.add('hidden');
     if (dynamicBanners) dynamicBanners.classList.add('hidden');
     if (mobileNav) mobileNav.classList.add('hidden');
-    
-    // Pre-render auth form so modal is ready
-    const container = document.getElementById('auth-form-container');
-    if (!container || !container.querySelector('form')) {
-      renderAuthForm('login');
-    }
-  } else {
-    store.state.activeUserId = store.state.authSession.userId;
-    if (publicHome) publicHome.classList.add('hidden');
-    if (authScreen) authScreen.classList.add('hidden');
-    if (appLayout) appLayout.classList.remove('hidden');
-    if (topbarSimulator) topbarSimulator.classList.remove('hidden');
-    if (dynamicBanners) dynamicBanners.classList.remove('hidden');
-    if (mobileNav) mobileNav.classList.remove('hidden');
 
-    updateTopBanners();
-    renderActiveView();
+    updateHomepageCtaState();
   }
+
   if (window.lucide) lucide.createIcons();
 }
 
@@ -8426,6 +8505,11 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuthAndRender();
 });
 
+// Browser History & Route Change Listener
+window.addEventListener('hashchange', () => {
+  checkAuthAndRender();
+});
+
 // Automatic Cross-Device Cloud Sync Listeners
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && typeof store !== 'undefined' && store.syncFromCloud) {
@@ -8465,16 +8549,52 @@ function handleAuthBackdropClick(event) {
   }
 }
 
+function updateHomepageCtaState() {
+  const isAuth = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
+  const currentUser = isAuth ? store.getUser(store.state.authSession.userId) : null;
+  const firstName = currentUser ? (currentUser.name || '').split(' ')[0] : 'Tim';
+
+  const navBtnText = document.getElementById('btn-home-auth-text');
+  const heroBtnText = document.getElementById('home-hero-cta-text');
+  const bottomBtnText = document.getElementById('home-bottom-cta-text');
+  const sessionBadge = document.getElementById('home-session-badge');
+
+  if (navBtnText) {
+    navBtnText.textContent = isAuth ? `Ke Dashboard (${firstName})` : 'Masuk Dashboard';
+  }
+  if (heroBtnText) {
+    heroBtnText.textContent = isAuth ? `Buka Dashboard Studio (${firstName})` : 'Masuk ke Dashboard Tim';
+  }
+  if (bottomBtnText) {
+    bottomBtnText.textContent = isAuth ? `Buka Dashboard Studio (${firstName})` : 'Masuk ke /dashboard';
+  }
+
+  if (sessionBadge) {
+    if (isAuth && currentUser) {
+      sessionBadge.classList.remove('hidden');
+      sessionBadge.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Sesi Aktif: <strong>${currentUser.name}</strong> (${currentUser.roleLabel || 'Co-Founder'})</span>
+      `;
+    } else {
+      sessionBadge.classList.add('hidden');
+    }
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
 function handleHomeAuthClick() {
-  const isAuth = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
+  const isAuth = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
   if (isAuth) {
-    returnToDashboard();
+    returnToDashboard('overview');
   } else {
     openLoginModal();
   }
 }
 
 function viewPublicHomepage() {
+  window.location.hash = '#/';
   const home = document.getElementById('public-homepage');
   const app = document.getElementById('app-layout-wrapper');
   const topbar = document.getElementById('topbar-simulator');
@@ -8487,27 +8607,18 @@ function viewPublicHomepage() {
   if (banners) banners.classList.add('hidden');
   if (auth) auth.classList.add('hidden');
 
-  // Update CTA text on public home if user is logged in
-  const isAuth = store.state.authSession && store.state.authSession.isAuthenticated;
-  const ctaBtn = document.getElementById('home-hero-cta-btn');
-  const navBtn = document.getElementById('home-nav-cta-btn');
-  if (ctaBtn) {
-    ctaBtn.innerHTML = isAuth ? '<span>Kembali ke Dashboard Studio</span><i data-lucide="arrow-right" class="w-4 h-4"></i>' : '<span>Masuk ke Dashboard Co-Founder</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
-  }
-  if (navBtn) {
-    navBtn.innerHTML = isAuth ? '<i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-emerald-400"></i><span>Ke Dashboard</span>' : '<i data-lucide="log-in" class="w-3.5 h-3.5 text-emerald-400"></i><span>Masuk Studio</span>';
-  }
-
+  updateHomepageCtaState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.lucide) lucide.createIcons();
 }
 
-function returnToDashboard() {
-  const isAuth = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
+function returnToDashboard(viewName = 'overview') {
+  const isAuth = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
   if (!isAuth) {
     openLoginModal();
     return;
   }
+  window.location.hash = '#/' + (viewName === 'overview' ? 'dashboard' : viewName);
   const home = document.getElementById('public-homepage');
   const app = document.getElementById('app-layout-wrapper');
   const topbar = document.getElementById('topbar-simulator');
@@ -8520,6 +8631,8 @@ function returnToDashboard() {
   if (topbar) topbar.classList.remove('hidden');
   if (banners) banners.classList.remove('hidden');
 
+  currentView = viewName;
+  updateTopBanners();
   renderActiveView();
   if (window.lucide) lucide.createIcons();
 }

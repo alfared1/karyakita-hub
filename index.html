@@ -267,10 +267,13 @@
       
       <!-- Hero Left (7 Kolom) -->
       <div class="lg:col-span-7 space-y-5">
-        <span class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#EEF5F2] dark:bg-[#162620] text-[#0F4C3A] dark:text-emerald-300 border border-[#CFE0D8] dark:border-[#23362F]">
-          <i data-lucide="sparkles" class="h-3.5 w-3.5 text-[#B45309] dark:text-[#F59E0B]"></i>
-          <span>INTERNAL OPERATING SYSTEM · 7 CO-FOUNDER</span>
-        </span>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#EEF5F2] dark:bg-[#162620] text-[#0F4C3A] dark:text-emerald-300 border border-[#CFE0D8] dark:border-[#23362F]">
+            <i data-lucide="sparkles" class="h-3.5 w-3.5 text-[#B45309] dark:text-[#F59E0B]"></i>
+            <span>INTERNAL OPERATING SYSTEM · 7 CO-FOUNDER</span>
+          </span>
+          <span id="home-session-badge" class="hidden inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800"></span>
+        </div>
 
         <h1 class="font-heading font-extrabold text-3xl sm:text-5xl leading-[1.15] tracking-tight text-gray-900 dark:text-white">
           Pusat Kendali Operasi, Keuangan Syariah, dan Kolaborasi <span class="text-[#0F4C3A] dark:text-[#10B981]">KaryaKita.</span>
@@ -283,10 +286,11 @@
         <div class="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="button"
+            id="home-hero-cta-btn"
             onclick="handleHomeAuthClick()"
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0F4C3A] hover:bg-[#1A6B52] dark:bg-[#10B981] dark:text-slate-950 text-white font-semibold text-sm transition-colors shadow-sm cursor-pointer"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0F4C3A] hover:bg-[#1A6B52] dark:bg-[#10B981] dark:text-slate-950 text-white font-semibold text-sm transition-colors shadow-sm cursor-pointer active:scale-95"
           >
-            <span>Masuk ke Dashboard Tim</span>
+            <span id="home-hero-cta-text">Masuk ke Dashboard Tim</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
           <button
@@ -634,10 +638,11 @@
         <div class="flex flex-wrap gap-3 shrink-0 relative z-10">
           <button
             type="button"
+            id="home-bottom-cta-btn"
             onclick="handleHomeAuthClick()"
-            class="px-5 py-3 rounded-xl bg-white text-[#0F4C3A] font-semibold text-sm hover:bg-emerald-50 inline-flex items-center gap-2 transition shadow-sm cursor-pointer"
+            class="px-5 py-3 rounded-xl bg-white text-[#0F4C3A] font-semibold text-sm hover:bg-emerald-50 inline-flex items-center gap-2 transition shadow-sm cursor-pointer active:scale-95"
           >
-            <span>Masuk ke /dashboard</span>
+            <span id="home-bottom-cta-text">Masuk ke /dashboard</span>
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
@@ -1178,6 +1183,6 @@
   <div id="printable-content" class="hidden"></div>
 
   <!-- Application Logic -->
-  <script src="app.js?v=2.4"></script>
+  <script src="app.js?v=2.6"></script>
 </body>
 </html>
