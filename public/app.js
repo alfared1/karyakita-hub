@@ -51,6 +51,14 @@ const INITIAL_STATE = {
     graduationThresholdIdr: 3500000,
     qardhInitialTotalIdr: 0,
     qardhRepaidIdr: 0,
+    botConfig: {
+      reminderCheckinRabu: true,
+      warningH1Sla: true,
+      notifyDp50Verified: true,
+      quietHours2206: true,
+      telegramChatId: '',
+      webhookUrl: ''
+    }
   },
   users: {
     alfatih: {
@@ -218,6 +226,7 @@ class AppStore {
     this.state = this.loadState();
     this.listeners = [];
     this._syncTimeout = null;
+    this._dirtyKeys = new Set();
     this.isCloudSyncing = false;
     this.lastCloudSyncTime = null;
     this.syncFromCloud();
@@ -285,6 +294,8 @@ class AppStore {
         if (!parsed.geminiApiKey || parsed.geminiApiKey.length < 10) {
           parsed.geminiApiKey = localStorage.getItem('karyakita_gemini_api_key') || DEFAULT_GEMINI_KEY;
         }
+        if (!parsed.settings) parsed.settings = { ...INITIAL_STATE.settings };
+        if (!parsed.settings.botConfig) parsed.settings.botConfig = { ...INITIAL_STATE.settings.botConfig };
         return parsed;
       }
     } catch (e) {
@@ -293,7 +304,14 @@ class AppStore {
     return JSON.parse(JSON.stringify(INITIAL_STATE));
   }
 
-  saveState(skipCloud = false) {
+  markDirty(...keys) {
+    keys.flat().filter(Boolean).forEach(k => this._dirtyKeys.add(k));
+  }
+
+  saveState(skipCloud = false, dirtyKeys = null, immediate = false) {
+    if (dirtyKeys) {
+      this.markDirty(dirtyKeys);
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     } catch (e) {
@@ -302,8 +320,180 @@ class AppStore {
     this.notify();
 
     if (!skipCloud) {
-      this.syncToCloudDebounced();
+      if (immediate) {
+        this.syncToCloud(dirtyKeys);
+      } else {
+        this.syncToCloudDebounced();
+      }
     }
+  }
+
+  _toEpochMs(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    const parsed = Date.parse(val);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  applyCloudState(cloudState, preserveLocalKeys = []) {
+    if (!cloudState || typeof cloudState !== 'object') return;
+
+    const currentSession = this.state.authSession;
+    const currentActiveUserId = this.state.activeUserId;
+    const skipMerge = new Set(preserveLocalKeys);
+
+    // Timestamp-aware array merge preserving remote unshift order cleanly
+    const mergeListByKey = (localList, remoteList, keyFn = (item) => item?.id) => {
+      const localMap = new Map();
+      if (Array.isArray(localList)) {
+        localList.forEach(item => {
+          const k = keyFn(item);
+          if (k) localMap.set(k, item);
+        });
+      }
+      const resultMap = new Map();
+      const orderedKeys = [];
+      const seen = new Set();
+
+      if (Array.isArray(remoteList)) {
+        remoteList.forEach(remoteItem => {
+          const k = keyFn(remoteItem);
+          if (!k) return;
+          const localItem = localMap.get(k);
+          let merged = remoteItem;
+          if (localItem) {
+            const locTs = this._toEpochMs(localItem._updatedAt);
+            const remTs = this._toEpochMs(remoteItem._updatedAt);
+            if (locTs > remTs) {
+              merged = { ...remoteItem, ...localItem };
+            } else {
+              merged = { ...localItem, ...remoteItem };
+            }
+          }
+          resultMap.set(k, merged);
+          if (!seen.has(k)) {
+            seen.add(k);
+            orderedKeys.push(k);
+          }
+        });
+      }
+
+      if (Array.isArray(localList)) {
+        localList.forEach(localItem => {
+          const k = keyFn(localItem);
+          if (k && !seen.has(k)) {
+            seen.add(k);
+            orderedKeys.push(k);
+            resultMap.set(k, localItem);
+          }
+        });
+      }
+
+      return orderedKeys.map(k => resultMap.get(k));
+    };
+
+    // Merge users respecting newer passwordChangedAt/_updatedAt
+    if (cloudState.users && !skipMerge.has('users')) {
+      Object.keys(cloudState.users).forEach(uid => {
+        const remU = cloudState.users[uid];
+        const locU = this.state.users[uid];
+        if (!locU) {
+          this.state.users[uid] = remU;
+        } else {
+          const locTs = Math.max(this._toEpochMs(locU.passwordChangedAt), this._toEpochMs(locU._updatedAt));
+          const remTs = Math.max(this._toEpochMs(remU.passwordChangedAt), this._toEpochMs(remU._updatedAt));
+          this.state.users[uid] = remTs >= locTs ? { ...locU, ...remU } : { ...remU, ...locU };
+        }
+      });
+    }
+
+    if (Array.isArray(cloudState.tasks) && !skipMerge.has('tasks')) this.state.tasks = mergeListByKey(this.state.tasks, cloudState.tasks);
+    if (Array.isArray(cloudState.projects) && !skipMerge.has('projects')) this.state.projects = mergeListByKey(this.state.projects, cloudState.projects);
+    if (Array.isArray(cloudState.crmLeads) && !skipMerge.has('crmLeads')) this.state.crmLeads = mergeListByKey(this.state.crmLeads, cloudState.crmLeads);
+    if (Array.isArray(cloudState.cashflow) && !skipMerge.has('cashflow')) this.state.cashflow = mergeListByKey(this.state.cashflow, cloudState.cashflow);
+    if (Array.isArray(cloudState.academyBatches) && !skipMerge.has('academyBatches')) this.state.academyBatches = mergeListByKey(this.state.academyBatches, cloudState.academyBatches);
+    if (Array.isArray(cloudState.affiliateContents) && !skipMerge.has('affiliateContents')) this.state.affiliateContents = mergeListByKey(this.state.affiliateContents, cloudState.affiliateContents);
+    if (Array.isArray(cloudState.affiliateCommissions) && !skipMerge.has('affiliateCommissions')) this.state.affiliateCommissions = mergeListByKey(this.state.affiliateCommissions, cloudState.affiliateCommissions);
+    if (Array.isArray(cloudState.revisionTriage) && !skipMerge.has('revisionTriage')) this.state.revisionTriage = mergeListByKey(this.state.revisionTriage, cloudState.revisionTriage);
+    if (Array.isArray(cloudState.archives) && !skipMerge.has('archives')) this.state.archives = mergeListByKey(this.state.archives, cloudState.archives);
+    if (Array.isArray(cloudState.botLogs) && !skipMerge.has('botLogs')) {
+      this.state.botLogs = mergeListByKey(this.state.botLogs, cloudState.botLogs, b => b?.id || (b ? `${b.time}_${b.type}` : null)).slice(0, 50);
+    }
+    if (Array.isArray(cloudState.auditLogs)) {
+      this.state.auditLogs = mergeListByKey(this.state.auditLogs, cloudState.auditLogs, a => a?.id || (a ? `${a.timestamp}_${a.action}` : null)).slice(0, 200);
+    }
+
+    if (Array.isArray(cloudState.checkins) && !skipMerge.has('checkins')) {
+      this.state.checkins = mergeListByKey(
+        this.state.checkins,
+        cloudState.checkins,
+        c => (c && c.userId) ? `${c.userId}_sprint_${c.sprintNumber || 1}` : null
+      );
+    }
+
+    if (Array.isArray(cloudState.syuraMinutes) && !skipMerge.has('syuraMinutes')) {
+      this.state.syuraMinutes = mergeListByKey(this.state.syuraMinutes, cloudState.syuraMinutes);
+    }
+
+    if (cloudState.settings && !skipMerge.has('settings')) {
+      this.state.settings = {
+        ...this.state.settings,
+        ...cloudState.settings,
+        botConfig: {
+          ...((this.state.settings && this.state.settings.botConfig) || {}),
+          ...(cloudState.settings.botConfig || {})
+        }
+      };
+    }
+
+    if (cloudState.currentSprint) {
+      this.state.currentSprint = Math.max(this.state.currentSprint || 1, cloudState.currentSprint || 1);
+    }
+
+    if (cloudState.syirkahPeriod && !skipMerge.has('syirkahPeriod')) {
+      const locP = this.state.syirkahPeriod || { status: 'DRAFT', reviewEndsAt: null, approvals: {} };
+      const remP = cloudState.syirkahPeriod;
+      if (this._toEpochMs(locP._updatedAt) > this._toEpochMs(remP._updatedAt)) {
+        this.state.syirkahPeriod = locP;
+      } else {
+        this.state.syirkahPeriod = {
+          ...locP,
+          ...remP,
+          approvals: {
+            ...(locP.approvals || {}),
+            ...(remP.approvals || {})
+          }
+        };
+      }
+    }
+
+    if (cloudState.geminiChatSessions && !skipMerge.has('geminiChatSessions')) {
+      if (!this.state.geminiChatSessions) this.state.geminiChatSessions = {};
+      Object.keys(cloudState.geminiChatSessions).forEach(uid => {
+        const remList = cloudState.geminiChatSessions[uid];
+        if (Array.isArray(remList)) {
+          if (uid === currentActiveUserId && Array.isArray(this.state.geminiChatSessions[uid]) && this.state.geminiChatSessions[uid].length > 0) {
+            this.state.geminiChatSessions[uid] = mergeListByKey(this.state.geminiChatSessions[uid], remList, s => s?.id).slice(0, 30);
+          } else {
+            this.state.geminiChatSessions[uid] = remList.slice(0, 30);
+          }
+        }
+      });
+    }
+
+    if (cloudState.geminiModel && !skipMerge.has('geminiModel')) {
+      this.state.geminiModel = cloudState.geminiModel;
+    }
+
+    // Preserve local session if logged in on this device
+    if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
+      this.state.authSession = currentSession;
+      this.state.activeUserId = currentActiveUserId;
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    } catch (e) {}
   }
 
   async syncFromCloud() {
@@ -315,122 +505,84 @@ class AppStore {
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
       if (!res.ok) {
-        this.isCloudSyncing = false;
-        return;
+        return false;
       }
       const json = await res.json();
       if (json && json.success && json.data) {
-        const cloudState = json.data;
         const currentSession = this.state.authSession;
-        const currentActiveUserId = this.state.activeUserId;
-
-        // Merge users while respecting current auth session
-        if (cloudState.users) {
-          Object.keys(cloudState.users).forEach(uid => {
-            if (this.state.users[uid]) {
-              this.state.users[uid] = { ...this.state.users[uid], ...cloudState.users[uid] };
-            } else {
-              this.state.users[uid] = cloudState.users[uid];
-            }
-          });
-        }
-
-        // Merge global settings, tasks, cashflow, audit logs
-        if (cloudState.tasks) this.state.tasks = cloudState.tasks;
-        if (cloudState.cashflow) this.state.cashflow = cloudState.cashflow;
-        if (cloudState.cashTransactions) this.state.cashTransactions = cloudState.cashTransactions;
-        if (cloudState.projects) this.state.projects = cloudState.projects;
-        if (cloudState.crmLeads) this.state.crmLeads = cloudState.crmLeads;
-        if (cloudState.auditLogs) this.state.auditLogs = cloudState.auditLogs;
-        if (cloudState.settings) this.state.settings = { ...this.state.settings, ...cloudState.settings };
-        if (cloudState.archives) this.state.archives = cloudState.archives;
-        if (cloudState.currentSprint) this.state.currentSprint = cloudState.currentSprint;
-
-        // Smart merge checkins (Rhythm Rabu Malam) - Preserves all co-founder checkins across devices
-        if (Array.isArray(cloudState.checkins)) {
-          const checkinMap = new Map();
-          (this.state.checkins || []).forEach(c => {
-            if (c && c.userId) checkinMap.set(`${c.userId}_sprint_${c.sprintNumber || 1}`, c);
-          });
-          cloudState.checkins.forEach(c => {
-            if (c && c.userId) checkinMap.set(`${c.userId}_sprint_${c.sprintNumber || 1}`, c);
-          });
-          this.state.checkins = Array.from(checkinMap.values());
-        }
-
-        // Smart merge syuraMinutes (Notulen Weekly Syura)
-        if (Array.isArray(cloudState.syuraMinutes)) {
-          const syuraMap = new Map();
-          (this.state.syuraMinutes || []).forEach(m => { if (m && m.id) syuraMap.set(m.id, m); });
-          cloudState.syuraMinutes.forEach(m => { if (m && m.id) syuraMap.set(m.id, m); });
-          this.state.syuraMinutes = Array.from(syuraMap.values());
-        }
-
-        // Merge remaining modules
-        if (Array.isArray(cloudState.academyBatches)) this.state.academyBatches = cloudState.academyBatches;
-        if (Array.isArray(cloudState.affiliateContents)) this.state.affiliateContents = cloudState.affiliateContents;
-        if (Array.isArray(cloudState.affiliateCommissions)) this.state.affiliateCommissions = cloudState.affiliateCommissions;
-        if (Array.isArray(cloudState.revisionTriage)) this.state.revisionTriage = cloudState.revisionTriage;
-        if (cloudState.syirkahPeriod) this.state.syirkahPeriod = { ...this.state.syirkahPeriod, ...cloudState.syirkahPeriod };
-
-        // Preserve local session if already logged in on this device
-        if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
-          this.state.authSession = currentSession;
-          this.state.activeUserId = currentActiveUserId;
-        }
-
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-        } catch (e) {}
+        const pendingDirty = Array.from(this._dirtyKeys || []);
+        this.applyCloudState(json.data, pendingDirty);
 
         this.lastCloudSyncTime = new Date();
         this.notify();
 
-        // Only re-render full views if already authenticated AND currently inside dashboard
-        if (currentSession && currentSession.isAuthenticated && currentSession.userId) {
-          const appLayout = document.getElementById('app-layout-wrapper');
-          const isAppVisible = appLayout && !appLayout.classList.contains('hidden');
-          if (isAppVisible) {
-            if (typeof renderActiveView === 'function') {
-              renderActiveView();
-            }
-          } else {
-            // If on homepage, just update the CTA buttons
-            if (typeof updateHomepageCtaState === 'function') {
-              updateHomepageCtaState();
-            }
-          }
+        const appLayout = document.getElementById('app-layout-wrapper');
+        const isAppVisible = appLayout && !appLayout.classList.contains('hidden');
+        const isAuthenticated = !!(currentSession && currentSession.isAuthenticated && currentSession.userId);
+        const isPublicClientPortal = typeof currentView !== 'undefined' && currentView === 'client-portal';
+
+        if (isAppVisible && (isAuthenticated || isPublicClientPortal)) {
+          if (typeof updateTopBanners === 'function' && isAuthenticated) updateTopBanners();
+          if (typeof renderActiveView === 'function') renderActiveView();
+        } else if (typeof updateHomepageCtaState === 'function') {
+          updateHomepageCtaState();
         }
         console.log('✅ Cloud Neon Sync: State studio otomatis tersinkronisasi antar-perangkat!');
+        return true;
       } else if (json && json.success && !json.data) {
         // Cloud is empty on first setup, seed it with initial state
-        this.syncToCloud();
+        await this.syncToCloud(['*']);
+        return true;
       }
     } catch (err) {
       console.warn('Cloud sync offline / local fallback:', err.message);
     } finally {
       this.isCloudSyncing = false;
     }
+    return false;
   }
 
   syncToCloudDebounced() {
     if (this._syncTimeout) clearTimeout(this._syncTimeout);
     this._syncTimeout = setTimeout(() => {
       this.syncToCloud();
-    }, 1200);
+    }, 350);
   }
 
-  async syncToCloud() {
+  async syncToCloud(explicitKeys = null) {
+    const keys = explicitKeys
+      ? (Array.isArray(explicitKeys) ? explicitKeys : [explicitKeys])
+      : Array.from(this._dirtyKeys || []);
+
+    keys.forEach(k => this._dirtyKeys.delete(k));
+
     try {
-      await fetch('/api/sync', {
+      const payload = {
+        ...this.state,
+        _syncMeta: {
+          dirtyKeys: keys.length > 0 ? keys : ['*'],
+          actorUserId: this.state.activeUserId,
+          sentAt: Date.now()
+        }
+      };
+
+      const res = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.state)
+        body: JSON.stringify(payload)
       });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      if (json && json.success && json.data) {
+        this.applyCloudState(json.data, Array.from(this._dirtyKeys || []));
+      }
       this.lastCloudSyncTime = new Date();
       console.log('☁️ Cloud Neon Sync: Perubahan studio tersimpan ke cloud.');
+      return true;
     } catch (err) {
+      keys.forEach(k => this._dirtyKeys.add(k));
       console.warn('Gagal sinkronisasi ke cloud:', err.message);
+      return false;
     }
   }
 
@@ -485,8 +637,10 @@ class AppStore {
     const completedTasks = this.state.tasks.filter(t => t.assigneeId === userId && t.status === 'DONE');
     const taskPoints = completedTasks.reduce((sum, t) => sum + Number(t.contributionWeight || (t.hoursEstimate >= 3 ? 3 : t.hoursEstimate >= 2 ? 2 : 1)), 0);
 
-    // 2. Acquisition & CRM Points (5 pts per won deal)
-    const wonLeads = this.state.crmLeads.filter(l => l.ownerId === userId && l.stage === 'WON');
+    // 2. Acquisition & CRM Points (5 pts per won/converted deal)
+    const wonLeads = (this.state.crmLeads || []).filter(
+      l => (l.ownerId === userId || l.picId === userId) && (l.stage === 'WON' || l.stage === 'CONVERTED')
+    );
     const crmPoints = wonLeads.length * 5;
 
     // 3. Governance, Ops & Finance Points (3 pts per timely check-in + audit activities)
@@ -641,8 +795,9 @@ function openCapacityModal() {
 function setCapacityStatus(newStatus) {
   const user = store.getCurrentUser();
   user.capacityStatus = newStatus;
+  user._updatedAt = Date.now();
   store.logAudit('CAPACITY_STATUS_UPDATED', user.name, 'Status kapasitas diperbarui menjadi ' + CAPACITY_META[newStatus].label);
-  store.saveState();
+  store.saveState(false, ['users', 'auditLogs'], true);
   closeModal();
   updateTopBanners();
   showToast('Status kapasitas Anda diperbarui: ' + CAPACITY_META[newStatus].label);
@@ -743,8 +898,9 @@ function initSidebarCollapse() {
 }
 
 function navigateTo(viewName) {
+  const isClientPortal = viewName === 'client-portal' || viewName === 'client_portal';
   const isAuthenticated = store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId;
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isClientPortal) {
     if (typeof checkAuthAndRender === 'function') checkAuthAndRender();
     return;
   }
@@ -904,9 +1060,9 @@ function renderOverviewView() {
   const activeBatchesCount = store.state.academyBatches.length;
 
   // Payment Gate Maker-Checker Counts
-  const waitingDpProjects = activeProjects.filter(p => !p.dpPaid || p.paymentStatus === 'WAITING_DP').length;
-  const inProgressProjects = activeProjects.filter(p => p.dpPaid && p.paymentStatus !== 'PAID_100').length;
-  const paid100Projects = activeProjects.filter(p => p.paymentStatus === 'PAID_100').length;
+  const waitingDpProjects = activeProjects.filter(p => p.paymentGateStatus === 'LOCKED_WAITING_DP' || (!p.paymentGateStatus && !p.dpPaid)).length;
+  const inProgressProjects = activeProjects.filter(p => p.paymentGateStatus === 'DP_50_VERIFIED').length;
+  const paid100Projects = activeProjects.filter(p => p.paymentGateStatus === 'PAID_100_VERIFIED').length;
 
   const blockedTasks = tasks.filter(t => t.isBlocked);
   const myTasks = tasks.filter(t => t.assigneeId === user.id);
@@ -1038,8 +1194,8 @@ function renderOverviewView() {
               <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold tabular-nums" title="Menunggu DP 50%">
                 ${waitingDpProjects} Menunggu DP
               </span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold tabular-nums" title="DP 50% Verified">
-                ${inProgressProjects} Produksi
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold tabular-nums" title="DP 50% Verified / Lunas 100%">
+                ${inProgressProjects + paid100Projects} Produksi
               </span>
             </div>
             <span class="text-[11px] text-sky-700 dark:text-sky-400 font-semibold mt-1.5 block">Guardrail DP 50% Aktif →</span>
@@ -1724,6 +1880,7 @@ function saveTaskModalChanges(taskId) {
   task.workProofUrl = proofUrl;
   task.isBlocked = isBlocked;
   task.blockedReason = isBlocked ? blockedReason : null;
+  task._updatedAt = Date.now();
 
   // Auto-Archive when moving to DONE
   if (targetStatus === 'DONE' && oldStatus !== 'DONE' && proofUrl) {
@@ -1733,20 +1890,24 @@ function saveTaskModalChanges(taskId) {
       quarter: '2026-Q1',
       category: 'Proyek Klien B2B',
       unitId: task.unitId,
+      projectId: task.projectId || null,
       uploadedById: store.state.activeUserId,
       storageType: 'EXTERNAL_LINK',
       url: proofUrl,
+      visibility: 'INTERNAL_TEAM',
       confidentiality: 'INTERNAL_TIM',
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0],
+      _updatedAt: Date.now()
     };
     store.state.archives.unshift(newArchive);
     store.logAudit('TASK_AUTO_ARCHIVED', 'Task: ' + task.title, 'Bukti kerja otomatis masuk ke /archives.');
   }
 
   store.logAudit('TASK_STATUS_UPDATED', 'Task: ' + task.title, `Status diubah dari ${oldStatus} ke ${targetStatus}`);
-  store.saveState();
+  store.saveState(false, ['tasks', 'archives', 'auditLogs'], true);
   closeModal();
   showToast('Perubahan tugas berhasil disimpan!');
+  renderActiveView();
 }
 
 function quickUpdateTaskStatus(taskId, newStatus) {
@@ -1760,9 +1921,11 @@ function quickUpdateTaskStatus(taskId, newStatus) {
   }
 
   task.status = newStatus;
+  task._updatedAt = Date.now();
   store.logAudit('QUICK_TASK_STATUS', 'Task: ' + task.title, 'Status cepat diubah ke ' + newStatus);
-  store.saveState();
+  store.saveState(false, ['tasks', 'auditLogs'], true);
   showToast(`Status tugas ${task.title} diubah ke ${newStatus}`);
+  renderActiveView();
 }
 
 function openCreateTaskModal() {
@@ -1881,14 +2044,17 @@ function submitNewTask() {
     dueDate: dueDate,
     dodChecklist: dodChecklist,
     workProofUrl: '',
-    isClientVisible: true
+    isClientVisible: true,
+    _updatedAt: Date.now()
   };
 
   store.state.tasks.unshift(newTask);
   store.logAudit('TASK_CREATED', 'Task: ' + title, `Tugas dibuat untuk ${store.state.users[assigneeId]?.name}`);
-  store.saveState();
+  store.saveState(false, ['tasks', 'auditLogs'], true);
+  updateTopBanners();
   closeModal();
   showToast('Tugas baru berhasil dibuat!');
+  renderActiveView();
 }
 
 // ------------------------------------------------------------------------------
@@ -2211,6 +2377,7 @@ function submitAsyncCheckin() {
   }
 
   user.capacityStatus = capacity;
+  user._updatedAt = Date.now();
 
   const existingIdx = store.state.checkins.findIndex(c => c.userId === user.id && c.sprintNumber === store.state.currentSprint);
   const checkinData = {
@@ -2220,7 +2387,8 @@ function submitAsyncCheckin() {
     inProgressSummary: inprogress,
     blockerSummary: blocker || 'Aman, tidak ada kendala.',
     capacityNext: capacity,
-    submittedAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+    submittedAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+    _updatedAt: Date.now()
   };
 
   if (existingIdx >= 0) {
@@ -2230,8 +2398,7 @@ function submitAsyncCheckin() {
   }
 
   store.logAudit('CHECKIN_SUBMITTED', 'Check-In: ' + user.name, `Laporan Async Check-In berhasil dikirim (Kapasitas: ${CAPACITY_META[capacity].label}).`);
-  store.saveState();
-  store.syncToCloud(); // Immediate cloud sync to Neon
+  store.saveState(false, ['checkins', 'users', 'auditLogs'], true);
   updateTopBanners();
   showToast('Alhamdulillah! Laporan Async Check-In berhasil disimpan & tersinkronisasi ke Cloud.');
   renderActiveView();
@@ -2293,10 +2460,11 @@ function promoteSyuraItemToTask(itemId) {
   };
 
   item.promoted = true;
+  if (targetMinute) targetMinute._updatedAt = Date.now();
+  newTask._updatedAt = Date.now();
   store.state.tasks.unshift(newTask);
   store.logAudit('SYURA_PROMOTED_TASK', 'Action Item: ' + item.title, 'Didorong ke papan tugas Kanban.');
-  store.saveState();
-  store.syncToCloud(); // Immediate cloud sync to Neon
+  store.saveState(false, ['syuraMinutes', 'tasks', 'auditLogs'], true);
   showToast('Action item berhasil diubah menjadi kartu Kanban!');
   renderActiveView();
 }
@@ -2379,13 +2547,13 @@ function submitNewSyura() {
     moderator: moderator,
     attendees: Object.keys(store.state.users).filter(id => id !== 'client_guest'),
     decisions: decisions,
-    actionItems: actionItems
+    actionItems: actionItems,
+    _updatedAt: Date.now()
   };
 
   store.state.syuraMinutes.unshift(newMinute);
   store.logAudit('SYURA_RECORDED', 'Notulen: ' + title, 'Notulen Weekly Syura berhasil dicatat.');
-  store.saveState();
-  store.syncToCloud(); // Immediate cloud sync to Neon
+  store.saveState(false, ['syuraMinutes', 'auditLogs'], true);
   closeModal();
   showToast('Alhamdulillah! Notulen Weekly Syura berhasil disimpan & tersinkronisasi ke Cloud.');
   renderActiveView();
@@ -2610,6 +2778,7 @@ function submitNewArchive() {
     return;
   }
 
+  const storageType = document.querySelector('input[name="storage-mode"]:checked')?.value || 'EXTERNAL_LINK';
   const newArchive = {
     id: 'arc-' + Date.now(),
     title: title,
@@ -2617,17 +2786,18 @@ function submitNewArchive() {
     category: category,
     unitId: 'INTERNAL_OPS',
     uploadedById: store.state.activeUserId,
-    storageType: 'EXTERNAL_LINK',
+    storageType: storageType,
     url: url,
     visibility: visibility,
     confidentiality: visibility === 'NDA_RESTRICTED' ? 'NDA_KLIEN' : 'INTERNAL_TIM',
     linkVerified: true,
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    _updatedAt: Date.now()
   };
 
   store.state.archives.unshift(newArchive);
   store.logAudit('ARCHIVE_CREATED', 'Doc: ' + title, 'Dokumen baru diarsipkan dengan visibilitas ' + visibility);
-  store.saveState();
+  store.saveState(false, ['archives', 'auditLogs'], true);
   closeModal();
   showToast('Dokumen berhasil diarsipkan ke vault!');
   renderActiveView();
@@ -2700,7 +2870,7 @@ function renderProjectsView() {
           const isWaitingDp = p.paymentGateStatus === 'LOCKED_WAITING_DP';
           const isDp50 = p.paymentGateStatus === 'DP_50_VERIFIED';
           const isPaid100 = p.paymentGateStatus === 'PAID_100_VERIFIED';
-          const pendingRevs = store.state.revisionTriage.filter(r => r.projectId === p.id && r.triageStatus === 'PENDING_TRIAGE');
+          const pendingRevs = (store.state.revisionTriage || []).filter(r => r.projectId === p.id && (r.triageStatus || r.status) === 'PENDING_TRIAGE');
 
           return `
             <div class="card-surface p-5 space-y-4">
@@ -2746,8 +2916,8 @@ function renderProjectsView() {
                     ${pendingRevs.map(rev => `
                       <div class="p-2 rounded bg-white border border-amber-200 flex flex-col gap-1.5">
                         <div class="flex items-start justify-between gap-2">
-                          <p class="text-gray-800 font-semibold text-[11px]">"${rev.notes}"</p>
-                          <span class="text-[9px] text-gray-400 font-mono whitespace-nowrap">${rev.createdAt}</span>
+                          <p class="text-gray-800 font-semibold text-[11px]">"${escapeHtml(rev.notes || rev.note || '')}"</p>
+                          <span class="text-[9px] text-gray-400 font-mono whitespace-nowrap">${rev.createdAt || (rev.submittedAt ? new Date(rev.submittedAt).toLocaleDateString('id-ID') : '')}</span>
                         </div>
                         <div class="flex items-center justify-end gap-1.5 pt-1 border-t border-gray-100">
                           <button onclick="acceptRevisionTriage('${rev.id}')" class="px-2 py-0.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-semibold flex items-center gap-1">
@@ -2766,11 +2936,11 @@ function renderProjectsView() {
               <!-- Payment Gate Action & Client Portal Token -->
               <div class="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div class="flex items-center gap-1.5">
-                  <a href="#client-portal" onclick="navigateTo('client-portal')" class="text-xs text-brand-emerald hover:underline flex items-center gap-1 font-semibold">
+                  <a href="#/client-portal?token=${p.clientPortalToken}" onclick="event.preventDefault(); openClientPortalByToken('${p.clientPortalToken}')" class="text-xs text-brand-emerald hover:underline flex items-center gap-1 font-semibold">
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                     <span>Portal Klien</span>
                   </a>
-                  <span class="text-[10px] bg-gray-100 px-1.5 py-0.2 rounded font-mono text-gray-600">${p.clientPortalToken}</span>
+                  <button type="button" onclick="copyClientPortalLink('${p.clientPortalToken}')" class="text-[10px] bg-gray-100 hover:bg-emerald-50 hover:text-brand-emerald px-1.5 py-0.5 rounded font-mono text-gray-600 transition cursor-pointer" title="Salin tautan khusus Portal Klien ini">${p.clientPortalToken} • Salin</button>
                 </div>
 
                 <div>
@@ -2812,13 +2982,17 @@ function acceptRevisionTriage(triageId) {
   if (!project) return;
 
   project.revisionUsed = (project.revisionUsed || 0) + 1;
+  project._updatedAt = Date.now();
   rev.triageStatus = 'ACCEPTED_IN_QUOTA';
+  rev.status = 'ACCEPTED_IN_QUOTA';
   rev.reviewedById = store.state.activeUserId;
+  rev._updatedAt = Date.now();
 
+  const revNoteText = rev.notes || rev.note || 'Permintaan revisi klien';
   const newTask = {
     id: 'task-' + Date.now(),
     title: 'Revisi Klien: ' + project.clientName,
-    description: rev.notes,
+    description: revNoteText,
     unitId: project.unitId,
     projectId: project.id,
     assigneeId: project.picId,
@@ -2831,11 +3005,12 @@ function acceptRevisionTriage(triageId) {
     dueDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
     dodChecklist: [{ label: 'Tuntaskan revisi klien terverifikasi', checked: false }],
     workProofUrl: '',
-    isClientVisible: true
+    isClientVisible: true,
+    _updatedAt: Date.now()
   };
   store.state.tasks.unshift(newTask);
   store.logAudit('REVISION_TRIAGE_ACCEPTED', 'Project: ' + project.title, 'Catatan revisi diterima; kartu tugas resmi dibuat di Papan Tugas.');
-  store.saveState();
+  store.saveState(false, ['projects', 'revisionTriage', 'tasks', 'auditLogs'], true);
   showToast('Revisi diterima! Kuota dipotong 1x dan kartu tugas resmi telah dibuat di Papan Tugas.');
   renderActiveView();
 }
@@ -2847,13 +3022,16 @@ function rejectRevisionAddendum(triageId) {
   if (!project) return;
 
   rev.triageStatus = 'OUT_OF_SCOPE_ADDENDUM';
+  rev.status = 'OUT_OF_SCOPE_ADDENDUM';
   rev.reviewedById = store.state.activeUserId;
+  rev._updatedAt = Date.now();
 
-  const waText = `Yth. ${project.clientName}, terima kasih atas catatan yang dikirimkan. Setelah ditinjau oleh PM KaryaKita, permintaan "${rev.notes}" berada di luar ruang lingkup (scope) kontrak awal. Kami siap mengakomodasi melalui penambahan Addendum Kerja. Silakan konfirmasi untuk penawaran addendum ini.`;
+  const revNoteText = rev.notes || rev.note || '';
+  const waText = `Yth. ${project.clientName}, terima kasih atas catatan yang dikirimkan. Setelah ditinjau oleh PM KaryaKita, permintaan "${revNoteText}" berada di luar ruang lingkup (scope) kontrak awal. Kami siap mengakomodasi melalui penambahan Addendum Kerja. Silakan konfirmasi untuk penawaran addendum ini.`;
   navigator.clipboard?.writeText(waText);
 
   store.logAudit('REVISION_TRIAGE_OUT_OF_SCOPE', 'Project: ' + project.title, 'Revisi ditandai di luar scope; draf addendum disiapkan.');
-  store.saveState();
+  store.saveState(false, ['revisionTriage', 'auditLogs'], true);
   showToast('Revisi ditandai di luar scope! Draf WhatsApp addendum telah disalin ke clipboard.');
   renderActiveView();
 }
@@ -2919,18 +3097,22 @@ function submitVerifyDp(projectId) {
   project.dpVerifiedById = store.state.activeUserId;
   project.dpVerifiedAt = date;
   project.dpProofUrl = proof;
+  project._updatedAt = Date.now();
 
-  // Auto record to cashflow ledger!
+  // Auto record to cashflow ledger with projectId & unitId!
   const dpAmount = project.contractValueIdr / 2;
   const cashEntry = {
     id: 'cf-' + Date.now(),
     date: date,
     type: 'INCOME',
+    unitId: project.unitId,
+    projectId: project.id,
     category: store.state.units[project.unitId]?.name || 'Proyek B2B',
     amountIdr: dpAmount,
     description: `DP 50% Kontrak Proyek ${project.title} (${project.clientName})`,
     proofUrl: proof,
-    createdById: store.state.activeUserId
+    createdById: store.state.activeUserId,
+    _updatedAt: Date.now()
   };
   store.state.cashflow.unshift(cashEntry);
 
@@ -2942,7 +3124,13 @@ function submitVerifyDp(projectId) {
     `DP 50% sebesar Rp${dpAmount.toLocaleString('id-ID')} terverifikasi${isDelegation ? ' (melalui Delegasi CFO saat Exam Mode)' : ''}.`
   );
 
-  store.saveState();
+  store.saveState(false, ['projects', 'cashflow', 'auditLogs'], true);
+  if (store.state.settings?.botConfig?.notifyDp50Verified !== false) {
+    dispatchBotNotification(
+      'Notifikasi Verifikasi DP 50%',
+      `DP 50% proyek ${project.title} (${project.clientName}) senilai Rp${dpAmount.toLocaleString('id-ID')} resmi terverifikasi oleh ${actor.name}. Tugas eksekusi kini terbuka!`
+    );
+  }
   closeModal();
   showToast('Alhamdulillah! DP 50% berhasil diverifikasi. Kartu tugas eksekusi kini dapat dikerjakan!');
   renderActiveView();
@@ -2960,20 +3148,24 @@ function openVerifyFullModal(projectId) {
 
   if (confirm(`Apakah Anda yakin memverifikasi Pelunasan 100% untuk ${project.title}?`)) {
     project.paymentGateStatus = 'PAID_100_VERIFIED';
+    project._updatedAt = Date.now();
     const finalAmount = project.contractValueIdr / 2;
     const cashEntry = {
       id: 'cf-' + Date.now(),
       date: new Date().toISOString().split('T')[0],
       type: 'INCOME',
+      unitId: project.unitId,
+      projectId: project.id,
       category: store.state.units[project.unitId]?.name || 'Proyek B2B',
       amountIdr: finalAmount,
       description: `Pelunasan 50% Final Proyek ${project.title}`,
       proofUrl: project.dpProofUrl,
-      createdById: store.state.activeUserId
+      createdById: store.state.activeUserId,
+      _updatedAt: Date.now()
     };
     store.state.cashflow.unshift(cashEntry);
     store.logAudit('PAYMENT_GATE_FULL_VERIFIED', 'Project: ' + project.title, `Pelunasan 100% selesai.`);
-    store.saveState();
+    store.saveState(false, ['projects', 'cashflow', 'auditLogs'], true);
     showToast('Pelunasan 100% berhasil diverifikasi!');
     renderActiveView();
   }
@@ -3068,6 +3260,7 @@ function submitNewProject() {
     unitId: unitId,
     contractValueIdr: contractValue,
     picId: picId,
+    createdById: store.state.activeUserId,
     paymentGateStatus: 'LOCKED_WAITING_DP', // Guard by default!
     dpVerifiedById: null,
     dpVerifiedAt: null,
@@ -3075,12 +3268,13 @@ function submitNewProject() {
     slaDeadline: sla,
     clientPortalToken: token,
     revisionQuota: 3,
-    revisionUsed: 0
+    revisionUsed: 0,
+    _updatedAt: Date.now()
   };
 
   store.state.projects.unshift(newProj);
   store.logAudit('PROJECT_CREATED', 'Project: ' + title, 'Proyek baru berstatus LOCKED_WAITING_DP.');
-  store.saveState();
+  store.saveState(false, ['projects', 'auditLogs'], true);
   closeModal();
   showToast('Proyek baru berhasil dibuat! Status terkunci menunggu verifikasi DP 50% oleh Novita (CFO).');
   renderActiveView();
@@ -3152,6 +3346,12 @@ function renderCrmView() {
                         </span>
                       </div>
 
+                      <div class="pt-1.5 flex items-center gap-1">
+                        <select onchange="updateLeadStage('${l.id}', this.value)" class="flex-1 text-[10px] border border-gray-200 rounded px-1.5 py-1 bg-gray-50 font-semibold text-gray-700" aria-label="Ubah tahap prospek">
+                          ${stages.map(opt => `<option value="${opt.id}" ${l.stage === opt.id ? 'selected' : ''}>${opt.title}</option>`).join('')}
+                        </select>
+                        <button type="button" onclick="touchLeadFollowUp('${l.id}')" class="px-1.5 py-1 text-[10px] rounded border border-emerald-200 bg-emerald-50 text-brand-emerald hover:bg-emerald-100 font-semibold" title="Catat Follow-Up Hari Ini">FU</button>
+                      </div>
                       ${l.stage === 'WON' ? `
                         <button onclick="convertLeadToProject('${l.id}')" class="w-full mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-1 rounded transition flex items-center justify-center gap-1">
                           <span>Konversi ke Proyek →</span>
@@ -3241,15 +3441,17 @@ function submitNewLead() {
     targetUnitId: unitId,
     estimatedValueIdr: value,
     stage: 'LEAD_IN',
-    picId: 'ilham',
+    picId: store.state.activeUserId || 'ilham',
+    ownerId: store.state.activeUserId || 'ilham',
     contactName: contact || 'PIC Klien',
     contactPhone: phone || '-',
-    lastFollowUpDaysAgo: 0
+    lastFollowUpDaysAgo: 0,
+    _updatedAt: Date.now()
   };
 
   store.state.crmLeads.unshift(newLead);
   store.logAudit('CRM_LEAD_CREATED', 'Lead: ' + name, 'Lead baru masuk ke pipeline CRM.');
-  store.saveState();
+  store.saveState(false, ['crmLeads', 'auditLogs'], true);
   closeModal();
   showToast('Lead baru berhasil ditambahkan!');
   renderActiveView();
@@ -3265,23 +3467,51 @@ function convertLeadToProject(leadId) {
     clientName: lead.businessName,
     unitId: lead.targetUnitId,
     contractValueIdr: lead.estimatedValueIdr,
-    picId: lead.picId,
+    picId: lead.picId || lead.ownerId || 'ilham',
+    createdById: store.state.activeUserId,
     paymentGateStatus: 'LOCKED_WAITING_DP', // Guard!
     dpVerifiedById: null,
     dpVerifiedAt: null,
     dpProofUrl: null,
-    slaDeadline: '2026-04-30',
+    slaDeadline: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
     clientPortalToken: 'tok-' + lead.businessName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8),
     revisionQuota: 3,
-    revisionUsed: 0
+    revisionUsed: 0,
+    _updatedAt: Date.now()
   };
 
   store.state.projects.unshift(newProj);
-  store.state.crmLeads = store.state.crmLeads.filter(l => l.id !== leadId);
+  lead.stage = 'CONVERTED';
+  lead.convertedProjectId = newProj.id;
+  lead._updatedAt = Date.now();
   store.logAudit('CRM_CONVERTED_PROJECT', 'Project: ' + newProj.title, 'Lead dikonversi menjadi proyek terkunci DP.');
-  store.saveState();
+  store.saveState(false, ['projects', 'crmLeads', 'auditLogs'], true);
   showToast('1-Klik Berhasil! Proyek otomatis dibuat di /projects berstatus Menunggu DP 50%.');
   navigateTo('projects');
+}
+
+function updateLeadStage(leadId, newStage) {
+  const lead = store.state.crmLeads.find(l => l.id === leadId);
+  if (!lead) return;
+  const oldStage = lead.stage;
+  lead.stage = newStage;
+  lead.lastFollowUpDaysAgo = 0;
+  lead._updatedAt = Date.now();
+  store.logAudit('CRM_STAGE_UPDATED', 'Lead: ' + lead.businessName, `Tahap diubah dari ${oldStage} ke ${newStage}`);
+  store.saveState(false, ['crmLeads', 'auditLogs'], true);
+  showToast(`Prospek ${lead.businessName} dipindahkan ke ${newStage}!`);
+  renderActiveView();
+}
+
+function touchLeadFollowUp(leadId) {
+  const lead = store.state.crmLeads.find(l => l.id === leadId);
+  if (!lead) return;
+  lead.lastFollowUpDaysAgo = 0;
+  lead._updatedAt = Date.now();
+  store.logAudit('CRM_FOLLOWUP_LOGGED', 'Lead: ' + lead.businessName, 'Follow-up prospek dicatat hari ini.');
+  store.saveState(false, ['crmLeads', 'auditLogs'], true);
+  showToast(`Follow-up ${lead.businessName} berhasil dicatat!`);
+  renderActiveView();
 }
 
 // ------------------------------------------------------------------------------
@@ -3759,20 +3989,35 @@ function submitNewCashflow() {
     return;
   }
 
+  const catLower = category.toLowerCase();
+  const inferredUnitId = catLower.includes('design') || catLower.includes('lini 1') ? 'LINI_1_DESIGN'
+    : catLower.includes('web') || catLower.includes('lini 2') ? 'LINI_2_WEBTECH'
+    : catLower.includes('data') || catLower.includes('assist') || catLower.includes('lini 3') ? 'LINI_3_ASSIST_DATA'
+    : catLower.includes('media') || catLower.includes('afiliasi') || catLower.includes('affiliate') || catLower.includes('lini 4') ? 'LINI_4_MEDIA_AFFILIATE'
+    : catLower.includes('academy') || catLower.includes('lini 5') ? 'LINI_5_AI_ACADEMY'
+    : 'INTERNAL_OPS';
+
   const newEntry = {
     id: 'cf-' + Date.now(),
     date: new Date().toISOString().split('T')[0],
     type: type,
+    unitId: inferredUnitId,
     category: category,
     amountIdr: amount,
     description: desc,
     proofUrl: proof || '',
-    createdById: store.state.activeUserId
+    createdById: store.state.activeUserId,
+    _updatedAt: Date.now()
   };
 
   store.state.cashflow.unshift(newEntry);
+  if (type === 'QARDH_IN') {
+    store.state.settings.qardhInitialTotalIdr = Number(store.state.settings.qardhInitialTotalIdr || 0) + amount;
+  } else if (type === 'QARDH_REPAY') {
+    store.state.settings.qardhRepaidIdr = Number(store.state.settings.qardhRepaidIdr || 0) + amount;
+  }
   store.logAudit('CASHFLOW_ADDED', `${type}: Rp${amount.toLocaleString('id-ID')}`, desc);
-  store.saveState();
+  store.saveState(false, ['cashflow', 'settings', 'auditLogs'], true);
   closeModal();
   showToast('Transaksi kas berhasil dicatat!');
   renderActiveView();
@@ -3784,9 +4029,10 @@ function startMusyawarah48h() {
   store.state.syirkahPeriod.status = 'REVIEW_48H';
   store.state.syirkahPeriod.reviewEndsAt = endsAt;
   store.state.syirkahPeriod.approvals = {};
+  store.state.syirkahPeriod._updatedAt = Date.now();
   
   store.logAudit('SYIRKAH_REVIEW_OPENED', 'Musyawarah 48 Jam Dimulai', 'Jendela review dibuka hingga: ' + new Date(endsAt).toLocaleString('id-ID'));
-  store.saveState();
+  store.saveState(false, ['syirkahPeriod', 'auditLogs'], true);
   showToast('Fase Review & Musyawarah 48 Jam resmi dibuka untuk seluruh co-founder!');
   renderActiveView();
 }
@@ -3814,7 +4060,8 @@ function confirmSyirkahSignOff(decision) {
     store.logAudit('SYIRKAH_SIGNOFF_CONFIRMED', `Konfirmasi Taradhin oleh: ${user.name}`, 'Menyetujui perhitungan bagi hasil.');
     showToast('Alhamdulillah, konfirmasi persetujuan (taradhin) Anda berhasil dicatat!');
   }
-  store.saveState();
+  store.state.syirkahPeriod._updatedAt = Date.now();
+  store.saveState(false, ['syirkahPeriod', 'auditLogs'], true);
   renderActiveView();
 }
 
@@ -3836,8 +4083,9 @@ function lockSyirkahPeriod() {
   }
 
   store.state.syirkahPeriod.status = 'LOCKED';
+  store.state.syirkahPeriod._updatedAt = Date.now();
   store.logAudit('SYIRKAH_PERIOD_LOCKED', 'Syirkah Periode Resmi Terkunci', `Disetujui oleh ${approvedCount}/${activeCofounders.length} co-founder. Status terkunci resmi oleh CFO.`);
-  store.saveState();
+  store.saveState(false, ['syirkahPeriod', 'auditLogs'], true);
   showToast('Alhamdulillah! Periode penutupan buku resmi dikunci dan slip final diterbitkan.');
   renderActiveView();
 }
@@ -3989,7 +4237,7 @@ function renderAcademyView() {
             KaryaKita AI Academy (Lini 5 — Mesin Pendapatan Berulang)
           </h3>
           <p class="text-xs text-gray-500 mt-0.5">
-            Admin: Alfatih (Kepala AI) & Aywa (CRO). Workshop Publik Rp75.000 & Pelatihan Korporat B2B.
+            Admin: Alfatih (Kepala AI) & Nazwa (CRO). Workshop Publik Rp75.000 & Pelatihan Korporat B2B.
           </p>
         </div>
         <div class="flex items-center gap-2">
@@ -4169,15 +4417,17 @@ function submitNewBatch() {
     priceIdr: price,
     date: date,
     quota: quota,
+    picId: store.state.activeUserId || 'nazwa',
     registeredCount: 0,
     verifiedCount: 0,
     status: 'REGISTRATION_OPEN',
-    participants: []
+    participants: [],
+    _updatedAt: Date.now()
   };
 
   store.state.academyBatches.unshift(newBatch);
   store.logAudit('ACADEMY_BATCH_CREATED', 'Batch: ' + title, `Batch baru dibuat dengan kuota ${quota} peserta.`);
-  store.saveState();
+  store.saveState(false, ['academyBatches', 'auditLogs'], true);
   closeModal();
   showToast('Batch pelatihan AI berhasil dibuat!');
   renderActiveView();
@@ -4367,12 +4617,13 @@ function submitNewContent() {
     stage: stage,
     picId: store.state.activeUserId,
     postUrl: '',
-    targetProgram: target
+    targetProgram: target,
+    _updatedAt: Date.now()
   };
 
   store.state.affiliateContents.unshift(newC);
   store.logAudit('CONTENT_ADDED', 'Media: ' + title, `Ide konten ditambahkan untuk platform ${platform}`);
-  store.saveState();
+  store.saveState(false, ['affiliateContents', 'auditLogs'], true);
   closeModal();
   showToast('Ide konten baru berhasil ditambahkan!');
   renderActiveView();
@@ -4454,12 +4705,13 @@ function submitNewCommission() {
     clicks: clicks,
     conversions: conv,
     commissionIdr: amount,
-    status: status
+    status: status,
+    _updatedAt: Date.now()
   };
 
   store.state.affiliateCommissions.unshift(newCom);
   store.logAudit('COMMISSION_RECORDED', 'Afiliasi: ' + partner, `Komisi Rp${amount.toLocaleString('id-ID')} dicatat (${status})`);
-  store.saveState();
+  store.saveState(false, ['affiliateCommissions', 'auditLogs'], true);
   closeModal();
   showToast('Komisi afiliasi berhasil dicatat!');
   renderActiveView();
@@ -4469,34 +4721,45 @@ function submitNewCommission() {
 // VIEW 10: BOT WA / TELEGRAM / INTEGRATIONS (Tahap 2)
 // ------------------------------------------------------------------------------
 function renderIntegrationsView() {
+  const botConfig = (store.state.settings && store.state.settings.botConfig) || {
+    reminderCheckinRabu: true,
+    warningH1Sla: true,
+    notifyDp50Verified: true,
+    quietHours2206: true,
+    telegramChatId: '',
+    webhookUrl: ''
+  };
+  const hasChannel = Boolean((botConfig.telegramChatId || '').trim() || (botConfig.webhookUrl || '').trim());
+
   return `
     <div class="space-y-6">
       
       <!-- Connection Card -->
       <div class="card-surface p-5 bg-white space-y-3">
-        <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-brand-border pb-3">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
               <i data-lucide="bot" class="w-5 h-5"></i>
             </div>
             <div>
-              <h3 class="font-heading font-bold text-sm text-gray-900">Bot Asisten WhatsApp & Telegram KaryaKita</h3>
-              <p class="text-xs text-gray-500">ID Grup Tujuan: <code>1203630291823910@g.us (Grup Internal Co-Founder)</code></p>
+              <h3 class="font-heading font-bold text-sm text-gray-900">Bot Asisten WhatsApp, Telegram & Webhook KaryaKita</h3>
+              <p class="text-xs text-gray-500">Terhubung ke endpoint Vercel <code>/api/notify</code> & tersimpan di Neon Postgres.</p>
             </div>
           </div>
-          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Terhubung
+          <span class="text-xs ${hasChannel ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full ${hasChannel ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+            ${hasChannel ? 'Webhook / Chat ID Aktif' : 'Mode Cloud Log (Siap Webhook)'}
           </span>
         </div>
 
-        <!-- Automation Toggles -->
+        <!-- Automation Toggles persisted to Neon DB -->
         <div class="space-y-3 text-xs pt-2">
           <label class="flex items-center justify-between p-2.5 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer">
             <div>
               <strong class="text-gray-900 block">Pengingat Otomatis Async Check-In Rabu</strong>
               <span class="text-[11px] text-gray-500">Kirim reminder otomatis ke grup pada Rabu 16.00 & 20.30 WIB.</span>
             </div>
-            <input type="checkbox" checked class="rounded text-brand-emerald">
+            <input type="checkbox" ${botConfig.reminderCheckinRabu !== false ? 'checked' : ''} onchange="toggleBotConfigFlag('reminderCheckinRabu', this.checked)" class="rounded text-brand-emerald">
           </label>
 
           <label class="flex items-center justify-between p-2.5 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer">
@@ -4504,7 +4767,7 @@ function renderIntegrationsView() {
               <strong class="text-gray-900 block">Peringatan Tenggat Tugas H-1</strong>
               <span class="text-[11px] text-gray-500">Ingatkan PIC 24 jam sebelum batas waktu SLA tugas berakhir.</span>
             </div>
-            <input type="checkbox" checked class="rounded text-brand-emerald">
+            <input type="checkbox" ${botConfig.warningH1Sla !== false ? 'checked' : ''} onchange="toggleBotConfigFlag('warningH1Sla', this.checked)" class="rounded text-brand-emerald">
           </label>
 
           <label class="flex items-center justify-between p-2.5 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer">
@@ -4512,7 +4775,7 @@ function renderIntegrationsView() {
               <strong class="text-gray-900 block">Notifikasi Verifikasi DP 50%</strong>
               <span class="text-[11px] text-gray-500">Beri kabar ke seluruh tim begitu CFO mengonfirmasi transfer DP proyek klien.</span>
             </div>
-            <input type="checkbox" checked class="rounded text-brand-emerald">
+            <input type="checkbox" ${botConfig.notifyDp50Verified !== false ? 'checked' : ''} onchange="toggleBotConfigFlag('notifyDp50Verified', this.checked)" class="rounded text-brand-emerald">
           </label>
 
           <label class="flex items-center justify-between p-2.5 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer">
@@ -4520,15 +4783,31 @@ function renderIntegrationsView() {
               <strong class="text-gray-900 block">Mode Hening (Quiet Hours 22.00 - 06.00 WIB)</strong>
               <span class="text-[11px] text-gray-500">Larangan otomatis kirim notifikasi larut malam agar mahasiswa beristirahat.</span>
             </div>
-            <input type="checkbox" checked class="rounded text-brand-emerald">
+            <input type="checkbox" ${botConfig.quietHours2206 !== false ? 'checked' : ''} onchange="toggleBotConfigFlag('quietHours2206', this.checked)" class="rounded text-brand-emerald">
           </label>
         </div>
 
-        <div class="pt-2 flex justify-end">
-          <button onclick="sendTestBotMessage()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
-            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            <span>Kirim Pesan Uji Coba ke WhatsApp</span>
-          </button>
+        <!-- External Webhook / Telegram Endpoint Config -->
+        <div class="pt-3 border-t border-brand-border space-y-3 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">Telegram Group / Chat ID (Opsional, pakai Env Vercel)</label>
+              <input type="text" id="bot-telegram-chatid" value="${escapeHtml(botConfig.telegramChatId || '')}" placeholder="Contoh: -1001234567890" class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+            </div>
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">Custom Webhook URL (Discord / WA Gateway / n8n)</label>
+              <input type="url" id="bot-webhook-url" value="${escapeHtml(botConfig.webhookUrl || '')}" placeholder="https://discord.com/api/webhooks/..." class="w-full border border-gray-300 rounded px-3 py-2 font-mono">
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <button type="button" onclick="saveBotWebhookConfig()" class="px-3.5 py-2 rounded-lg border border-brand-emerald text-brand-emerald hover:bg-emerald-50 text-xs font-semibold transition">
+              Simpan Pengaturan Bot ke Cloud
+            </button>
+            <button type="button" onclick="sendTestBotMessage()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Kirim Pesan Uji Coba (Cloud / Bot)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -4562,16 +4841,77 @@ function renderIntegrationsView() {
 
 function initIntegrationsEvents() {}
 
-function sendTestBotMessage() {
-  store.state.botLogs.unshift({
-    time: new Date().toLocaleTimeString('id-ID') + ' WIB',
-    channel: 'WhatsApp Cloud API',
-    type: 'Pesan Uji Coba Bot Antarmuka',
-    status: 'Terkirim Sukses'
-  });
-  store.logAudit('BOT_TEST_SENT', 'WhatsApp Bot', 'Uji coba pengiriman webhook pesan ke grup tim.');
-  store.saveState();
-  showToast('Pesan uji coba bot berhasil dikirimkan ke grup WhatsApp tim!');
+function toggleBotConfigFlag(flagKey, isChecked) {
+  if (!store.state.settings) store.state.settings = { ...INITIAL_STATE.settings };
+  if (!store.state.settings.botConfig) store.state.settings.botConfig = { ...INITIAL_STATE.settings.botConfig };
+  store.state.settings.botConfig[flagKey] = !!isChecked;
+  store.logAudit('BOT_CONFIG_UPDATED', 'BotSettings: ' + flagKey, `Otomasi bot ${flagKey} diubah menjadi ${isChecked ? 'AKTIF' : 'NONAKTIF'}`);
+  store.saveState(false, ['settings', 'auditLogs'], true);
+  showToast('Pengaturan otomasi bot disimpan ke Neon Cloud!');
+}
+
+function saveBotWebhookConfig() {
+  const tgChatId = document.getElementById('bot-telegram-chatid')?.value?.trim() || '';
+  const webhookUrl = document.getElementById('bot-webhook-url')?.value?.trim() || '';
+  if (!store.state.settings) store.state.settings = { ...INITIAL_STATE.settings };
+  if (!store.state.settings.botConfig) store.state.settings.botConfig = { ...INITIAL_STATE.settings.botConfig };
+  store.state.settings.botConfig.telegramChatId = tgChatId;
+  store.state.settings.botConfig.webhookUrl = webhookUrl;
+  store.logAudit('BOT_WEBHOOK_SAVED', 'BotSettings', 'Endpoint Telegram/Webhook bot diperbarui.');
+  store.saveState(false, ['settings', 'auditLogs'], true);
+  showToast('Konfigurasi endpoint bot berhasil disimpan ke Neon Cloud!');
+  renderActiveView();
+}
+
+async function dispatchBotNotification(type, message, forceSend = false) {
+  const user = store.getCurrentUser();
+  const actorName = user ? `${user.name} (${user.roleLabel})` : 'Sistem KaryaKita';
+  try {
+    const res = await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, message, actorName, forceSend })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.botLogs)) {
+        store.state.botLogs = data.botLogs;
+      }
+      if (data && Array.isArray(data.auditLogs)) {
+        store.state.auditLogs = data.auditLogs;
+      }
+      store.saveState(true);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Notify API error:', err.message);
+  }
+  return null;
+}
+
+async function sendTestBotMessage() {
+  showToast('Mengirim pesan uji coba melalui Vercel /api/notify...', 'info');
+  const data = await dispatchBotNotification(
+    'Pesan Uji Coba Bot KaryaKita',
+    'Alhamdulillah, koneksi endpoint /api/notify dan Neon Postgres KaryaKita Hub aktif!',
+    true
+  );
+
+  if (data && data.success) {
+    showToast(data.delivered ? 'Alhamdulillah! Pesan terkirim live & dicatat ke Neon Cloud!' : 'Log uji coba tersimpan di Neon Cloud (siap webhook/token).');
+  } else {
+    if (!store.state.botLogs) store.state.botLogs = [];
+    store.state.botLogs.unshift({
+      id: 'botlog-' + Date.now(),
+      time: new Date().toLocaleTimeString('id-ID') + ' WIB',
+      channel: 'KaryaKita Local Fallback',
+      type: 'Pesan Uji Coba Bot Antarmuka',
+      status: 'Disimpan Lokal (Offline)'
+    });
+    store.logAudit('BOT_TEST_SENT', 'Bot Notification', 'Uji coba pengiriman pesan dicatat.');
+    store.saveState(false, ['botLogs', 'auditLogs'], true);
+    showToast('Log uji coba disimpan!', 'warning');
+  }
   renderActiveView();
 }
 
@@ -4646,13 +4986,22 @@ function initAnalyticsCharts() {
     };
 
     store.state.cashflow.filter(c => c.type === 'INCOME' || c.type === 'IN').forEach(c => {
-      if (c.projectId) {
+      let targetUnit = null;
+      if (c.unitId && unitMap[c.unitId] !== undefined) {
+        targetUnit = c.unitId;
+      } else if (c.projectId) {
         const p = store.state.projects.find(proj => proj.id === c.projectId);
-        if (p && unitMap[p.unitId] !== undefined) {
-          unitMap[p.unitId] += Number(c.amountIdr || 0) / 1000000;
-        }
-      } else if (c.unitId && unitMap[c.unitId] !== undefined) {
-        unitMap[c.unitId] += Number(c.amountIdr || 0) / 1000000;
+        if (p && unitMap[p.unitId] !== undefined) targetUnit = p.unitId;
+      } else if (c.category) {
+        const cat = c.category.toLowerCase();
+        if (cat.includes('design') || cat.includes('lini 1')) targetUnit = 'LINI_1_DESIGN';
+        else if (cat.includes('web') || cat.includes('lini 2')) targetUnit = 'LINI_2_WEBTECH';
+        else if (cat.includes('data') || cat.includes('assist') || cat.includes('lini 3')) targetUnit = 'LINI_3_ASSIST_DATA';
+        else if (cat.includes('media') || cat.includes('afiliasi') || cat.includes('affiliate') || cat.includes('lini 4')) targetUnit = 'LINI_4_MEDIA_AFFILIATE';
+        else if (cat.includes('academy') || cat.includes('lini 5')) targetUnit = 'LINI_5_AI_ACADEMY';
+      }
+      if (targetUnit && unitMap[targetUnit] !== undefined) {
+        unitMap[targetUnit] += Number(c.amountIdr || 0) / 1000000;
       }
     });
 
@@ -4692,7 +5041,7 @@ function initAnalyticsCharts() {
       { id: 'novita', name: 'Novita' },
       { id: 'ilham', name: 'Ilham' },
       { id: 'syarah', name: 'Syarah' },
-      { id: 'aywa', name: 'Aywa' },
+      { id: 'nazwa', name: 'Nazwa' },
       { id: 'ahmad', name: 'Ahmad' }
     ];
     const labels = founders.map(f => f.name);
@@ -4766,7 +5115,7 @@ function exportMkutPdfReport() {
 
       <h3 style="color: #333; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">2. Anggota Tim & Komitmen Mahasiswa</h3>
       <p style="font-size: 12px; line-height: 1.5; color: #444;">
-        Studio dikelola oleh 7 mahasiswa Sistem Informasi STMIK Tazkia (Alfatih, Hilwa, Novita, Ilham Akbar, Syarah, Aywa, Ahmad) dengan batas beban waktu maksimal 3-5 jam/minggu untuk menjaga keseimbangan akademik.
+        Studio dikelola oleh 7 mahasiswa Sistem Informasi STMIK Tazkia (Alfatih, Hilwa, Novita, Ilham Akbar, Syarah, Nazwa, Ahmad) dengan batas beban waktu maksimal 3-5 jam/minggu untuk menjaga keseimbangan akademik.
       </p>
 
       <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 12px; text-align: center;">
@@ -4929,20 +5278,31 @@ function renderSystemView() {
           </button>
         </div>
       ` : systemActiveTab === 'sync' ? `
-        <!-- TAB 4: SINKRONISASI ANTAR PERANGKAT (HP & LAPTOP) -->
+        <!-- TAB 4: SINKRONISASI ANTAR PERANGKAT & CLOUD NEON POSTGRES -->
         <div class="card-surface p-5 space-y-4 text-xs">
-          <div class="flex items-center justify-between border-b border-brand-border pb-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-brand-border pb-3">
             <div>
               <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-                <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-emerald"></i>
-                <span>Sinkronisasi Data Studio Antar-Perangkat (Laptop ↔ Handphone)</span>
+                <i data-lucide="cloud" class="w-4 h-4 text-brand-emerald"></i>
+                <span>Sinkronisasi Cloud Neon Postgres & Cadangan Antar-Perangkat</span>
               </h3>
-              <p class="text-gray-500 mt-0.5">Sistem KaryaKita OS menyimpan basis data secara mandiri dan aman di peramban (Client-Side Storage). Fitur ini memudahkan penyalinan data dari Laptop ke HP seluruh rekan.</p>
+              <p class="text-gray-500 mt-0.5">
+                Seluruh modul terhubung otomatis ke Cloud Neon Postgres melalui Vercel (<code>/api/sync</code>). Sinkronisasi terakhir: <strong>${store.lastCloudSyncTime ? new Date(store.lastCloudSyncTime).toLocaleTimeString('id-ID') + ' WIB' : 'Otomatis saat muat'}</strong>.
+              </p>
             </div>
-            <span class="text-[10px] bg-sky-100 text-sky-800 font-bold px-2.5 py-1 rounded-full">
-              Multi-Device Sync Helper
-            </span>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="checkVercelHealth()" class="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-800 font-semibold transition flex items-center gap-1.5">
+                <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                <span>Cek Kesehatan DB & Vercel</span>
+              </button>
+              <button type="button" onclick="manualCloudSyncNow()" class="px-3 py-1.5 rounded-lg bg-brand-emerald hover:bg-brand-hover text-white font-semibold transition flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Sinkronkan Cloud Sekarang</span>
+              </button>
+            </div>
           </div>
+
+          <div id="vercel-health-result" class="hidden p-3 rounded-xl border text-xs"></div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
@@ -5036,8 +5396,31 @@ function initSystemEvents() {
 // VIEW 13: PORTAL KLIEN B2B / CLIENT PORTAL (Tahap 3)
 // ------------------------------------------------------------------------------
 function renderClientPortalView() {
+  const isAuth = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
+  const backNavHtml = `
+    <div class="flex items-center justify-between pb-3 mb-2 border-b border-gray-200 dark:border-gray-800">
+      <button onclick="navigateToHomepage()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-emerald dark:text-emerald-400 hover:underline transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Kembali ke Beranda Utama KaryaKita</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] text-gray-500 dark:text-gray-400">Portal Akses Klien B2B</span>
+        ${!isAuth ? `
+          <button onclick="openLoginModal()" class="text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-brand-emerald dark:hover:text-emerald-400 border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-0.5 transition">
+            Login Co-Founder
+          </button>
+        ` : `
+          <button onclick="navigateTo('overview')" class="text-[11px] font-semibold text-brand-emerald dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg px-2.5 py-0.5 transition">
+            Ke Dashboard Internal
+          </button>
+        `}
+      </div>
+    </div>
+  `;
   if (!store.state.projects || store.state.projects.length === 0) {
     return `
+    <div class="max-w-4xl mx-auto space-y-4">
+      ${backNavHtml}
       <div class="max-w-2xl mx-auto py-12 px-4 text-center card-surface bg-white space-y-4">
         <div class="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-brand-emerald flex items-center justify-center">
           <i data-lucide="shield-check" class="w-8 h-8"></i>
@@ -5054,11 +5437,37 @@ function renderClientPortalView() {
     `;
   }
 
-  const proj = store.state.projects[0];
-  const clientVisibleTasks = store.state.tasks.filter(t => t.projectId === proj.id && t.isClientVisible);
+  let urlToken = '';
+  try {
+    const hashStr = window.location.hash || '';
+    const qIdx = hashStr.indexOf('?');
+    if (qIdx !== -1) {
+      urlToken = new URLSearchParams(hashStr.slice(qIdx)).get('token') || '';
+    }
+    if (!urlToken && window.location.search) {
+      urlToken = new URLSearchParams(window.location.search).get('token') || '';
+    }
+  } catch (e) {}
+
+  const projectsList = store.state.projects || [];
+  const proj = (urlToken && projectsList.find(p => p.clientPortalToken === urlToken))
+    || projectsList.find(p => p.id === selectedClientPortalProjectId)
+    || projectsList[0];
+  const clientVisibleTasks = (store.state.tasks || []).filter(t => t.projectId === proj.id && t.isClientVisible);
+
+  const projectSwitcherHtml = (!urlToken && projectsList.length > 1) ? `
+    <div class="card-surface p-3.5 bg-emerald-50/50 border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <span class="font-semibold text-emerald-950">Pilih Proyek B2B yang Dipantau:</span>
+      <select onchange="selectedClientPortalProjectId = this.value; renderActiveView();" class="border border-emerald-300 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800">
+        ${projectsList.map(p => `<option value="${p.id}" ${p.id === proj.id ? 'selected' : ''}>${p.title} (${p.clientName})</option>`).join('')}
+      </select>
+    </div>
+  ` : '';
 
   return `
     <div class="space-y-6 max-w-4xl mx-auto">
+      ${backNavHtml}
+      ${projectSwitcherHtml}
       
       <!-- Client Header -->
       <div class="card-surface p-6 bg-white border-brand-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -5174,7 +5583,26 @@ function renderClientPortalView() {
   `;
 }
 
+let selectedClientPortalProjectId = null;
+
 function initClientPortalEvents() {}
+
+function openClientPortalByToken(token) {
+  window.location.hash = token ? '#/client-portal?token=' + encodeURIComponent(token) : '#/client-portal';
+  currentView = 'client-portal';
+  checkAuthAndRender();
+}
+
+function copyClientPortalLink(token) {
+  const url = window.location.origin + '/#/client-portal?token=' + encodeURIComponent(token || '');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Tautan khusus Portal Klien disalin: ' + url);
+    }).catch(() => prompt('Salin tautan Portal Klien berikut:', url));
+  } else {
+    prompt('Salin tautan Portal Klien berikut:', url);
+  }
+}
 
 function submitClientRevision(projectId) {
   const note = document.getElementById('client-rev-note')?.value.trim();
@@ -5189,23 +5617,29 @@ function submitClientRevision(projectId) {
   const quota = proj.revisionQuota || 2;
   const currentUsed = proj.revisionUsed || 0;
   const isOutOfQuota = currentUsed >= quota;
+  const nowIso = new Date().toISOString();
+  const formattedCreated = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
   const triageItem = {
     id: 'triage-' + Date.now(),
     projectId: proj.id,
     projectTitle: proj.title,
     clientName: proj.clientName,
+    notes: note,
     note: note,
-    submittedAt: new Date().toISOString(),
+    createdAt: formattedCreated,
+    submittedAt: nowIso,
+    triageStatus: 'PENDING_TRIAGE',
     status: 'PENDING_TRIAGE',
     quotaRemaining: Math.max(0, quota - currentUsed),
-    isOutOfQuota: isOutOfQuota
+    isOutOfQuota: isOutOfQuota,
+    _updatedAt: Date.now()
   };
 
   if (!store.state.revisionTriage) store.state.revisionTriage = [];
   store.state.revisionTriage.unshift(triageItem);
   store.logAudit('CLIENT_REVISION_TRIAGE_QUEUED', `Revisi Klien: ${proj.title}`, `Catatan revisi diarahkan ke Inbox Triage (${isOutOfQuota ? 'Melebihi Kuota' : 'Dalam Kuota'}).`);
-  store.saveState();
+  store.saveState(false, ['revisionTriage', 'auditLogs'], true);
 
   const noteInput = document.getElementById('client-rev-note');
   if (noteInput) noteInput.value = '';
@@ -5220,7 +5654,7 @@ function submitClientRevision(projectId) {
 function toggleAcademicFreeze() {
   store.state.settings.academicFreezeMode = !store.state.settings.academicFreezeMode;
   store.logAudit('FREEZE_MODE_TOGGLED', 'AcademicFreeze', 'Mode ' + (store.state.settings.academicFreezeMode ? 'Diaktifkan' : 'Dinonaktifkan'));
-  store.saveState();
+  store.saveState(false, ['settings', 'auditLogs'], true);
   updateTopBanners();
   showToast('Academic Freeze Mode ' + (store.state.settings.academicFreezeMode ? 'diaktifkan!' : 'dinonaktifkan!'));
   renderActiveView();
@@ -5916,8 +6350,9 @@ function finishRoleOnboardingFromModal() {
   closeModal();
   if (currentOnboardingModalUser) {
     currentOnboardingModalUser.hasCompletedOnboarding = true;
+    currentOnboardingModalUser._updatedAt = Date.now();
     store.logAudit('ONBOARDING_CAROUSEL_COMPLETED', `Onboarding Carousel: ${currentOnboardingModalUser.name}`, `Tur onboarding 3 slide untuk ${currentOnboardingModalUser.roleLabel} telah diselesaikan.`);
-    store.saveState();
+    store.saveState(false, ['users', 'auditLogs'], true);
   }
   showToast('Selamat berkolaborasi di KaryaKita Hub!');
   renderActiveView();
@@ -6171,8 +6606,9 @@ function finishOnboardingTour() {
   }
   if (currentHotspotUser) {
     currentHotspotUser.hasCompletedOnboarding = true;
+    currentHotspotUser._updatedAt = Date.now();
     store.logAudit('ONBOARDING_COMPLETED', `Tooltips & Hotspots Tour: ${currentHotspotUser.name}`, `Tur interaktif hotspot untuk peran ${currentHotspotUser.roleLabel} telah diselesaikan.`);
-    store.saveState();
+    store.saveState(false, ['users', 'auditLogs'], true);
   }
   showToast('Selamat bekerja & berkolaborasi di KaryaKita Hub!');
   renderActiveView();
@@ -6396,8 +6832,9 @@ function saveUserProfileAvatar(userId) {
   }
 
   user.avatar = tempSelectedAvatar;
+  user._updatedAt = Date.now();
   store.logAudit('USER_AVATAR_UPDATED', `Foto Profil: ${user.name}`, `Foto profil untuk pengguna ${user.name} (${user.roleLabel}) telah berhasil diperbarui.`);
-  store.saveState();
+  store.saveState(false, ['users', 'auditLogs'], true);
 
   // Instant UI updates across topbar, sidebar, and open views
   updateTopBanners();
@@ -6669,6 +7106,7 @@ async function handleLoginSubmit(event) {
 
       // Hydrate state from cloud
       if (authData.fullState) {
+        store.applyCloudState(authData.fullState);
         const fullCloud = authData.fullState;
         if (fullCloud.users) {
           Object.keys(fullCloud.users).forEach(uid => {
@@ -6687,6 +7125,9 @@ async function handleLoginSubmit(event) {
         if (fullCloud.affiliateContents) store.state.affiliateContents = fullCloud.affiliateContents;
         if (fullCloud.affiliateCommissions) store.state.affiliateCommissions = fullCloud.affiliateCommissions;
         if (fullCloud.revisionTriage) store.state.revisionTriage = fullCloud.revisionTriage;
+        if (fullCloud.botLogs) store.state.botLogs = fullCloud.botLogs;
+        if (fullCloud.syirkahPeriod) store.state.syirkahPeriod = fullCloud.syirkahPeriod;
+        if (fullCloud.currentSprint) store.state.currentSprint = fullCloud.currentSprint;
         if (fullCloud.settings) store.state.settings = { ...store.state.settings, ...fullCloud.settings };
       }
       store.state.users[authenticatedUser.id] = { ...store.state.users[authenticatedUser.id], ...authenticatedUser };
@@ -6782,8 +7223,10 @@ async function handleLoginSubmit(event) {
   store.state.activeUserId = authenticatedUser.id;
   if (!serverAuthSuccess) {
     store.logAudit('AUTH_LOGIN_SUCCESS', `Login: ${authenticatedUser.name}`, `Co-Founder ${authenticatedUser.name} (${authenticatedUser.roleLabel}) berhasil masuk (Offline).`);
+    store.saveState(false, ['auditLogs'], true);
+  } else {
+    store.saveState(true);
   }
-  store.saveState();
 
   showToast(`Alhamdulillah! Selamat datang, ${authenticatedUser.name}.`);
   window.location.hash = '#/dashboard';
@@ -6844,9 +7287,9 @@ function handleFirstTimeResetSubmit(event, userId) {
   user.password = newPassword;
   user.mustChangePassword = false;
   user.passwordChangedAt = new Date().toISOString();
+  user._updatedAt = Date.now();
   store.logAudit('AUTH_PASSWORD_ACTIVATED', `Aktivasi Akun: ${user.name}`, `Co-Founder ${user.name} (${user.roleLabel}) berhasil membuat kata sandi baru. Akun resmi aktif.`);
-  store.saveState();
-  store.syncToCloud();
+  store.saveState(false, ['users', 'auditLogs'], true);
 
   showToast('Alhamdulillah! Kata sandi berhasil diperbarui! Menyiapkan ruang kerja...');
   setTimeout(() => {
@@ -6949,14 +7392,14 @@ function saveAdminChangePassword(event, userId) {
   targetUser.password = newPwd;
   targetUser.mustChangePassword = !isPermanent;
   targetUser.passwordChangedAt = new Date().toISOString();
+  targetUser._updatedAt = Date.now();
 
   store.logAudit(
     'AUTH_PASSWORD_UPDATED',
     `Ubah Sandi: ${targetUser.name}`,
     `DevOps/Admin (${actor.name}) memperbarui kata sandi untuk ${targetUser.name} (${targetUser.roleLabel}). Status: ${isPermanent ? 'Aktif (Password Pribadi)' : 'Password Sementara'}.`
   );
-  store.saveState();
-  store.syncToCloud();
+  store.saveState(false, ['users_admin', 'auditLogs'], true);
 
   closeModal();
   showToast(`Kata sandi untuk ${targetUser.name} berhasil disimpan (${isPermanent ? 'Aktif Pribadi' : 'Sementara'})!`);
@@ -7072,14 +7515,14 @@ function saveChangeMyPassword(event, userId) {
   user.password = newPassword;
   user.mustChangePassword = false;
   user.passwordChangedAt = new Date().toISOString();
+  user._updatedAt = Date.now();
 
   store.logAudit(
     'AUTH_PASSWORD_CHANGED',
     `Ganti Kata Sandi: ${user.name}`,
     `Co-Founder ${user.name} (${user.roleLabel}) berhasil memperbarui kata sandi pribadi secara mandiri.`
   );
-  store.saveState();
-  store.syncToCloud();
+  store.saveState(false, ['users', 'auditLogs'], true);
 
   closeModal();
   showToast('Alhamdulillah! Kata sandi pribadi Anda berhasil diperbarui dan akun berstatus Aktif Resmi.');
@@ -7161,7 +7604,7 @@ function saveImportedStudioState(event) {
     }
 
     store.state = parsed;
-    store.saveState();
+    store.saveState(false, ['*'], true);
     closeModal();
     showToast('Alhamdulillah! Sinkronisasi data studio berhasil diterapkan di perangkat ini.');
     checkAuthAndRender();
@@ -7202,9 +7645,10 @@ function resetUserCredentialsByAdmin(userId) {
     user.password = newTemp;
     user.mustChangePassword = true;
     user.hasCompletedOnboarding = false;
+    user._updatedAt = Date.now();
 
     store.logAudit('AUTH_ADMIN_PASSWORD_RESET', `Reset Kredensial: ${user.name}`, `DevOps/Admin mereset kata sandi sementara untuk ${user.name}.`);
-    store.saveState();
+    store.saveState(false, ['users_admin', 'auditLogs'], true);
 
     alert(`Kata sandi sementara baru untuk ${user.name}:\n\n${newTemp}\n\nKredensial ini telah disalin. Kirimkan kepada rekan via WhatsApp pribadi.`);
     if (navigator.clipboard) navigator.clipboard.writeText(newTemp).catch(() => {});
@@ -7216,7 +7660,7 @@ function logout() {
   if (confirm('Apakah Anda yakin ingin keluar dari KaryaKita Hub?')) {
     store.state.authSession = { isAuthenticated: false, userId: null };
     store.logAudit('AUTH_LOGOUT', 'User Logout', `Pengguna keluar dari sesi.`);
-    store.saveState();
+    store.saveState(false, ['auditLogs'], true);
     window.location.hash = '#/';
     showToast('Anda telah keluar dari sistem.');
     checkAuthAndRender();
@@ -7238,11 +7682,19 @@ function isDashboardRoute() {
     '#/archives', '#archives',
     '#/analytics', '#analytics',
     '#/system', '#system',
-    '#/integrations', '#integrations',
-    '#/client_portal', '#client_portal',
-    '#/client-portal', '#client-portal'
+    '#/integrations', '#integrations'
   ];
   return dashboardRoutes.some(r => hash === r || hash.startsWith(r + '/') || hash.startsWith(r + '?'));
+}
+
+function isClientPortalRoute() {
+  const hash = (window.location.hash || '').toLowerCase();
+  return (
+    hash === '#/client-portal' || hash === '#client-portal' ||
+    hash === '#/client_portal' || hash === '#client_portal' ||
+    hash.startsWith('#/client-portal/') || hash.startsWith('#/client_portal/') ||
+    hash.startsWith('#/client/') || hash.startsWith('#client/')
+  );
 }
 
 function getViewFromHash() {
@@ -7265,14 +7717,48 @@ function checkAuthAndRender() {
   const dynamicBanners = document.getElementById('dynamic-banners-container');
   const mobileNav = document.querySelector('.mobile-bottom-nav');
   const publicHome = document.getElementById('public-homepage');
+  const sidebar = document.getElementById('main-sidebar');
 
   const isAuthenticated = !!(store.state.authSession && store.state.authSession.isAuthenticated && store.state.authSession.userId);
   const isDash = isDashboardRoute();
+  const isClientPortal = isClientPortalRoute();
 
   // Pre-render auth form so modal is ready
   const container = document.getElementById('auth-form-container');
   if (!container || !container.querySelector('form')) {
     renderAuthForm('login');
+  }
+
+  if (isClientPortal) {
+    // Publicly accessible Client Portal (B2B Clients & transparency preview)
+    currentView = 'client-portal';
+    if (publicHome) publicHome.classList.add('hidden');
+    if (authScreen) authScreen.classList.add('hidden');
+    if (appLayout) appLayout.classList.remove('hidden');
+
+    if (isAuthenticated) {
+      if (topbarSimulator) topbarSimulator.classList.remove('hidden');
+      if (dynamicBanners) dynamicBanners.classList.remove('hidden');
+      if (mobileNav) mobileNav.classList.remove('hidden');
+      if (sidebar) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('md:flex');
+      }
+      updateTopBanners();
+    } else {
+      // Standalone clean client portal view for B2B Clients & public visitors
+      if (topbarSimulator) topbarSimulator.classList.add('hidden');
+      if (dynamicBanners) dynamicBanners.classList.add('hidden');
+      if (mobileNav) mobileNav.classList.add('hidden');
+      if (sidebar) {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('md:flex');
+      }
+    }
+
+    renderActiveView();
+    if (window.lucide) lucide.createIcons();
+    return;
   }
 
   if (isDash) {
@@ -7284,6 +7770,10 @@ function checkAuthAndRender() {
       if (topbarSimulator) topbarSimulator.classList.remove('hidden');
       if (dynamicBanners) dynamicBanners.classList.remove('hidden');
       if (mobileNav) mobileNav.classList.remove('hidden');
+      if (sidebar) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('md:flex');
+      }
 
       const targetView = getViewFromHash();
       if (targetView && targetView !== currentView) {
@@ -7313,6 +7803,10 @@ function checkAuthAndRender() {
     if (topbarSimulator) topbarSimulator.classList.add('hidden');
     if (dynamicBanners) dynamicBanners.classList.add('hidden');
     if (mobileNav) mobileNav.classList.add('hidden');
+    if (sidebar) {
+      sidebar.classList.remove('hidden');
+      sidebar.classList.add('md:flex');
+    }
 
     updateHomepageCtaState();
   }
@@ -7573,7 +8067,7 @@ function startNewGeminiChat(isInitialSilent) {
     store.state.geminiChatSessions[user.id] = [];
   }
   store.state.geminiChatSessions[user.id].unshift(newSession);
-  store.saveState();
+  store.saveState(isInitialSilent, ['geminiChatSessions'], false);
 
   renderGeminiMessages(sessionId);
   if (!isInitialSilent) {
@@ -7684,7 +8178,7 @@ function handleSendGeminiMessage(event) {
   };
 
   session.messages.push(userMsg);
-  store.saveState();
+  store.saveState(false, ['geminiChatSessions'], false);
 
   input.value = '';
   input.style.height = 'auto';
@@ -7705,7 +8199,7 @@ function handleSendGeminiMessage(event) {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     session.messages.push(aiMsg);
-    store.saveState();
+    store.saveState(false, ['geminiChatSessions'], true);
     renderGeminiMessages(session.id);
   });
 }
@@ -7750,11 +8244,12 @@ function getStudioComprehensiveContext() {
   const sampleTasksStr = activeTasks.slice(0, 8).map(t => `  * [${t.status}] ${t.title} (PIC: ${t.assigneeId || 'Unassigned'})`).join('\n');
 
   const projects = store.state.projects || [];
-  const projectsStr = projects.map(p => `  * ${p.title} (${p.clientName}) - Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')}, Status: ${p.status}, DP: ${p.dpPaid ? 'LUNAS 50%' : 'BELUM'}`).join('\n');
+  const gateLabels = { LOCKED_WAITING_DP: 'Menunggu DP 50%', DP_50_VERIFIED: 'DP 50% Terverifikasi (Produksi)', PAID_100_VERIFIED: 'Lunas 100%' };
+  const projectsStr = projects.map(p => `  * ${p.title} (${p.clientName}) - Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')}, Status Gate: ${gateLabels[p.paymentGateStatus] || p.paymentGateStatus || 'LOCKED_WAITING_DP'}`).join('\n');
 
   const currentSprint = store.state.currentSprint || 1;
   const freezeMode = store.state.settings && store.state.settings.academicFreezeMode ? 'AKTIF (Pekan UTS/UAS Tazkia, kapasitas dialihkan ke akademik)' : 'TIDAK AKTIF (Reguler)';
-  const cashBalance = store.state.cashTransactions ? store.state.cashTransactions.reduce((acc, t) => acc + (t.type === 'IN' ? t.amount : -t.amount), 0) : 0;
+  const cashBalance = store.calculateCashBalance();
 
   return `
 [DATA REAL-TIME STUDIO KARYAKITA HUB]:
@@ -7810,9 +8305,25 @@ INSTRUKSI PENTING:
 
     const tryFetchModel = (modelIndex) => {
       if (modelIndex >= candidateModels.length) {
-        console.warn('Semua endpoint Gemini Live API gagal, beralih ke engine internal studio.');
-        const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc);
-        callback(fallbackReply);
+        // Try server-side Vercel /api/gemini if GEMINI_API_KEY env var is configured on Vercel
+        fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: `${systemInstructionText}\n\n[PERTANYAAN PENGGUNA]:\n${userQuery}${contextDocPrompt}`, model: preferredModel })
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+        .then(resData => {
+          if (resData && resData.success && resData.text) {
+            callback(resData.text);
+          } else {
+            throw new Error('Empty proxy response');
+          }
+        })
+        .catch(() => {
+          console.warn('Semua endpoint Gemini Live API gagal, beralih ke engine internal studio.');
+          const fallbackReply = generateStudioFallbackReply(user, userQuery, attachedDoc);
+          callback(fallbackReply);
+        });
         return;
       }
 
@@ -7868,10 +8379,23 @@ INSTRUKSI PENTING:
 
     tryFetchModel(0);
   } else {
-    setTimeout(() => {
+    fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: `${systemInstructionText}\n\n[PERTANYAAN PENGGUNA]:\n${userQuery}${contextDocPrompt}`, model: preferredModel })
+    })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('No Vercel key')))
+    .then(resData => {
+      if (resData && resData.success && resData.text) {
+        callback(resData.text);
+      } else {
+        throw new Error('Empty proxy response');
+      }
+    })
+    .catch(() => {
       const reply = generateStudioFallbackReply(user, userQuery, attachedDoc);
       callback(reply);
-    }, 400);
+    });
   }
 }
 
@@ -7886,7 +8410,7 @@ function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
   }
 
   const allUsers = Object.values(store.state.users || {});
-  const cashBalance = store.state.cashTransactions ? store.state.cashTransactions.reduce((acc, t) => acc + (t.type === 'IN' ? t.amount : -t.amount), 0) : 0;
+  const cashBalance = store.calculateCashBalance();
   const currentSprint = store.state.currentSprint || 1;
   const activeTasks = (store.state.tasks || []).filter(t => t.status !== 'DONE');
   const projects = store.state.projects || [];
@@ -7940,7 +8464,7 @@ function generateStudioFallbackReply(user, query, attachedDoc, errorMsg) {
     analysis += `### Status Proyek Klien & Pipeline CRM\n` +
       `- **Total Proyek Aktif:** ${projects.length} proyek.\n` +
       (projects.length > 0
-        ? projects.map(p => `  * **${p.title}** (${p.clientName}) — Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')} | Status: ${p.status} | DP: ${p.dpPaid ? 'Lunas 50%' : 'Belum Bayar'}`).join('\n')
+        ? projects.map(p => `  * **${p.title}** (${p.clientName}) — Nilai: Rp${(p.contractValueIdr || 0).toLocaleString('id-ID')} | Gate: ${p.paymentGateStatus === 'PAID_100_VERIFIED' ? 'Lunas 100%' : p.paymentGateStatus === 'DP_50_VERIFIED' ? 'DP 50% Terverifikasi' : 'Menunggu DP 50%'}`).join('\n')
         : '  * Belum ada proyek klien yang tercatat.') +
       `\n\n**Aturan Eksekusi:** Pastikan status DP 50% terverifikasi di modul Keuangan sebelum tim memulai tahapan produksi.`;
   } else if (q.includes('kampus') || q.includes('tazkia') || q.includes('freeze') || q.includes('uts') || q.includes('uas') || q.includes('kuliah') || q.includes('ujian')) {
@@ -8072,7 +8596,7 @@ function deleteGeminiSession(sessionId, event) {
   let sessions = store.state.geminiChatSessions[user.id] || [];
   sessions = sessions.filter(s => s.id !== sessionId);
   store.state.geminiChatSessions[user.id] = sessions;
-  store.saveState();
+  store.saveState(false, ['geminiChatSessions'], true);
 
   if (activeGeminiSessionId === sessionId) {
     activeGeminiSessionId = sessions.length > 0 ? sessions[0].id : null;
@@ -8091,7 +8615,7 @@ function clearAllGeminiHistory() {
   const user = store.getCurrentUser() || { id: 'alfatih' };
   if (confirm('Hapus seluruh riwayat percakapan Gemini Copilot untuk akun Anda?')) {
     store.state.geminiChatSessions[user.id] = [];
-    store.saveState();
+    store.saveState(false, ['geminiChatSessions'], true);
     startNewGeminiChat(true);
     const panel = document.getElementById('gemini-history-panel');
     if (panel) panel.classList.add('hidden');
@@ -8403,7 +8927,7 @@ function togglePasswordVisibility(inputId) {
 
 function changeGeminiModel(modelName) {
   store.state.geminiModel = modelName;
-  store.saveState();
+  store.saveState(false, ['geminiModel'], true);
 
   const modelLabels = {
     'gemini-flash-lite-latest': 'Gemini Flash Lite (Super Cepat & Stabil)',
@@ -8676,8 +9200,9 @@ function returnToDashboard(viewName = 'overview') {
 }
 
 function previewClientPortalFromHome() {
-  navigateTo('client_portal');
-  returnToDashboard();
+  window.location.hash = '#/client-portal';
+  currentView = 'client-portal';
+  checkAuthAndRender();
 }
 
 function toggleFaqItem(faqId) {
@@ -8753,11 +9278,63 @@ const FOUNDERS_DATA_MAP = {
   }
 };
 
+async function manualCloudSyncNow() {
+  showToast('Menarik & menyinkronkan data studio dari Neon Cloud...', 'info');
+  await store.syncToCloud();
+  const ok = await store.syncFromCloud();
+  if (ok) {
+    showToast('Alhamdulillah! Seluruh data studio berhasil disinkronkan dari Cloud Neon Postgres.');
+    renderActiveView();
+  } else {
+    showToast('Gagal terhubung ke Neon Cloud. Periksa koneksi internet Anda.', 'error');
+  }
+}
+
+async function checkVercelHealth() {
+  const box = document.getElementById('vercel-health-result');
+  if (box) {
+    box.className = 'p-3 rounded-xl border border-sky-200 bg-sky-50 text-sky-900 text-xs block animate-pulse';
+    box.textContent = 'Sedang memeriksa koneksi Vercel Serverless & Neon PostgreSQL...';
+  }
+  try {
+    const res = await fetch('/api/health?t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'HTTP ' + res.status);
+    const envs = data.vercel?.envConfigured || {};
+    const htmlInfo = `
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between font-bold text-emerald-800">
+          <span>✅ Server Vercel & Neon PostgreSQL SEHAT (Latency: ${data.database?.latencyMs} ms)</span>
+          <span class="font-mono text-[10px]">Region: ${data.vercel?.region} (${data.vercel?.env})</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5 text-[10px]">
+          <span class="px-2 py-0.5 rounded ${envs.DATABASE_URL ? 'bg-emerald-200 text-emerald-900 font-bold' : 'bg-red-200 text-red-900'}">DATABASE_URL: ${envs.DATABASE_URL ? 'TERKONFIGURASI' : 'BELUM SET'}</span>
+          <span class="px-2 py-0.5 rounded ${envs.TELEGRAM_BOT_TOKEN ? 'bg-emerald-200 text-emerald-900 font-bold' : 'bg-gray-200 text-gray-700'}">TELEGRAM_BOT_TOKEN: ${envs.TELEGRAM_BOT_TOKEN ? 'AKTIF' : 'OPSIONAL'}</span>
+          <span class="px-2 py-0.5 rounded ${envs.WA_CLOUD_TOKEN ? 'bg-emerald-200 text-emerald-900 font-bold' : 'bg-gray-200 text-gray-700'}">WA_CLOUD_TOKEN: ${envs.WA_CLOUD_TOKEN ? 'AKTIF' : 'OPSIONAL'}</span>
+          <span class="px-2 py-0.5 rounded ${envs.GEMINI_API_KEY ? 'bg-emerald-200 text-emerald-900 font-bold' : 'bg-gray-200 text-gray-700'}">GEMINI_API_KEY: ${envs.GEMINI_API_KEY ? 'AKTIF' : 'OPSIONAL (CLIENT KEY AKTIF)'}</span>
+        </div>
+        <p class="text-[11px] text-emerald-900">Pembaruan terakhir di DB: ${data.database?.lastSyncAt ? new Date(data.database.lastSyncAt).toLocaleString('id-ID') : '-'}</p>
+      </div>
+    `;
+    if (box) {
+      box.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 text-xs block';
+      box.innerHTML = htmlInfo;
+    }
+    showToast(`Koneksi Vercel & Neon Sehat (${data.database?.latencyMs} ms)!`);
+  } catch (err) {
+    if (box) {
+      box.className = 'p-3 rounded-xl border border-red-300 bg-red-50 text-red-900 text-xs block';
+      box.textContent = '❌ Gagal memeriksa kesehatan DB/Vercel: ' + err.message;
+    }
+    showToast('Gagal memeriksa kesehatan DB/Vercel!', 'error');
+  }
+}
+
 function openFounderBioModal(founderId) {
   const f = FOUNDERS_DATA_MAP[founderId];
   if (!f) return;
   const modal = document.getElementById('founder-bio-modal');
-  const body = document.getElementById('founder-bio-modal-body');
+  const body = document.getElementById('founder-bio-modal-body') || document.getElementById('founder-bio-card');
   if (!modal || !body) return;
 
   body.innerHTML = `

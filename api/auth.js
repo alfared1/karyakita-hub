@@ -39,6 +39,14 @@ module.exports = async function handler(req, res) {
     const cleanPassword = String(password).trim();
 
     const sql = neon(DATABASE_URL);
+    await sql`
+      CREATE TABLE IF NOT EXISTS studio_state (
+        key VARCHAR(64) PRIMARY KEY,
+        state JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `;
+
     const rows = await sql`SELECT state FROM studio_state WHERE key = 'main_state' LIMIT 1;`;
 
     if (!rows || rows.length === 0 || !rows[0].state || !rows[0].state.users) {
@@ -65,9 +73,9 @@ module.exports = async function handler(req, res) {
     });
 
     if (!matchedUser) {
-      return res.status(401).json({ 
-        success: false, 
-        error: `Username atau ID "${rawUsername}" tidak ditemukan. Gunakan username resmi (contoh: hilwa, alfatih, novita, ilham).` 
+      return res.status(401).json({
+        success: false,
+        error: `Username atau ID "${rawUsername}" tidak ditemukan. Gunakan username resmi (contoh: hilwa, alfatih, novita, ilham).`
       });
     }
 
@@ -90,9 +98,9 @@ module.exports = async function handler(req, res) {
     const isLegacyMatch = legacyTempPasswords[matchedUser.id] && legacyTempPasswords[matchedUser.id] === cleanPassword;
 
     if (!isExactMatch && !isCaseInsensitiveMatch && !isStrippedAtMatch && !isLegacyMatch) {
-      return res.status(401).json({ 
-        success: false, 
-        error: `Kata sandi untuk @${matchedUser.username || matchedUser.id} tidak cocok. Pastikan menggunakan kata sandi terbaru tanpa spasi ekstra.` 
+      return res.status(401).json({
+        success: false,
+        error: `Kata sandi untuk @${matchedUser.username || matchedUser.id} tidak cocok. Pastikan menggunakan kata sandi terbaru tanpa spasi ekstra.`
       });
     }
 
@@ -108,10 +116,11 @@ module.exports = async function handler(req, res) {
 
     if (!state.auditLogs) state.auditLogs = [];
     state.auditLogs.unshift(newLog);
+    state.auditLogs = state.auditLogs.slice(0, 200);
 
     await sql`
-      UPDATE studio_state 
-      SET state = ${JSON.stringify(state)}::jsonb, updated_at = NOW() 
+      UPDATE studio_state
+      SET state = ${JSON.stringify(state)}::jsonb, updated_at = NOW()
       WHERE key = 'main_state';
     `;
 

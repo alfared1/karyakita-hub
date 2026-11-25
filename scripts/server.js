@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
-// Root directory project (satu tingkat di atas folder scripts)
 const PUBLIC_DIR = path.join(__dirname, '..');
 
 const MIME_TYPES = {
@@ -20,6 +19,50 @@ const MIME_TYPES = {
   '.pdf': 'application/pdf',
 };
 
+function dispatchApiHandler(req, res, apiName) {
+  const apiPath = path.join(PUBLIC_DIR, 'api', `${apiName}.js`);
+  if (!fs.existsSync(apiPath)) {
+    res.writeHead(404, { 'Content-Type': 'application/json; charset=UTF-8' });
+    res.end(JSON.stringify({ success: false, error: `Endpoint /api/${apiName} tidak ditemukan.` }));
+    return;
+  }
+
+  let bodyRaw = '';
+  req.on('data', chunk => { bodyRaw += chunk; });
+  req.on('end', async () => {
+    try {
+      req.body = bodyRaw ? JSON.parse(bodyRaw) : {};
+    } catch (e) {
+      req.body = bodyRaw || {};
+    }
+
+    // Wrap Node http.ServerResponse with Express/Vercel-compatible helpers
+    const vercelRes = {
+      _status: 200,
+      setHeader: (k, v) => res.setHeader(k, v),
+      status: (code) => { vercelRes._status = code; return vercelRes; },
+      json: (obj) => {
+        if (!res.headersSent) res.writeHead(vercelRes._status, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify(obj));
+      },
+      end: (chunk) => {
+        if (!res.headersSent) res.writeHead(vercelRes._status);
+        res.end(chunk);
+      }
+    };
+
+    try {
+      const handler = require(apiPath);
+      await handler(req, vercelRes);
+    } catch (err) {
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=UTF-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    }
+  });
+}
+
 function handleRequest(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -33,7 +76,15 @@ function handleRequest(req, res) {
 
   const host = req.headers.host || 'localhost:3000';
   const parsedUrl = new URL(req.url, `http://${host}`);
-  let pathname = parsedUrl.pathname;
+  const pathname = parsedUrl.pathname;
+
+  if (pathname.startsWith('/api/')) {
+    const apiName = pathname.replace(/^\/api\//, '').replace(/\/$/, '').split('/')[0];
+    if (/^[a-z0-9_-]+$/i.test(apiName)) {
+      dispatchApiHandler(req, res, apiName);
+      return;
+    }
+  }
 
   let filePath = path.join(PUBLIC_DIR, pathname);
 
