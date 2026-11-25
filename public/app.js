@@ -523,7 +523,12 @@ class AppStore {
 
         if (isAppVisible && (isAuthenticated || isPublicClientPortal)) {
           if (typeof updateTopBanners === 'function' && isAuthenticated) updateTopBanners();
-          if (typeof renderActiveView === 'function') renderActiveView();
+          // Avoid wiping in-progress form typing inside main-view-container during background 30s polling
+          const viewBox = document.getElementById('main-view-container');
+          const activeTag = document.activeElement?.tagName;
+          const isTypingInView = viewBox && document.activeElement && viewBox.contains(document.activeElement)
+            && (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT');
+          if (!isTypingInView && typeof renderActiveView === 'function') renderActiveView();
         } else if (typeof updateHomepageCtaState === 'function') {
           updateHomepageCtaState();
         }
@@ -5429,11 +5434,19 @@ function renderClientPortalView() {
         <p class="text-xs text-gray-500 max-w-md mx-auto">
           Belum ada proyek aktif yang tercatat di sistem. Ketika proyek klien dibuat di menu <strong>Proyek</strong>, tautan pemantauan progres transparan untuk klien B2B akan otomatis aktif di sini.
         </p>
-        <button onclick="navigateTo('projects')" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition">
-          <i data-lucide="folder-plus" class="w-4 h-4"></i>
-          <span>Buka Menu Proyek</span>
-        </button>
+        ${isAuth ? `
+          <button onclick="navigateTo('projects')" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i>
+            <span>Buka Menu Proyek</span>
+          </button>
+        ` : `
+          <button onclick="navigateToHomepage()" class="bg-brand-emerald hover:bg-brand-hover text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Kembali ke Beranda</span>
+          </button>
+        `}
       </div>
+    </div>
     `;
   }
 
@@ -5444,8 +5457,14 @@ function renderClientPortalView() {
     if (qIdx !== -1) {
       urlToken = new URLSearchParams(hashStr.slice(qIdx)).get('token') || '';
     }
+    if (!urlToken && /^#\/?client\/([^/?#]+)/i.test(hashStr)) {
+      urlToken = decodeURIComponent(hashStr.match(/^#\/?client\/([^/?#]+)/i)[1] || '');
+    }
     if (!urlToken && window.location.search) {
       urlToken = new URLSearchParams(window.location.search).get('token') || '';
+    }
+    if (!urlToken && /^\/client\/([^/?#]+)/i.test(window.location.pathname || '')) {
+      urlToken = decodeURIComponent(window.location.pathname.match(/^\/client\/([^/?#]+)/i)[1] || '');
     }
   } catch (e) {}
 
@@ -7689,12 +7708,10 @@ function isDashboardRoute() {
 
 function isClientPortalRoute() {
   const hash = (window.location.hash || '').toLowerCase();
-  return (
-    hash === '#/client-portal' || hash === '#client-portal' ||
-    hash === '#/client_portal' || hash === '#client_portal' ||
-    hash.startsWith('#/client-portal/') || hash.startsWith('#/client_portal/') ||
-    hash.startsWith('#/client/') || hash.startsWith('#client/')
-  );
+  const path = (window.location.pathname || '').toLowerCase();
+  const prefixes = ['#/client-portal', '#client-portal', '#/client_portal', '#client_portal', '#/client', '#client'];
+  if (prefixes.some(r => hash === r || hash.startsWith(r + '/') || hash.startsWith(r + '?'))) return true;
+  return path.startsWith('/client-portal') || path.startsWith('/client_portal') || path.startsWith('/client/');
 }
 
 function getViewFromHash() {
@@ -7763,6 +7780,10 @@ function checkAuthAndRender() {
 
   if (isDash) {
     if (isAuthenticated) {
+      const wasAlreadyVisible = appLayout && !appLayout.classList.contains('hidden');
+      const viewBox = document.getElementById('main-view-container');
+      const hasRenderedView = viewBox && viewBox.children.length > 0 && !document.getElementById('view-loading');
+
       store.state.activeUserId = store.state.authSession.userId;
       if (publicHome) publicHome.classList.add('hidden');
       if (authScreen) authScreen.classList.add('hidden');
@@ -7776,12 +7797,15 @@ function checkAuthAndRender() {
       }
 
       const targetView = getViewFromHash();
-      if (targetView && targetView !== currentView) {
+      const viewChanged = targetView && targetView !== currentView;
+      if (viewChanged) {
         currentView = targetView;
       }
 
-      updateTopBanners();
-      renderActiveView();
+      if (!wasAlreadyVisible || viewChanged || !hasRenderedView) {
+        updateTopBanners();
+        renderActiveView();
+      }
     } else {
       // Trying to access dashboard without auth -> stay on homepage and open login modal
       window.location.hash = '#/';
@@ -9162,16 +9186,25 @@ function viewPublicHomepage() {
   const topbar = document.getElementById('topbar-simulator');
   const banners = document.getElementById('dynamic-banners-container');
   const auth = document.getElementById('auth-screen');
+  const sidebar = document.getElementById('main-sidebar');
 
   if (home) home.classList.remove('hidden');
   if (app) app.classList.add('hidden');
   if (topbar) topbar.classList.add('hidden');
   if (banners) banners.classList.add('hidden');
   if (auth) auth.classList.add('hidden');
+  if (sidebar) {
+    sidebar.classList.remove('hidden');
+    sidebar.classList.add('md:flex');
+  }
 
   updateHomepageCtaState();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.lucide) lucide.createIcons();
+}
+
+function navigateToHomepage() {
+  viewPublicHomepage();
 }
 
 function returnToDashboard(viewName = 'overview') {
@@ -9291,10 +9324,10 @@ async function manualCloudSyncNow() {
 }
 
 async function checkVercelHealth() {
-  const box = document.getElementById('vercel-health-result');
-  if (box) {
-    box.className = 'p-3 rounded-xl border border-sky-200 bg-sky-50 text-sky-900 text-xs block animate-pulse';
-    box.textContent = 'Sedang memeriksa koneksi Vercel Serverless & Neon PostgreSQL...';
+  const preBox = document.getElementById('vercel-health-result');
+  if (preBox) {
+    preBox.className = 'p-3 rounded-xl border border-sky-200 bg-sky-50 text-sky-900 text-xs block animate-pulse';
+    preBox.textContent = 'Sedang memeriksa koneksi Vercel Serverless & Neon PostgreSQL...';
   }
   try {
     const res = await fetch('/api/health?t=' + Date.now(), { cache: 'no-store' });
@@ -9316,15 +9349,17 @@ async function checkVercelHealth() {
         <p class="text-[11px] text-emerald-900">Pembaruan terakhir di DB: ${data.database?.lastSyncAt ? new Date(data.database.lastSyncAt).toLocaleString('id-ID') : '-'}</p>
       </div>
     `;
-    if (box) {
-      box.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 text-xs block';
-      box.innerHTML = htmlInfo;
+    const liveBox = document.getElementById('vercel-health-result');
+    if (liveBox) {
+      liveBox.className = 'p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 text-xs block';
+      liveBox.innerHTML = htmlInfo;
     }
     showToast(`Koneksi Vercel & Neon Sehat (${data.database?.latencyMs} ms)!`);
   } catch (err) {
-    if (box) {
-      box.className = 'p-3 rounded-xl border border-red-300 bg-red-50 text-red-900 text-xs block';
-      box.textContent = '❌ Gagal memeriksa kesehatan DB/Vercel: ' + err.message;
+    const liveBox = document.getElementById('vercel-health-result');
+    if (liveBox) {
+      liveBox.className = 'p-3 rounded-xl border border-red-300 bg-red-50 text-red-900 text-xs block';
+      liveBox.textContent = '❌ Gagal memeriksa kesehatan DB/Vercel: ' + err.message;
     }
     showToast('Gagal memeriksa kesehatan DB/Vercel!', 'error');
   }
