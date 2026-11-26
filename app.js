@@ -2855,6 +2855,75 @@ function renderProjectsView() {
         </div>
       ` : ''}
 
+            ${(() => {
+        const pendingApprovals = projects.filter(p => 
+          p.paymentGateStatus === 'VERIFYING_PROOF' || 
+          p.paymentGateStatus === 'LOCKED_WAITING_DP' || 
+          p.paymentGateStatus === 'WAITING_FULL_100' ||
+          (p.dpProofUrl && !['DP_50_VERIFIED', 'PAID_100_VERIFIED'].includes(p.paymentGateStatus))
+        );
+        if (pendingApprovals.length === 0) return '';
+        return `
+          <!-- Antrean Verifikasi Transaksi Klien Web -->
+          <div class="card-surface p-4 bg-gradient-to-r from-amber-50 to-emerald-50 dark:from-amber-950/20 dark:to-emerald-950/20 border border-amber-300 dark:border-amber-800 rounded-xl space-y-3 shadow-xs">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <h4 class="font-heading font-bold text-xs sm:text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                  <i data-lucide="inbox" class="w-4 h-4 text-amber-600"></i>
+                  Antrean Approval Transaksi Klien Web (${pendingApprovals.length} Pesanan)
+                </h4>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200">
+                CFO Desk Approval
+              </span>
+            </div>
+            <p class="text-[11px] text-gray-600 dark:text-gray-400">
+              Verifikasi bukti transfer dari portal klien web <em>karyakita-ai.vercel.app</em>. Pengesahan langsung membuka kunci tugas dan mengirim notifikasi status ke klien.
+            </p>
+
+            <div class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-xs overflow-hidden">
+              ${pendingApprovals.map(p => {
+                const hasProof = !!p.dpProofUrl;
+                const dpAmount = p.contractValueIdr / 2;
+                const unitName = store.state.units[p.unitId]?.name || p.unitId;
+                return `
+                  <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-brand-emerald dark:text-emerald-400">${p.orderCode || p.id.replace('proj-', '')}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded font-bold ${hasProof ? 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200' : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'}">
+                          ${hasProof ? 'Bukti TF Diunggah' : 'Menunggu Transfer'}
+                        </span>
+                        <span class="text-[10px] text-gray-500">• ${unitName}</span>
+                      </div>
+                      <div class="font-bold text-gray-900 dark:text-white">${p.title}</div>
+                      <div class="text-[11px] text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Klien: <strong>${p.clientName}</strong></span>
+                        <span>Nilai: <strong class="font-mono text-gray-800 dark:text-gray-200">${formatRp(p.contractValueIdr)}</strong></span>
+                        <span>Tagihan DP: <strong class="font-mono text-emerald-700 dark:text-emerald-400">${formatRp(dpAmount)}</strong></span>
+                        ${p.customerWhatsapp ? `<span>WA: <a href="https://wa.me/${p.customerWhatsapp.replace(/\D/g, '')}" target="_blank" class="text-emerald-600 underline">${p.customerWhatsapp}</a></span>` : ''}
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      ${hasProof ? `
+                        <a href="${p.dpProofUrl}" target="_blank" class="px-2.5 py-1.5 rounded-lg border border-sky-300 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-xs font-semibold hover:bg-sky-100 transition flex items-center gap-1" title="Buka bukti transfer">
+                          <i data-lucide="eye" class="w-3.5 h-3.5"></i> Bukti TF
+                        </a>
+                      ` : ''}
+                      <button onclick="openVerifyDpModal('${p.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Approval / Sahkan
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      })()}
+
       <!-- Project Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         ${projects.length === 0 ? `
@@ -2872,7 +2941,7 @@ function renderProjectsView() {
         ` : projects.map(p => {
           const unit = store.state.units[p.unitId] || { name: p.unitId, badgeClass: '' };
           const pic = store.state.users[p.picId] || { name: p.picId };
-          const isWaitingDp = p.paymentGateStatus === 'LOCKED_WAITING_DP';
+          const isWaitingDp = p.paymentGateStatus === 'LOCKED_WAITING_DP' || p.paymentGateStatus === 'WAITING_FULL_100' || p.paymentGateStatus === 'VERIFYING_PROOF';
           const isDp50 = p.paymentGateStatus === 'DP_50_VERIFIED';
           const isPaid100 = p.paymentGateStatus === 'PAID_100_VERIFIED';
           const pendingRevs = (store.state.revisionTriage || []).filter(r => r.projectId === p.id && (r.triageStatus || r.status) === 'PENDING_TRIAGE');
@@ -3045,134 +3114,352 @@ function openVerifyDpModal(projectId) {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
 
+  const user = store.getCurrentUser();
+  const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+  const dpAmount = project.contractValueIdr / 2;
+  const isCreator = store.state.activeUserId === project.createdById;
+  const isCfoOrOps = ['novita', 'hilwa'].includes(store.state.activeUserId) || ['FINANCE_ADMIN', 'OPS_ADMIN'].includes(user.role);
+  const orderCode = project.orderCode || project.id.replace('proj-', '');
+
   const modalHtml = `
-    <div class="p-6 space-y-4">
+    <div class="p-6 space-y-4 max-w-lg mx-auto">
       <div class="flex items-center justify-between border-b border-brand-border pb-3">
-        <h3 class="font-heading font-bold text-sm text-gray-900 flex items-center gap-2">
-          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
-          Verifikasi Gerbang Pembayaran DP 50% (CFO / Delegasi)
-        </h3>
-        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-gray-900 dark:text-white leading-tight">
+              Otorisasi & Approval Pembayaran Klien
+            </h3>
+            <p class="text-[11px] text-gray-500">CFO Desk • KaryaKita Hub Studio OS</p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
-      <div class="p-3 bg-emerald-50 rounded-lg text-xs text-emerald-900">
-        Memverifikasi DP 50% untuk proyek <strong>${project.title}</strong> (${project.clientName}). Nilai DP yang harus masuk: <strong>Rp${(project.contractValueIdr / 2).toLocaleString('id-ID')}</strong>.
+      <!-- Ringkasan Order & Klien -->
+      <div class="p-3.5 bg-gray-50 dark:bg-gray-800/80 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="font-mono font-bold text-brand-emerald dark:text-emerald-400">${orderCode}</span>
+          <span class="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+            ${project.paymentGateStatus || 'LOCKED_WAITING_DP'}
+          </span>
+        </div>
+        <div class="font-bold text-sm text-gray-900 dark:text-white">${project.title}</div>
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200 dark:border-gray-700 text-[11px]">
+          <div>Klien: <strong class="text-gray-800 dark:text-gray-200">${project.clientName}</strong></div>
+          <div>Nilai Kontrak: <strong class="font-mono text-gray-800 dark:text-gray-200">${formatRp(project.contractValueIdr)}</strong></div>
+          <div>Unit Bisnis: <strong class="text-gray-800 dark:text-gray-200">${store.state.units[project.unitId]?.name || project.unitId}</strong></div>
+          <div>Tagihan DP 50%: <strong class="font-mono text-emerald-700 dark:text-emerald-400">${formatRp(dpAmount)}</strong></div>
+        </div>
+        ${project.customerWhatsapp ? `
+          <div class="pt-1 text-[11px] text-gray-500 flex items-center justify-between">
+            <span>WhatsApp: <strong class="text-gray-800 dark:text-gray-200">${project.customerWhatsapp}</strong></span>
+            <a href="https://wa.me/${project.customerWhatsapp.replace(/\D/g, '')}" target="_blank" class="text-emerald-600 hover:underline flex items-center gap-1 font-semibold">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Hubungi via WA
+            </a>
+          </div>
+        ` : ''}
       </div>
+
+      <!-- Bukti Transfer Preview (Jika diunggah klien) -->
+      ${project.dpProofUrl ? `
+        <div class="p-3 bg-sky-50 dark:bg-sky-950/30 rounded-xl border border-sky-200 dark:border-sky-800 text-xs space-y-2">
+          <div class="flex items-center justify-between text-sky-900 dark:text-sky-200 font-bold">
+            <span class="flex items-center gap-1.5"><i data-lucide="file-check" class="w-4 h-4 text-sky-600"></i> Bukti Transfer Masuk:</span>
+            <a href="${project.dpProofUrl}" target="_blank" class="text-sky-700 dark:text-sky-300 underline font-semibold flex items-center gap-1">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Gambar Resolusi Penuh
+            </a>
+          </div>
+          <div class="max-h-56 overflow-hidden rounded-lg border border-sky-200 dark:border-sky-800 bg-white dark:bg-gray-900 flex items-center justify-center p-1">
+            <img src="${project.dpProofUrl}" alt="Bukti Transfer" class="max-h-52 object-contain rounded cursor-pointer hover:opacity-95 transition" onclick="window.open('${project.dpProofUrl}', '_blank')" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\\'p-4 text-center text-gray-500\\\'>Bukti transfer berupa berkas/tautan Google Drive: <br><a href=\\\'${project.dpProofUrl}\\\' target=\\\'_blank\\\' class=\\\'text-blue-600 underline font-semibold mt-1 inline-block\\\'>Klik untuk membuka bukti &rarr;</a></div>';">
+          </div>
+        </div>
+      ` : `
+        <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200">
+          Klien belum mengunggah bukti via portal, atau pembayaran ditransfer secara manual/tunai.
+        </div>
+      `}
 
       <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-gray-700 mb-1">Tanggal Transfer Terverifikasi *</label>
-          <input type="date" id="verify-dp-date" value="${new Date().toISOString().split('T')[0]}" class="w-full border border-gray-300 rounded px-3 py-2">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Tanggal Mutasi Bank *</label>
+            <input type="date" id="verify-dp-date" value="${new Date().toISOString().split('T')[0]}" class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 dark:text-gray-300 mb-1">Tautan Bukti TF (Opsional)</label>
+            <input type="url" id="verify-dp-proof" value="${project.dpProofUrl || ''}" placeholder="https://..." class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+          </div>
         </div>
-        <div>
-          <label class="block font-semibold text-gray-700 mb-1">Tautan Bukti Transfer (Google Drive / Storage) *</label>
-          <input type="url" id="verify-dp-proof" placeholder="https://drive.google.com/proof-transfer..." class="w-full border border-gray-300 rounded px-3 py-2">
-        </div>
+
+        ${isCreator && !isCfoOrOps ? `
+          <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-1.5">
+            <label class="block font-bold text-amber-950 dark:text-amber-200">Maker-Checker Protection</label>
+            <p class="text-[11px] text-amber-800 dark:text-amber-300 leading-tight">
+              Anda tercatat sebagai pembuat/PIC awal proyek ini. Masukkan <strong>6 Digit PIN CFO (192837)</strong> untuk mengesahkan:
+            </p>
+            <input type="password" id="verify-dp-pin" maxlength="6" placeholder="Masukkan 6 Digit PIN CFO (192837)" class="w-full border border-amber-300 dark:border-amber-700 rounded-lg px-3 py-1.5 font-mono tracking-widest text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+          </div>
+        ` : ''}
       </div>
 
-      <div class="border-t border-brand-border pt-4 flex justify-end gap-2">
-        <button onclick="closeModal()" class="px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-xs">Batal</button>
-        <button onclick="submitVerifyDp('${project.id}')" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Sahkan & Buka Kunci Tugas</button>
+      <!-- Action Buttons -->
+      <div class="border-t border-brand-border dark:border-gray-700 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <button onclick="openRejectDpModal('${project.id}')" class="w-full sm:w-auto px-3.5 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>
+          <span>Tolak Bukti</span>
+        </button>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button onclick="closeModal()" class="px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+            Batal
+          </button>
+          <button id="btn-submit-verify-dp" onclick="submitVerifyDp('${project.id}', 'APPROVE_DP_50')" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Sahkan DP 50% & Buka Kunci</span>
+          </button>
+        </div>
       </div>
     </div>
   `;
 
   openModal(modalHtml);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function submitVerifyDp(projectId) {
+async function submitVerifyDp(projectId, action = 'APPROVE_DP_50') {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
 
-  // Maker-Checker Security Guard
-  if (store.state.activeUserId === project.createdById) {
-    showToast('Prinsip Maker-Checker: Pembuat proyek dilarang memverifikasi pembayarannya sendiri! Verifikasi harus dilakukan oleh CFO (Novita Rani) atau COO (Hilwa Mufida).', 'error');
+  const btn = document.getElementById('btn-submit-verify-dp');
+  const dateInput = document.getElementById('verify-dp-date');
+  const proofInput = document.getElementById('verify-dp-proof');
+  const pinInput = document.getElementById('verify-dp-pin');
+
+  const date = (dateInput && dateInput.value) || new Date().toISOString().split('T')[0];
+  const proof = (proofInput && proofInput.value.trim()) || project.dpProofUrl || '';
+  const pin = pinInput ? pinInput.value.trim() : '';
+
+  const user = store.getCurrentUser();
+  const isCreator = store.state.activeUserId === project.createdById;
+  const isCfoOrOps = ['novita', 'hilwa'].includes(store.state.activeUserId) || ['FINANCE_ADMIN', 'OPS_ADMIN'].includes(user.role);
+
+  if (isCreator && !isCfoOrOps && pin !== '192837') {
+    showToast('Maker-Checker: Masukkan PIN CFO (192837) yang valid untuk mengesahkan transaksi!', 'error');
     return;
   }
 
-  const date = document.getElementById('verify-dp-date').value;
-  const proof = document.getElementById('verify-dp-proof').value.trim();
-
-  if (!proof) {
-    showToast('Tautan bukti transfer wajib diisi!', 'error');
-    return;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">⌛</span> Menyinkronkan ke Cloud...';
   }
 
-  project.paymentGateStatus = 'DP_50_VERIFIED';
-  project.dpVerifiedById = store.state.activeUserId;
-  project.dpVerifiedAt = date;
-  project.dpProofUrl = proof;
-  project._updatedAt = Date.now();
+  showToast('Sedang memproses approval transaksi ke Neon Cloud...', 'info');
 
-  // Auto record to cashflow ledger with projectId & unitId!
-  const dpAmount = project.contractValueIdr / 2;
-  const cashEntry = {
-    id: 'cf-' + Date.now(),
-    date: date,
-    type: 'INCOME',
-    unitId: project.unitId,
-    projectId: project.id,
-    category: store.state.units[project.unitId]?.name || 'Proyek B2B',
-    amountIdr: dpAmount,
-    description: `DP 50% Kontrak Proyek ${project.title} (${project.clientName})`,
-    proofUrl: proof,
-    createdById: store.state.activeUserId,
-    _updatedAt: Date.now()
-  };
-  store.state.cashflow.unshift(cashEntry);
+  try {
+    const res = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: project.id,
+        orderCode: project.orderCode || project.id.replace('proj-', ''),
+        action,
+        proofUrl: proof,
+        verifiedDate: date,
+        actorId: user.id,
+        actorName: `${user.name} (${user.roleLabel || 'CFO'})`,
+        pin: pin || undefined
+      })
+    });
 
-  const actor = store.getCurrentUser();
-  const isDelegation = store.state.users.novita?.capacityStatus === 'EXAM_MODE' && actor.id !== 'novita';
-  store.logAudit(
-    'PAYMENT_GATE_VERIFIED',
-    'Project: ' + project.title,
-    `DP 50% sebesar Rp${dpAmount.toLocaleString('id-ID')} terverifikasi${isDelegation ? ' (melalui Delegasi CFO saat Exam Mode)' : ''}.`
-  );
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal memverifikasi transaksi');
+    }
 
-  store.saveState(false, ['projects', 'cashflow', 'auditLogs'], true);
-  if (store.state.settings?.botConfig?.notifyDp50Verified !== false) {
-    dispatchBotNotification(
-      'Notifikasi Verifikasi DP 50%',
-      `DP 50% proyek ${project.title} (${project.clientName}) senilai Rp${dpAmount.toLocaleString('id-ID')} resmi terverifikasi oleh ${actor.name}. Tugas eksekusi kini terbuka!`
-    );
+    // Update local state
+    project.paymentGateStatus = data.afterStatus || 'DP_50_VERIFIED';
+    project.dpVerifiedById = user.id;
+    project.dpVerifiedAt = date;
+    project.dpProofUrl = proof;
+    project._updatedAt = Date.now();
+
+    if (data.cashflowEntry) {
+      const cIdx = store.state.cashflow.findIndex(c => c.id === data.cashflowEntry.id);
+      if (cIdx !== -1) {
+        store.state.cashflow[cIdx] = data.cashflowEntry;
+      } else {
+        store.state.cashflow.unshift(data.cashflowEntry);
+      }
+    }
+
+    store.saveState(false, ['projects', 'cashflow', 'auditLogs'], false);
+
+    if (store.state.settings?.botConfig?.notifyDp50Verified !== false) {
+      dispatchBotNotification(
+        'Notifikasi Approval DP 50%',
+        `DP 50% proyek ${project.title} (${project.clientName}) resmi disahkan oleh ${user.name} melalui KaryaKita Hub. Kartu tugas eksekusi kini terbuka!`
+      );
+    }
+
+    closeModal();
+    showToast('Alhamdulillah! Pembayaran DP 50% disahkan & status portal klien otomatis terbuka!');
+    renderActiveView();
+  } catch (err) {
+    console.error('Error verify DP:', err);
+    showToast(err.message || 'Gagal menghubungi server verifikasi.', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Sahkan DP 50% & Buka Kunci';
+    }
   }
-  closeModal();
-  showToast('Alhamdulillah! DP 50% berhasil diverifikasi. Kartu tugas eksekusi kini dapat dikerjakan!');
-  renderActiveView();
 }
 
-function openVerifyFullModal(projectId) {
+function openRejectDpModal(projectId) {
   const project = store.state.projects.find(p => p.id === projectId);
   if (!project) return;
 
-  // Maker-Checker Security Guard
-  if (store.state.activeUserId === project.createdById) {
+  const modalHtml = `
+    <div class="p-6 space-y-4 max-w-md mx-auto">
+      <div class="flex items-center justify-between border-b border-brand-border pb-3">
+        <h3 class="font-heading font-bold text-sm text-red-600 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          Tolak Bukti Pembayaran Klien
+        </h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg text-xs text-red-800 dark:text-red-200">
+        Menolak bukti pembayaran untuk <strong>${project.title}</strong> (${project.clientName}). Klien akan otomatis menerima notifikasi WhatsApp beserta alasan penolakan dan tautan unggah ulang.
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <label class="block font-semibold text-gray-700 dark:text-gray-300">Alasan Penolakan Bukti *</label>
+        <textarea id="reject-payment-reason" rows="3" placeholder="Contoh: Bukti transfer terpotong, nominal mutasi belum masuk ke rekening, atau tanggal mutasi tidak sesuai." class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs"></textarea>
+      </div>
+
+      <div class="border-t border-brand-border dark:border-gray-700 pt-4 flex justify-end gap-2">
+        <button onclick="closeModal()" class="px-3.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs">Batal</button>
+        <button id="btn-submit-reject" onclick="submitRejectPayment('${project.id}')" class="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Tolak & Beritahu Klien</button>
+      </div>
+    </div>
+  `;
+
+  openModal(modalHtml);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function submitRejectPayment(projectId) {
+  const project = store.state.projects.find(p => p.id === projectId);
+  if (!project) return;
+
+  const reasonInput = document.getElementById('reject-payment-reason');
+  const reason = (reasonInput && reasonInput.value.trim()) || 'Bukti transfer tidak valid / mutasi belum tercatat di rekening bank.';
+
+  const btn = document.getElementById('btn-submit-reject');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'Memproses...';
+  }
+
+  showToast('Sedang memproses penolakan ke sistem...', 'info');
+
+  try {
+    const user = store.getCurrentUser();
+    const res = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: project.id,
+        orderCode: project.orderCode || project.id.replace('proj-', ''),
+        action: 'REJECT',
+        rejectionReason: reason,
+        actorId: user.id,
+        actorName: `${user.name} (${user.roleLabel || 'CFO'})`
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal menolak bukti transfer');
+    }
+
+    project.paymentGateStatus = 'REJECTED_PROOF';
+    project._updatedAt = Date.now();
+    store.saveState(false, ['projects', 'auditLogs'], false);
+
+    closeModal();
+    showToast('Bukti transfer berhasil ditolak. Klien telah dinotifikasi untuk mengunggah ulang.');
+    renderActiveView();
+  } catch (err) {
+    console.error('Error reject payment:', err);
+    showToast(err.message || 'Gagal memproses penolakan.', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Tolak & Beritahu Klien';
+    }
+  }
+}
+
+async function openVerifyFullModal(projectId) {
+  const project = store.state.projects.find(p => p.id === projectId);
+  if (!project) return;
+
+  const user = store.getCurrentUser();
+  const isCreator = store.state.activeUserId === project.createdById;
+  const isCfoOrOps = ['novita', 'hilwa'].includes(store.state.activeUserId) || ['FINANCE_ADMIN', 'OPS_ADMIN'].includes(user.role);
+
+  if (isCreator && !isCfoOrOps) {
     showToast('Prinsip Maker-Checker: Pembuat proyek dilarang memverifikasi pelunasan sendiri!', 'error');
     return;
   }
 
-  if (confirm(`Apakah Anda yakin memverifikasi Pelunasan 100% untuk ${project.title}?`)) {
+  if (!confirm(`Apakah Anda yakin memverifikasi Pelunasan 100% untuk ${project.title} (${project.clientName})? Seluruh berkas master akan otomatis diserahkan ke klien.`)) {
+    return;
+  }
+
+  showToast('Sedang memproses pengesahan pelunasan 100%...', 'info');
+
+  try {
+    const res = await fetch('/api/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: project.id,
+        orderCode: project.orderCode || project.id.replace('proj-', ''),
+        action: 'APPROVE_FULL_100',
+        actorId: user.id,
+        actorName: `${user.name} (${user.roleLabel || 'CFO'})`
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal memverifikasi pelunasan');
+    }
+
     project.paymentGateStatus = 'PAID_100_VERIFIED';
     project._updatedAt = Date.now();
-    const finalAmount = project.contractValueIdr / 2;
-    const cashEntry = {
-      id: 'cf-' + Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      type: 'INCOME',
-      unitId: project.unitId,
-      projectId: project.id,
-      category: store.state.units[project.unitId]?.name || 'Proyek B2B',
-      amountIdr: finalAmount,
-      description: `Pelunasan 50% Final Proyek ${project.title}`,
-      proofUrl: project.dpProofUrl,
-      createdById: store.state.activeUserId,
-      _updatedAt: Date.now()
-    };
-    store.state.cashflow.unshift(cashEntry);
-    store.logAudit('PAYMENT_GATE_FULL_VERIFIED', 'Project: ' + project.title, `Pelunasan 100% selesai.`);
-    store.saveState(false, ['projects', 'cashflow', 'auditLogs'], true);
-    showToast('Pelunasan 100% berhasil diverifikasi!');
+
+    if (data.cashflowEntry) {
+      const cIdx = store.state.cashflow.findIndex(c => c.id === data.cashflowEntry.id);
+      if (cIdx !== -1) {
+        store.state.cashflow[cIdx] = data.cashflowEntry;
+      } else {
+        store.state.cashflow.unshift(data.cashflowEntry);
+      }
+    }
+
+    store.saveState(false, ['projects', 'cashflow', 'auditLogs'], false);
+    showToast('Alhamdulillah! Pelunasan 100% berhasil diverifikasi dan hak cipta/master telah diserahkan.');
     renderActiveView();
+  } catch (err) {
+    console.error('Error verify full:', err);
+    showToast(err.message || 'Gagal memverifikasi pelunasan 100%.', 'error');
   }
 }
 
